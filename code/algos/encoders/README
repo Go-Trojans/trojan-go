@@ -1,0 +1,10 @@
+Trojan-Go
+
+Board_size              Input_Features (planes)
+
+19*19                   17 planes (8 + 8 + 1)
+13*13                   13 planes (6 + 6 + 1)
+9*9                     11 planes (5 + 5 + 1)
+5*5                     7 planes  (3 + 3 + 1) 
+  
+

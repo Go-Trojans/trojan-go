@@ -1,0 +1,5 @@
+board_size5  = 5*5
+board_size9  = 9*9
+board_size13 = 13*13
+board_size19 = 19*19
+
