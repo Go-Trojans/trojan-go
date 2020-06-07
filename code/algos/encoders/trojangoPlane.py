@@ -4,6 +4,7 @@ Please keep the code here for the input features.
 """
 
 import numpy as np
+from algos import GlobalConfig
 
 
 
@@ -18,7 +19,7 @@ Opposition 8 history    8               Opposition player 8 history states
 FEATURE_OFFSETS = {
     "current_player": 0,   # Plane[0]
     "base_self_history": 1, # Plane [1,2,3,4,5,6,7,8]
-    "base_opp_history": 1 + int((plane_size-1)/2)     # Plane [9, 10, 11, 12, 13, 14, 15, 16] (plane_size is coming from global config file)
+    "base_opp_history": 1 + int((num_planes-1)/2)     # Plane [9, 10, 11, 12, 13, 14, 15, 16] (plane_size is coming from global config file)
 }
 
 
