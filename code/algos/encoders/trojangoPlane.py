@@ -18,8 +18,8 @@ Opposition 8 history    8               Opposition player 8 history states
 
 FEATURE_OFFSETS = {
     "current_player": 0,   # Plane[0]
-    "base_self_history": 1, # Plane [1,2,3,4,5,6,7,8]
-    "base_opp_history": 1 + int((num_planes-1)/2)     # Plane [9, 10, 11, 12, 13, 14, 15, 16] (plane_size is coming from global config file)
+    "base_self_history": 1, # Plane [1,2,3,4,5,6,7,8] or [1,2,3]
+    "base_opp_history": 1 + int((num_planes-1)/2)     # Plane [9, 10, 11, 12, 13, 14, 15, 16] or [4,5,6] (plane_size is coming from global config file)
 }
 
 
@@ -37,10 +37,10 @@ class TrojanGoPlane(Encoder):
         def name(self):
             return 'trojangoplane'
 
-        def encode(self, game_state):    # <1> # Need to define game_state (previous game_state info, 1 black, 0 white and -1 for blank point)
+        def encode(self, game_state):    # <1> # Need to define game_state (previous game_state info, 1 black, 2 white and 0 for blank point)
             board_tensor = np.zeros(self.shape())  # (17*19*19)
 
-           """
+        
             
             plane_history = 1
             opp = True
@@ -53,21 +53,37 @@ class TrojanGoPlane(Encoder):
                     
                     if (opp):
                             # from current player point of view, current game_state is first history game_state of opposition. So, it should go in opposition base plane.
-                            board_tensor[offset("base_opp_history") + iter_base_opp] = game_state # This is wrong. 0->1(change), 1->0(change), -1->0(change)
+                            # 2->1 & 1->0 (if game_state.current_player == Player.black), and 2->0(if game_state.current_player == Player.white)
+                            
+                            if game_state.current_player == Player.black:
+                               board_plane = convert2to1and1to0(game_state)
+                            else:
+                               board_plane = convert2to0(game_state)                 
+                            
+
+                            board_tensor[offset("base_opp_history") + iter_base_opp] = board_plane
                             plane_history += 1
                             iter_base_opp += 1
                             opp = False
                             self = True
                             game_state = game_state.previous
+                            
                     if (self):
-                            board_tensor[offset("base_self_history") + iter_base_self] = game_state # 1->1(no change), 0->0(no change) and -1->0(change)
+                            # 2->0 (if game_state.current_player == Player.black), and 2->1 & 1->0 (if game_state.current_player == Player.white)
+                            
+                            if game_state.current_player == Player.black:
+                               board_plane = convert2to0(game_state)
+                            else:
+                               board_plane = convert2to1and1to0(game_state)
+                               
+                            board_tensor[offset("base_self_history") + iter_base_self] = board_plane
                             plane_history += 1
                             iter_base_self+= 1
                             opp = True
                             self = False
                             game_state = game_state.previous                 
                     
-            """
+        
            
             if game_state.current_player == Player.black: # Need to define Player
                     board_tensor[offset("current_player")] = np.ones([self.board_width, self.board_width, 1])
