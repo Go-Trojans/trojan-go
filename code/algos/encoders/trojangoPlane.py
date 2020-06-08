@@ -1,6 +1,7 @@
 """
 Author : Rupesh Kumar
 Date   : June 8th 2020
+File   : tojangoPlane.py
 
 Description : Generate Input features.
 
@@ -56,8 +57,8 @@ def offset(feature):
 
 class TrojanGoPlane(Encoder):
         def __init__(self, board_size, plane_size):
-	    self.board_width, self.board_height = board_size
-	    self.num_planes = plane_size
+            self.board_width, self.board_height = board_size
+            self.num_planes = plane_size
 	    
         def name(self):
             return 'trojangoplane'
@@ -73,51 +74,48 @@ class TrojanGoPlane(Encoder):
             iter_base_self = 0
             
             while game_state and plane_history <= (num_planes - 1):
-       
+                if (opp):
+                    # from current player point of view, current game_state is first history
+                    # game_state of opposition. So, it should go in opposition base plane.
+                    # 2->1 & 1->0 (if game_state.current_player == Player.black),
+                    # and 2->0(if game_state.current_player == Player.white)
                     
-                    if (opp):
-                            # from current player point of view, current game_state is first history
-                            # game_state of opposition. So, it should go in opposition base plane.
-                            # 2->1 & 1->0 (if game_state.current_player == Player.black),
-                            # and 2->0(if game_state.current_player == Player.white)
-                            
-                            if game_state.current_player == Player.black:
-                               board_plane = convert2to1and1to0(game_state)
-                            else:
-                               board_plane = convert2to0(game_state)                 
-                            
+                    if game_state.current_player == Player.black:
+                       board_plane = convert2to1and1to0(game_state)
+                    else:
+                       board_plane = convert2to0(game_state)                 
+                    
 
-                            board_tensor[offset("base_opp_history") + iter_base_opp] = board_plane
-                            plane_history += 1
-                            iter_base_opp += 1
-                            opp = False
-                            self = True
-                            game_state = game_state.previous
+                    board_tensor[offset("base_opp_history") + iter_base_opp] = board_plane
+                    plane_history += 1
+                    iter_base_opp += 1
+                    opp = False
+                    self = True
+                    game_state = game_state.previous
                             
-                    if (self):
-                            # 2->0 (if game_state.current_player == Player.black),
-                            # and 2->1 & 1->0 (if game_state.current_player == Player.white)
-                            
-                            if game_state.current_player == Player.black:
-                               board_plane = convert2to0(game_state)
-                            else:
-                               board_plane = convert2to1and1to0(game_state)
-                               
-                            board_tensor[offset("base_self_history") + iter_base_self] = board_plane
-                            plane_history += 1
-                            iter_base_self+= 1
-                            opp = True
-                            self = False
-                            game_state = game_state.previous                 
+                if (self):
+                    # 2->0 (if game_state.current_player == Player.black),
+                    # and 2->1 & 1->0 (if game_state.current_player == Player.white)
                     
-        
+                    if game_state.current_player == Player.black:
+                       board_plane = convert2to0(game_state)
+                    else:
+                       board_plane = convert2to1and1to0(game_state)
+                       
+                    board_tensor[offset("base_self_history") + iter_base_self] = board_plane
+                    plane_history += 1
+                    iter_base_self+= 1
+                    opp = True
+                    self = False
+                    game_state = game_state.previous                 
+            
            
             if game_state.current_player == Player.black:
-                    board_tensor[offset("current_player")] = np.ones([1, self.board_width, self.board_width])
+                board_tensor[offset("current_player")] = np.ones([1, self.board_width, self.board_width])
             if game_state.current_player == Player.white:
-                    board_tensor[offset("current_player")] = np.zeros([1, self.board_width, self.board_width])                  
-            
+                board_tensor[offset("current_player")] = np.zeros([1, self.board_width, self.board_width])                  
 
+            
         def encode_point(self, point):
             raise NotImplementedError()
 
