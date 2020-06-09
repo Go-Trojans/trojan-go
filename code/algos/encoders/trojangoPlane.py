@@ -9,6 +9,7 @@ Description : Generate Input features.
 
 import numpy as np
 from algos import GlobalConfig
+from utility import convert2to1and1to0, convert2to0
 
 
 """
