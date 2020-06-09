@@ -19,17 +19,20 @@ Big Idea for the code written in this file:
 Assuming 5*5 go board size.
 
 Given: given a board state, generate the input feature stacks/planes (in this case 7*5*5)
-Plane[0] = current player (if Black turn then all ones, if white turn then all zeros)
+C = Plane[0] = current player (if Black turn then all ones, if white turn then all zeros)
 
-Plane[1] = current player all moves made till now (say ith move) with all ones & others as zeros    (self 1st history)
-Plane[2] = current player all moves made till (i-1)th move with all ones & others as zeros          (self 2nd history)
-Plane[3] = current player all moves made till (i-2)th move with all ones & others as zeros          (self 3rd history)
+X{t=2} = Plane[1] = current player all moves made till now, say (i)th move with all ones & others as zeros   (self 1st history)
+X{t=1} = Plane[2] = current player all moves made till (i-1)th move with all ones & others as zeros          (self 2nd history)
+X{t=0} = Plane[3] = current player all moves made till (i-2)th move with all ones & others as zeros          (self 3rd history)
 
-Plane[4] = opposotion player all moves made till now (say jth move) with all ones & others as zeros (opp 1st history)
-Plane[5] = opposotion player all moves made till (j-1)th move with all ones & others as zeros       (opp 2nd history)
-Plane[6] = opposotion player all moves made till (j-2)th move with all ones & others as zeros       (opp 3rd history)
+Y{t=2} = Plane[4] = opposotion player all moves made till now (say jth move) with all ones & others as zeros (opp 1st history)
+Y{t=1} = Plane[5] = opposotion player all moves made till (j-1)th move with all ones & others as zeros       (opp 2nd history)
+Y{t=0} = Plane[6] = opposotion player all moves made till (j-2)th move with all ones & others as zeros       (opp 3rd history)
 
 NOTE: if (i-n)th or (j-n)th move doesn't exist then the plane will have all zeros.
+AlphaZero: These planes are concatenated together to give input features s{t} = [X{t}, Y{t}, X{t−1}, Y{t−1},..., X{t−7}, Y{t−7}, C].
+Currently, s{t} = [C, X{t=2}, X{t=1}, X{t=0}, Y{t=2}, Y{t=1}, Y{t=0}]
+
 """
 
 """
