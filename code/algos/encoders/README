@@ -8,3 +8,19 @@ Board_size              Input_Features (planes)
 5*5                     7 planes  (3 + 3 + 1) 
   
 
+"""----Input feature stack---"""
+The input to the neural network is a 19 × 19 × 17 image stack comprising 17 binary feature planes. 
+
+Eight feature planes, X{t}, consist of binary values indicating the presence of the current player’s stones 
+X{i,t} = 1 if intersection i contains a stone of the player’s colour at time-step t; 
+0 if the intersection is empty, contains an opponent stone, or if t < 0). 
+
+A further 8 feature planes, Y{t}, represent the corresponding features for the opponent’s stones. 
+
+The final feature plane, C, represents the colour to play, and has a constant value of either 1 if black is to play or 0 if white is to play. 
+
+These planes are concatenated together to give input features s{t} = [X{t}, Y{t}, X{t−1}, Y{t−1},..., X{t−7}, Y{t−7}, C]. 
+
+History features X{t}, Y{t} are necessary, because Go is not fully observable solely from the current stones, 
+as repetitions are forbidden; similarly, the colour feature C is necessary, because the komi is not observable.
+"""---end---"""
