@@ -65,22 +65,32 @@ class TrojanGoPlane(Encoder):
 
         # Need to define Point, Player, game_state (previous game_state info, 1 black, 2 white and 0 for blank point)
         def encode(self, game_state):    # <1> 
-            board_tensor = np.zeros(self.shape())  # (17*19*19)
+            board_tensor = np.zeros(self.shape())  # (17*19*19) (7*5*5)
 
             plane_history = 1
             opp = True
-            self = False
+            myself = False
             iter_base_opp = 0
             iter_base_self = 0
-            
+
+            if game_state.current_player == Player.black:
+                board_tensor[offset("current_player")] = np.ones([1, self.board_width, self.board_width])
+            if game_state.current_player == Player.white:
+                board_tensor[offset("current_player")] = np.zeros([1, self.board_width, self.board_width])                  
+
+
+            current_player = game_state.current_player
             while game_state and plane_history <= (num_planes - 1):
+                if game_state is None:
+                    raise ValueError("encoding history must have neen done by this time ...")
+                
                 if (opp):
                     # from current player point of view, current game_state is first history
                     # game_state of opposition. So, it should go in opposition base plane.
                     # 2->1 & 1->0 (if game_state.current_player == Player.black),
                     # and 2->0(if game_state.current_player == Player.white)
                     
-                    if game_state.current_player == Player.black:
+                    if current_player == Player.black:
                        board_plane = convert2to1and1to0(game_state)
                     else:
                        board_plane = convert2to0(game_state)                 
@@ -90,14 +100,14 @@ class TrojanGoPlane(Encoder):
                     plane_history += 1
                     iter_base_opp += 1
                     opp = False
-                    self = True
+                    myself = True
                     game_state = game_state.previous
                             
-                if (self):
+                elif (myself):
                     # 2->0 (if game_state.current_player == Player.black),
                     # and 2->1 & 1->0 (if game_state.current_player == Player.white)
                     
-                    if game_state.current_player == Player.black:
+                    if current_player == Player.black:
                        board_plane = convert2to0(game_state)
                     else:
                        board_plane = convert2to1and1to0(game_state)
@@ -106,15 +116,12 @@ class TrojanGoPlane(Encoder):
                     plane_history += 1
                     iter_base_self+= 1
                     opp = True
-                    self = False
-                    game_state = game_state.previous                 
-            
-           
-            if game_state.current_player == Player.black:
-                board_tensor[offset("current_player")] = np.ones([1, self.board_width, self.board_width])
-            if game_state.current_player == Player.white:
-                board_tensor[offset("current_player")] = np.zeros([1, self.board_width, self.board_width])                  
+                    myself = False
+                    game_state = game_state.previous
 
+                else:
+                    raise ValueError("Invalid encoding landing ...")
+                     
             
         def encode_point(self, point):
             raise NotImplementedError()
