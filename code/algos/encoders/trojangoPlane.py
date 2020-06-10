@@ -31,7 +31,7 @@ Y{t=0} = Plane[6] = opposotion player all moves made till (j-2)th move with all 
 
 NOTE: if (i-n)th or (j-n)th move doesn't exist then the plane will have all zeros.
 AlphaZero: These planes are concatenated together to give input features s{t} = [X{t}, Y{t}, X{t−1}, Y{t−1},..., X{t−7}, Y{t−7}, C].
-Currently, s{t} = [C, X{t=2}, X{t=1}, X{t=0}, Y{t=2}, Y{t=1}, Y{t=0}]
+board_tensor, s{t} = [C, X{t=2}, X{t=1}, X{t=0}, Y{t=2}, Y{t=1}, Y{t=0}]
 
 """
 
@@ -125,6 +125,31 @@ class TrojanGoPlane(Encoder):
 
                 else:
                     raise ValueError("Invalid encoding landing ...")
+                
+            """
+            return board_tensor
+            s{t} = [C, X{t=2}, X{t=1}, X{t=0}, Y{t=2}, Y{t=1}, Y{t=0}]
+            
+            AlphaZero: These planes are concatenated together to give input features
+            s{t} = [X{t}, Y{t}, X{t−1}, Y{t−1},..., X{t−7}, Y{t−7}, C].
+            So, re-sequence it to align with AlphaGoZero.
+            """
+            
+            new_board_tensor = np.zeros(self.shape())
+            new_board_tensor[-1] = board_tensor[0]
+
+            j = (self.num_planes - 1) / 2      # number of history staes for any player
+            k = -1
+            for i in range(self.num_planes - 1):
+                if i%2 == 0:                  # current player planes re-sequencing X{t}
+                    new_board_tensor[i] = board_tensor[i+ (-1 * k)]
+                    k = k+1
+                else:                         # opp player planes re-sequencing Y{t}
+                    new_board_tensor[i] = board_tensor[i+j]
+                    j = j-1
+                    
+                
+            return new_board_tensor  # AlphaGoZero complaint
                      
             
         def encode_point(self, point):
@@ -141,4 +166,37 @@ class TrojanGoPlane(Encoder):
 def create(board_size, num_planes):
     return TrojanGoPlane(board_size, num_planes)
 
+
+"""
+Driver code
+"""
+if __name__ == "__main__":
+    board_size = 5
+    num_planes = 7
+    
+    board = Board(board_size, board_size)
+    board.new_game()
+    #board.print_board()
+
+    # black is starting the game, board is all empty now.
+    game_state = GameState(board, Player.black, None)
+    #print(game_state.display())
+
+    # Simulate a game for making 3-3 moves for black and white.
+    #moves = [(2,2), (2,3), (2,1), (3,3), (1,1), (1,2), (4,4), (0,0)]
+    moves = [(2,2), (2,3), (2,1), (3,3)]
+    
+    for coord in moves:
+        game_state = game_state.playGame(coord)
+        
+    print(game_state.display())
+
+    #now get an input feature stack
+    trojangoplane = create(board_size, num_planes)
+    planes_tensor = trojangoplane.encode(game_state)
+
+    print("Turn to make move is player : ", game_state.current_player)
+    print("Input feature stacks ...")
+    print(planes_tensor)
+    
                 
