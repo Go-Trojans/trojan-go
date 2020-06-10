@@ -31,7 +31,7 @@ Y{t=0} = Plane[6] = opposotion player all moves made till (j-2)th move with all 
 
 NOTE: if (i-n)th or (j-n)th move doesn't exist then the plane will have all zeros.
 AlphaZero: These planes are concatenated together to give input features s{t} = [X{t}, Y{t}, X{t−1}, Y{t−1},..., X{t−7}, Y{t−7}, C].
-Currently, s{t} = [C, X{t=2}, X{t=1}, X{t=0}, Y{t=2}, Y{t=1}, Y{t=0}]
+board_tensor, s{t} = [C, X{t=2}, X{t=1}, X{t=0}, Y{t=2}, Y{t=1}, Y{t=0}]
 
 """
 
@@ -128,7 +128,7 @@ class TrojanGoPlane(Encoder):
                 
             """
             return board_tensor
-            Currently, s{t} = [C, X{t=2}, X{t=1}, X{t=0}, Y{t=2}, Y{t=1}, Y{t=0}]
+            s{t} = [C, X{t=2}, X{t=1}, X{t=0}, Y{t=2}, Y{t=1}, Y{t=0}]
             
             AlphaZero: These planes are concatenated together to give input features
             s{t} = [X{t}, Y{t}, X{t−1}, Y{t−1},..., X{t−7}, Y{t−7}, C].
