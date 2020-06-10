@@ -19,7 +19,7 @@ class smallNN:
     def __init__(self):
         self.board_input = Input(shape=TrojanGoPlane.shape(), name='board_input')
 
-    def model(self):
+    def nn_model(self):
 
         common = self.board_input
         for i in range(4):                     # <1>
