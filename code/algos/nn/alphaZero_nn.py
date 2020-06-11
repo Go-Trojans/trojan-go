@@ -1,5 +1,3 @@
-Neural network architecture.
-============================
 """
 Author : 
 File   : alphaZero_nn.py
