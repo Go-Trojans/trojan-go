@@ -29,7 +29,7 @@ import numpy as np
 def game_winner(board):
     """
 
-    :param board: A 2-Dimensional numpy array
+    :param: board: A 2-Dimensional numpy array
     :return: 0: Draw
              1: Black wins
              2: White wins
