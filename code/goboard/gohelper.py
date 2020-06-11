@@ -47,6 +47,12 @@ class Point(namedtuple('Point', 'row col')):
         return self
 
 
+
+def is_point_an_eye(board, point, player):
+    raise NotImplementedError()
+    
+
+
 """
 Driver code
 """
