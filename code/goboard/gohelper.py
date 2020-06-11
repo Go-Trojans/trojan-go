@@ -3,13 +3,18 @@ Author : Rupesh Kumar
 Date   : June 11th 2020
 File   : tojangoPlane.py
 
-Description : Generate Input features.
+Description : Define Player and Point class.
 
 """
 
 import enum
 from collections import namedtuple
 import operator
+
+__all__ = [
+    'Player',
+    'Point',
+]
 
 def directionVector_add(a, b):
     return tuple(map(operator.add, a, b))
