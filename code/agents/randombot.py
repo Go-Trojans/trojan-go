@@ -5,7 +5,7 @@ from algo.encoders import Point
 __all__ = ['RandomBot']
 
 
-class RandomBot(Agent):
+class RandomBot():
     print("RandomBot selecting move ...")
     def select_move(self, game_state): 
         raise NotImplementedError() 
