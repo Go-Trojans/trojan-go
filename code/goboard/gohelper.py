@@ -28,7 +28,7 @@ class Player(enum.Enum):
     white = 2
 
     @property
-    def other(self):
+    def opp(self):  #opposition
         if self == Player.white:
             return Player.black 
         else:
@@ -62,7 +62,7 @@ if __name__ == "__main__":
     self_player = Player.black
     print(self_player, self_player.value) #Player.black 1
 
-    opp_player = self_player.other
+    opp_player = self_player.opp
     print(opp_player, opp_player.value) #Player.white 2
     
 
