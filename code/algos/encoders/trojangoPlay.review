@@ -1,0 +1,15 @@
+I think the if logic from line 97 and line 114 is the same for both "opp" and "myself", and can be taken out of the "if" statement since this block is run regardless if the current_player is opp or myself.  
+
+if current_player == Player.black: 
+    board_plane = convert2to1and1to0(game_state)
+else:
+    board_plane = convert2to0(game_state)
+
+This block and the other one similar to it could then be placed into an if clause specifying which plane_history to update. game_state = game_state.previous could be taken out of the if.
+
+103                     board_tensor[offset("base_opp_history") + iter_base_opp] = board_plane
+104                     plane_history += 1
+105                     iter_base_opp += 1
+106                     opp = False
+107                     myself = True
+108                     game_state = game_state.previous
