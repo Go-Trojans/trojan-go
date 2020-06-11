@@ -50,3 +50,14 @@ for the residual tower, plus an additional 2 layers for the policy head and 3 la
 from keras.layers import Activation, BatchNormalization
 from keras.layers import Conv2D, Dense, Flatten, Input
 from keras.models import Model
+
+
+class trojanGoZero:
+    def __init__(self):
+        self.board_input = Input(shape=TrojanGoPlane.shape(), name='board_input')
+
+    def nn_model(self):
+        #return model
+        raise NotImplementedError() 
+    
+    
