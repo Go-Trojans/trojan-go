@@ -1,0 +1,70 @@
+Neural network architecture.
+============================
+"""
+Author : 
+File   : alphaZero_nn.py
+Date   : 11th July 2020
+
+Description : Have the same deep neural network as AlphaGoZero
+"""
+
+
+"""
+#----Input feature stack---
+The input to the neural network is a 19 × 19 × 17 image stack comprising 17 binary feature planes. 
+
+Eight feature planes, X{t}, consist of binary values indicating the presence of the current player’s stones 
+X{i,t} = 1 if intersection i contains a stone of the player’s colour at time-step t; 
+0 if the intersection is empty, contains an opponent stone, or if t < 0). 
+
+A further 8 feature planes, Y{t}, represent the corresponding features for the opponent’s stones. 
+
+The final feature plane, C, represents the colour to play, and has a constant value of either 1 if black is to play or 0 if white is to play. 
+
+These planes are concatenated together to give input features s{t} = [X{t}, Y{t}, X{t−1}, Y{t−1},..., X{t−7}, Y{t−7}, C]. 
+
+History features X{t}, Y{t} are necessary, because Go is not fully observable solely from the current stones, 
+as repetitions are forbidden; similarly, the colour feature C is necessary, because the komi is not observable.
+#---end---
+
+The input features s{t} are processed by a residual tower that consists of a single convolutional block 
+followed by either 19 or 39 residual blocks.
+
+The convolutional block applies the following modules:
+(1) A convolution of 256 filters of kernel size 3 × 3 with stride 1
+(2) Batch normalization
+(3) A rectifier nonlinearity
+
+Each residual block applies the following modules sequentially to its input: 
+(1) A convolution of 256 filters of kernel size 3 × 3 with stride 1
+(2) Batch normalization
+(3) A rectifier nonlinearity
+(4) A convolution of 256 filters of kernel size 3 × 3 with stride 1
+(5) Batch normalization
+(6) A skip connection that adds the input to the block
+(7) A rectifier nonlinearity
+
+The output of the residual tower is passed into two separate ‘heads’ for computing the policy and value. 
+
+The policy head applies the following modules: 
+(1) A convolution of 2 filters of kernel size 1 × 1 with stride 1
+(2) Batch normalization
+(3) A rectifier nonlinearity
+(4) A fully connected linear layer that outputs a vector of size 19*19 + 1 = 362, corresponding to logit probabilities for all intersections and the pass move
+
+The value head applies the following modules:
+(1) A convolution of 1 filter of kernel size 1 × 1 with stride 1 
+(2) Batch normalization
+(3) A rectifier nonlinearity
+(4) A fully connected linear layer to a hidden layer of size 256
+(5) A rectifier nonlinearity
+(6) A fully connected linear layer to a scalar
+(7) A tanh nonlinearity outputting a scalar in the range [−1, 1]
+
+The overall network depth, in the 20­ or 40­block network, is 39 or 79 parameterized layers, respectively, 
+for the residual tower, plus an additional 2 layers for the policy head and 3 layers for the value head.
+"""
+
+from keras.layers import Activation, BatchNormalization
+from keras.layers import Conv2D, Dense, Flatten, Input
+from keras.models import Model
