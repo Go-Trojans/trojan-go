@@ -6,6 +6,7 @@ __all__ = ['RandomBot']
 
 
 class RandomBot():
+    # try push
     print("RandomBot selecting move ...")
-    def select_move(self, game_state): 
+    def select_move(self, game_state):
         raise NotImplementedError() 
