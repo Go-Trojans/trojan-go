@@ -35,8 +35,13 @@ class GoBoard:
 # <3> Keeping for debugging purpose, just a knob for enabling/disabling verbose logs.
 # <4> The max moves allowed for a Go game,  Games terminate when both players pass or after 19 × 19 × 2 = 722 moves.
 
-    def place_stone(self, player, point):             # <1>        
-        raise NotImplementedError()
+    def place_stone(self, player, point):             # <1>
+        """
+        Assuming that the valid point check has been applied prior to 
+        calling this function. Just sets the coordinates on grid. 
+        """
+        r, c = point
+        self.grid[r][c] = player
 
 # <1> put the stone on the board and take care of other DS like removing dead stone, etc    
 
@@ -69,6 +74,8 @@ class GameState:
 
     def apply_move(self, move):
         """Return the new GameState after applying the move."""
+
+        # if we don't pass
         if move.is_play:
             next_board = copy.deepcopy(self.board)
             next_board.place_stone(self.next_player, move.point)
@@ -93,7 +100,7 @@ class GameState:
     def legal_moves(self):
         raise NotImplementedError()
 
-    def is_valid_move(self, move):
+    def is_valid_move(self, move, curr_player):
         raise NotImplementedError()
 
     def is_over(self):
