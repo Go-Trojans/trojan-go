@@ -73,7 +73,7 @@ def is_point_an_eye(board, point, player):
     # neighbors are the same color and are part of a chain
     for n in neighs: 
         nr, nc = n
-        if nr < 0 or nc < 0:
+        if not board.is_on_grid(point):
             continue
         if board.grid[nr][nc] != player or n not in chain:
             return False
@@ -92,7 +92,7 @@ def find_connected(board, point, player):
         visited.add(curr)
         for n in neighs:
             r, c = n
-            if r < 0 or c < 0 or r >= board.board_width or c >= board.board_height:
+            if not board.is_on_grid(point):
                 continue
             if n not in visited and board.grid[r][c] == player:
                 queue.append(n)

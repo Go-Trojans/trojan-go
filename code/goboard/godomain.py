@@ -42,12 +42,13 @@ class GoBoard:
         """
         r, c = point
         self.grid[r][c] = player
+        remove_dead_stones(self, player)
 
 # <1> put the stone on the board and take care of other DS like removing dead stone, etc    
 
     def is_on_grid(self, point):
-        return 1 <= point.row <= self.board_width and \
-            1 <= point.col <= self.board_height
+        return 0 <= point.row < self.board_width and \
+            0 <= point.col < self.board_height
 
     def update_total_moves(self):
         self.moves = self.moves + 1
