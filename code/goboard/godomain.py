@@ -24,7 +24,6 @@ class GoBoard:
     def __init__(self, board_width, board_height, moves = 0):
         self.board_width = board_width
         self.board_height = board_width
-        self.moves = moves                             # <1>
         self.grid = np.zeros((board_width, board_width))
         self.komi = 0                                  # <2>
         self.verbose = True                            # <3>
@@ -35,6 +34,10 @@ class GoBoard:
 # <3> Keeping for debugging purpose, just a knob for enabling/disabling verbose logs.
 # <4> The max moves allowed for a Go game,  Games terminate when both players pass or after 19 × 19 × 2 = 722 moves.
 
+    def copy_board(self) :
+
+        return copy.deepcopy(self)
+
     def place_stone(self, player, point):             # <1>        
         raise NotImplementedError()
 
@@ -44,8 +47,10 @@ class GoBoard:
         return 1 <= point.row <= self.board_width and \
             1 <= point.col <= self.board_height
 
-    def update_total_moves(self):
-        self.moves = self.moves + 1
+    def compare_board(self,board) :
+
+        compare = self.grid == board.grid
+        return compare.all()
 
     def display_board(self):
         print(self.grid)
@@ -54,11 +59,12 @@ class GoBoard:
 
 #GoState mentioned in the mail but using GameState as class name.
 class GameState:
-    def __init__(self, board, next_player, previous, last_move):
+    def __init__(self, board, next_player, previous, last_move,moves=0):
         self.board = board                 # <1>
         self.next_player = next_player     # <2> 
         self.previous_state = previous     # <3>
         self.last_move = last_move         # <4>
+        self.moves = moves                 # <5>
 
 
 # <1> board          : What is the current board
@@ -74,7 +80,8 @@ class GameState:
             next_board.place_stone(self.next_player, move.point)
         else:
             next_board = self.board
-        return GameState(next_board, self.next_player.other, self, move)
+        self.update_total_moves()
+        return GameState(next_board, self.next_player.other, self, move,self.moves)
 
     @classmethod
     def new_game(cls, board_size):
@@ -87,14 +94,55 @@ class GameState:
         raise NotImplementedError()
 
     def violate_ko(self, player, move):
-        raise NotImplementedError()
-        
+
+        test_board = self.board.copy_board()
+        test_board.place_stone(player,move.point)
+
+        prev_state = self
+        for i in range(8) :
+            prev_state = prev_state.previous_state
+            if test_board.compare_board(prev_state.board) :
+                return True
+
+        return False
+
+
     # Return all legal moves
     def legal_moves(self):
-        raise NotImplementedError()
+
+        leg_moves = []
+        board = self.board
+        for r in board.board_height :
+            for c in board.board_width :
+                move = Move(point=Point(row=r,col=c))
+                if self.is_valid_move(move) :
+                    leg_moves.append(move)
+
+        return leg_moves
 
     def is_valid_move(self, move):
-        raise NotImplementedError()
+
+        point = move.point
+        r,c = point
+        board = self.board
+
+        #check if on grid
+        if not board.is_on_grid(point) :
+            return False
+        #check if empty position
+        if board.grid[r][c] != 0 :
+            return False
+        #check no suicide
+        if self.is_suicide(self.next_player,move) :
+            return False
+        #check no KO
+        if self.violate_ko(self.next_player,move) :
+            return False
+
+        return True
+
+    def update_total_moves(self):
+        self.moves = self.moves + 1
 
     def is_over(self):
         raise NotImplementedError()
