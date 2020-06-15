@@ -42,8 +42,8 @@ class GoBoard:
         calling this function. Just sets the coordinates on grid. 
         """
         r, c = point
-        self.grid[r][c] = player
-        remove_dead_stones.remove_dead_stones(self, player)
+        self.grid[r][c] = player.value
+        remove_dead_stones.remove_dead_stones(self.grid, player.value)
 
 # <1> put the stone on the board and take care of other DS like removing dead stone, etc    
 
@@ -83,7 +83,7 @@ class GameState:
             next_board.place_stone(self.next_player, move.point)
         else:
             next_board = self.board
-        return GameState(next_board, self.next_player.other, self, move)
+        return GameState(next_board, self.next_player.opp, self, move)
 
     @classmethod
     def new_game(cls, board_size):
@@ -149,8 +149,6 @@ if __name__ == "__main__":
     move = Move.pass_turn()
     print(move.point, move.is_play, move.is_pass, move.is_selected) # None False True False
 
-
-
     """GameState new_game"""
     gamestate = GameState.new_game(BOARD_SIZE)
     print(gamestate.board.display_board()) # display the board for this gamestate
@@ -158,6 +156,18 @@ if __name__ == "__main__":
     # Set player as black
     gamestate.next_player = Player(Player.black.value)
     print(gamestate.next_player)   # Player.black
+
+    gamestate = GameState.new_game(BOARD_SIZE)
+    gamestate.board.grid = np.array(
+        [[0, 1, 2, 0, 0],
+        [1, 1, 2, 0, 0],
+        [2, 2, 2, 0 ,0],
+        [0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0]]
+        )
+    print(gamestate.board.display_board())
+    new_state = gamestate.apply_move(Move(Point(0,0)))
+    print(new_state.board.display_board())
 
     """
     bot1 = RandomAgent(Player.black)
