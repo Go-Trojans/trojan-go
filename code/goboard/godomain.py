@@ -12,6 +12,7 @@ Gamestate class is using GoBoard class.
 import copy
 import numpy as np
 from gohelper import Player, Point
+import remove_dead_stones
 
 __all__ = [
     'GoBoard',
@@ -35,14 +36,20 @@ class GoBoard:
 # <3> Keeping for debugging purpose, just a knob for enabling/disabling verbose logs.
 # <4> The max moves allowed for a Go game,  Games terminate when both players pass or after 19 × 19 × 2 = 722 moves.
 
-    def place_stone(self, player, point):             # <1>        
-        raise NotImplementedError()
+    def place_stone(self, player, point):             # <1>
+        """
+        Assuming that the valid point check has been applied prior to 
+        calling this function. Just sets the coordinates on grid. 
+        """
+        r, c = point
+        self.grid[r][c] = player
+        remove_dead_stones.remove_dead_stones(self, player)
 
 # <1> put the stone on the board and take care of other DS like removing dead stone, etc    
 
     def is_on_grid(self, point):
-        return 1 <= point.row <= self.board_width and \
-            1 <= point.col <= self.board_height
+        return 0 <= point.row < self.board_width and \
+            0 <= point.col < self.board_height
 
     def update_total_moves(self):
         self.moves = self.moves + 1
@@ -69,6 +76,8 @@ class GameState:
 
     def apply_move(self, move):
         """Return the new GameState after applying the move."""
+
+        # if we don't pass
         if move.is_play:
             next_board = copy.deepcopy(self.board)
             next_board.place_stone(self.next_player, move.point)
