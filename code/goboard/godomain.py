@@ -12,6 +12,7 @@ Gamestate class is using GoBoard class.
 import copy
 import numpy as np
 from gohelper import Player, Point
+import remove_dead_stones
 
 __all__ = [
     'GoBoard',
@@ -42,7 +43,7 @@ class GoBoard:
         """
         r, c = point
         self.grid[r][c] = player
-        remove_dead_stones(self, player)
+        remove_dead_stones.remove_dead_stones(self, player)
 
 # <1> put the stone on the board and take care of other DS like removing dead stone, etc    
 
@@ -101,7 +102,7 @@ class GameState:
     def legal_moves(self):
         raise NotImplementedError()
 
-    def is_valid_move(self, move, curr_player):
+    def is_valid_move(self, move):
         raise NotImplementedError()
 
     def is_over(self):
