@@ -1,6 +1,35 @@
 import numpy as np
+import logging
+"""
+Author : Puranjay Rajvanshi
+Date   : June 9th 2020
+File   : game_winner.py
+Description : Remove dead stones
+"""
 
+"""
+Big Idea for the code written in this file:
+===========================================
+Assuming any go board size.
+Given: given a board state, determine who's the winner
+       0 : blank site
+       1 : black piece
+       2 : White piece 
+
+Removal of dead stones has been implemented in two separate functions:
+    1> remove_dead_stones : checks the full board for groups without liberty
+    2> remove_dead_stones_with_move : checks for dead pieces only for the pieces neighbouring the latest move
+"""
 def remove_dead_stones(board, piece):
+    """
+
+    :param board: A 2-Dimensional numpy array
+           piece: The enemy piece for which the dead pieces have to be removed
+    :return: board: A 2-Dimensional numpy array with the dead pieces removed
+
+    Basic intuition:
+        find enemy groups with no liberties and remove them from the board.
+    """
     visited = set()
     m = board.shape[0]
     n = board.shape[1]
@@ -37,6 +66,16 @@ def remove_dead_stones(board, piece):
                     # board[remove_group] = 0
     return board
 def remove_dead_stones_with_move(board, piece,move):
+    """
+
+    :param board: A 2-Dimensional numpy array
+           piece: The enemy piece for which the dead pieces have to be removed
+           move: The latest move played
+    :return: board: A 2-Dimensional numpy array with the dead pieces removed
+
+    Basic intuition:
+        find enemy groups neighbouring the latest move with no liberties and remove them from the board.
+    """
     visited = set()
     m = board.shape[0]
     n = board.shape[1]
@@ -66,6 +105,7 @@ def remove_dead_stones_with_move(board, piece,move):
                             liberty_found = True
                         if val == piece:
                             queue.add((neighbour[0],neighbour[1]))
+
             # print(queue,remove_group)
             if not liberty_found:
                 while remove_group:
@@ -75,11 +115,14 @@ def remove_dead_stones_with_move(board, piece,move):
     return board
 
 if __name__ == "__main__":
-    board = np.zeros((19,19))
+    board = np.zeros((5,5))
     board[1][0] = 1
     board[0][1] = 1
-    board[1][2] = 1
+    board[1][3] = 1
+    board[0][2] = 1
     board[2][1] = 1
+    board[2][2] = 1
     board[1][1] = 2
+    board[1][2] = 2
     print(board)
     print(remove_dead_stones(board,2))
