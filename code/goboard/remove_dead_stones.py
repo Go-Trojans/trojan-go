@@ -18,14 +18,13 @@ Given: given a board state, determine who's the winner
 
 Removal of dead stones has been implemented in two separate functions:
     1> remove_dead_stones : checks the full board for groups without liberty
-    2> remove_dead_stones_with_move : checks for dead pieces only for the pieces neighbouring the latest move
 """
 
 def remove_dead_stones(board, piece,move = None):
     """
 
     :param board: A 2-Dimensional numpy array
-           piece: The enemy piece for which the dead pieces have to be removed
+           piece: The hero piece 
            move: The latest move played
     :return: board: A 2-Dimensional numpy array with the dead pieces removed
 
