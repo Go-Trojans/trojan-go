@@ -12,7 +12,7 @@ Gamestate class is using GoBoard class.
 import copy
 import numpy as np
 from gohelper import Player, Point
-
+import remove_dead_stones
 __all__ = [
     'GoBoard',
     'GameState',
@@ -34,23 +34,25 @@ class GoBoard:
 # <3> Keeping for debugging purpose, just a knob for enabling/disabling verbose logs.
 # <4> The max moves allowed for a Go game,  Games terminate when both players pass or after 19 × 19 × 2 = 722 moves.
 
+    def __eq__(self, other) :
+        if isinstance(other, GoBoard) :
+            comparison = self.grid == other.grid
+            return comparison.all()
+        return False
     def copy_board(self) :
 
         return copy.deepcopy(self)
 
     def place_stone(self, player, point):             # <1>        
-        raise NotImplementedError()
+        r, c = point
+        self.grid[r][c] = player.value
+        remove_dead_stones.remove_dead_stones(self.grid, player.value)
 
 # <1> put the stone on the board and take care of other DS like removing dead stone, etc    
 
     def is_on_grid(self, point):
-        return 1 <= point.row <= self.board_width and \
-            1 <= point.col <= self.board_height
-
-    def compare_board(self,board) :
-
-        compare = self.grid == board.grid
-        return compare.all()
+        return 0 <= point.row <= self.board_width and \
+            0 <= point.col <= self.board_height
 
     def display_board(self):
         print(self.grid)
@@ -90,8 +92,46 @@ class GameState:
         board = GoBoard(*board_size)
         return GameState(board, Player.black, None, None)
 
-    def is_suicide(self, player, move):
-        raise NotImplementedError()
+    def detect_neighbor_ally(self,player,point):
+
+        grid = self.board.grid
+        neighbors = point.neighbors()  # Detect neighbors
+        group_allies = []
+
+        for piece in neighbors:
+            if self.board.is_on_grid(piece) :
+                nR,nC = piece
+                if grid[nR][nC] == player.value:
+                    group_allies.append(piece)
+        return group_allies
+
+    def ally_dfs(self, player, point):
+
+        stack = [point]
+        ally_members = []
+        while stack:
+            piece = stack.pop()
+            ally_members.append(piece)
+            neighbor_allies = self.detect_neighbor_ally(player,point)
+            for ally in neighbor_allies:
+                if ally not in stack and ally not in ally_members:
+                    stack.append(ally)
+        return ally_members
+
+    def is_suicide(self,player,move):
+
+        grid = self.board.grid
+        point = move.point
+        ally_members = self.ally_dfs(player,point)
+        for member in ally_members:
+            neighbors = member.neighbors()
+            for piece in neighbors:
+                if self.board.is_on_grid(piece) :
+                    nR,nC = piece
+                    # If there is empty space around a piece, it has liberty
+                    if grid[nR][nC] == 0:
+                        return False
+        return True
 
     def violate_ko(self, player, move):
 
@@ -101,15 +141,15 @@ class GameState:
         prev_state = self
         for i in range(8) :
             prev_state = prev_state.previous_state
-            if test_board.compare_board(prev_state.board) :
+            if not prev_state :
+                break
+            if test_board == prev_state.board :
                 return True
 
         return False
 
-
     # Return all legal moves
-    def legal_moves(self):
-
+    def legal_moves(self) :
         leg_moves = []
         board = self.board
         for r in board.board_height :
@@ -126,19 +166,12 @@ class GameState:
         r,c = point
         board = self.board
 
-        #check if on grid
-        if not board.is_on_grid(point) :
+        #check if off grid or not empty position
+        if not board.is_on_grid(point) or board.grid[r][c] != 0 :
             return False
-        #check if empty position
-        if board.grid[r][c] != 0 :
+        #check KO or suicide
+        if self.violate_ko(self.next_player,move) or self.is_suicide(self.next_player,move):
             return False
-        #check no suicide
-        if self.is_suicide(self.next_player,move) :
-            return False
-        #check no KO
-        if self.violate_ko(self.next_player,move) :
-            return False
-
         return True
 
     def update_total_moves(self):
