@@ -49,8 +49,54 @@ class Point(namedtuple('Point', 'row col')):
 
 
 def is_point_an_eye(board, point, player):
-    raise NotImplementedError()
+    """
+    Checks if the point is an eye for the player being passed in (not evaluating if point is an eye for either player). 
+    Checks if point is:
+        1) a liberty
+        2) surrounded by a chain or almost chain
+            a) neighbors are the same color
+            b) neighbors are part of the same chain
+    """
+    r, c = point
+    if board.grid[r][c] != 0:
+        return False
+
+    neighs = point.neighbors()
+    chain = set()
+
+    for n in neighs:
+        rn, rc = n
+        if rn >= 0 and rc >= 0:
+            chain = find_connected(board, n, player)
+            break
+            
+    # neighbors are the same color and are part of a chain
+    for n in neighs: 
+        nr, nc = n
+        if not board.is_on_grid(point):
+            continue
+        if board.grid[nr][nc] != player.value or n not in chain:
+            return False
+    return True
     
+def find_connected(board, point, player):
+    """
+    BFS from starting point to get all pieces in a connected group. 
+    """
+    queue = [point]
+
+    visited = set()
+    while len(queue) > 0:
+        curr = queue.pop(0)
+        neighs = curr.neighbors()
+        visited.add(curr)
+        for n in neighs:
+            r, c = n
+            if not board.is_on_grid(point):
+                continue
+            if n not in visited and board.grid[r][c] == player.value:
+                queue.append(n)
+    return visited
 
 
 """
