@@ -12,6 +12,7 @@ Gamestate class is using GoBoard class.
 import copy
 import numpy as np
 from gohelper import Player, Point
+import remove_dead_stones
 
 __all__ = [
     'GoBoard',
@@ -105,89 +106,7 @@ class GameState:
 
     def is_over(self):
         raise NotImplementedError()
-    def remove_dead_pieces(self,board,piece,move = None):
-        """
-
-         :param board: A 2-Dimensional numpy array
-                piece: The enemy piece for which the dead pieces have to be removed
-                move: The latest move played
-         :return: board: A 2-Dimensional numpy array with the dead pieces removed
-
-         Basic intuition:
-             find enemy groups neighbouring the latest move with no liberties and remove them from the board.
-         """
-        if not move:
-            visited = set()
-            m = board.shape[0]
-            n = board.shape[1]
-            offset = np.array([[1, 0], [0, 1], [-1, 0], [0, -1]])
-            for i in range(m):
-                for j in range(n):
-                    if board[i][j] == piece:
-                        if (i, j) in visited:
-                            continue
-                        liberty_found = False
-                        remove_group = []
-                        queue = set()
-                        queue.add((i, j))
-                        while queue:
-                            node_x, node_y = queue.pop()
-                            if (node_x, node_y) in visited:
-                                continue
-                            visited.add((node_x, node_y))
-                            remove_group.append([node_x, node_y])
-                            neighbours = offset + np.array([node_x, node_y])
-                            for neighbour in neighbours:
-                                if (neighbour[0], neighbour[1]) in visited:
-                                    continue
-                                if 0 <= neighbour[0] < m and 0 <= neighbour[1] < n:
-                                    val = board[neighbour[0]][neighbour[1]]
-                                    if val == 0:
-                                        liberty_found = True
-                                    if val == piece:
-                                        queue.add((neighbour[0], neighbour[1]))
-                        if not liberty_found:
-                            while remove_group:
-                                del_node_x, del_node_y = remove_group.pop()
-                                board[del_node_x][del_node_y] = 0
-        else:
-            visited = set()
-            m = board.shape[0]
-            n = board.shape[1]
-            offset = np.array([[1, 0], [0, 1], [-1, 0], [0, -1]])
-            move_neighbours = offset + move
-            for move_neighbour in move_neighbours:
-                if board[move_neighbour[0]][move_neighbour[1]] == piece:
-                    if (move_neighbour[0], move_neighbour[1]) in visited:
-                        continue
-                    liberty_found = False
-                    remove_group = []
-                    queue = set()
-                    queue.add((move_neighbour[0], move_neighbour[1]))
-                    while queue:
-                        node_x, node_y = queue.pop()
-                        if (node_x, node_y) in visited:
-                            continue
-                        visited.add((node_x, node_y))
-                        remove_group.append([node_x, node_y])
-                        neighbours = offset + np.array([node_x, node_y])
-                        for neighbour in neighbours:
-                            if (neighbour[0], neighbour[1]) in visited:
-                                continue
-                            if 0 <= neighbour[0] < m and 0 <= neighbour[1] < n:
-                                val = board[neighbour[0]][neighbour[1]]
-                                if val == 0:
-                                    liberty_found = True
-                                if val == piece:
-                                    queue.add((neighbour[0], neighbour[1]))
-
-                    # print(queue,remove_group)
-                    if not liberty_found:
-                        while remove_group:
-                            del_node_x, del_node_y = remove_group.pop()
-                            board[del_node_x][del_node_y] = 0
-                        # board[[remove_group]] = 0
-        return board
+    
     def winner(self,board):
         """
 
