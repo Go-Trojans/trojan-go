@@ -33,6 +33,7 @@ def remove_dead_stones(board, piece,move = None):
         find enemy groups neighbouring the latest move with no liberties and remove them from the board.
     """
     if not move:
+        piece = 3-piece
         visited = set()
         m = board.shape[0]
         n = board.shape[1]
@@ -70,6 +71,7 @@ def remove_dead_stones(board, piece,move = None):
         visited = set()
         m = board.shape[0]
         n = board.shape[1]
+        piece = 3-piece
         offset = np.array([[1,0],[0,1],[-1,0],[0,-1]])
         move_neighbours = offset + move
         for move_neighbour in move_neighbours:
