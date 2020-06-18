@@ -12,7 +12,6 @@ Gamestate class is using GoBoard class.
 import copy
 import numpy as np
 from gohelper import Player, Point
-import remove_dead_stones
 
 __all__ = [
     'GoBoard',
