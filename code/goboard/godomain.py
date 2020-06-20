@@ -139,7 +139,7 @@ class GameState:
         else:
             next_board = self.board
         self.update_total_moves()
-        return GameState(next_board, self.next_player.other, self, move,self.moves)
+        return GameState(next_board, self.next_player.opp, self, move,self.moves)
 
     @classmethod
     def new_game(cls, board_size):
