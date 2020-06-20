@@ -234,7 +234,7 @@ class GameState:
         self.moves = self.moves + 1
 
     def is_over(self,board_size):
-        if moves>(board_size*board_size*2):
+        if self.moves>(board_size*board_size*2):
             return True
         if self.last_move.is_pass and self.previous_state.last_move.is_pass:
             return True
