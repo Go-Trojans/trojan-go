@@ -3,10 +3,11 @@ from algos.agent import humanbot
 from algos import gohelper
 from algos import godomain
 from algos.utils import print_board, print_move
+from algos.encoders.trojangoPlane import TrojanGoPlane
 import time
 import math
 
-def main(bot1, bot2, win_rec):
+def main(bot1, bot2, win_rec, encoder):
     board_size = 5
     game = godomain.GameState.new_game(board_size)
     bots = {
@@ -28,6 +29,11 @@ def main(bot1, bot2, win_rec):
             
         #print_move(game.next_player, bot_move)
         game = game.apply_move(bot_move)
+        """uncomment the print the encoder"""
+        board_tensor = encoder.encode(game)
+        #print("Board tensor for this game state ...")
+        #print(board_tensor)
+        
 
     finish = time.time()    
 
@@ -45,13 +51,18 @@ if __name__ == '__main__':
     start = time.time()
     win_rec = [0, 0 ,0] # draw, Black wins, White wins
 
+    """encoder code piece"""
+    board_size = (5, 5)
+    num_planes = 7
+    encoder = TrojanGoPlane(board_size, num_planes)
+    
     
     # Play total_games between HumanBot and RandomBot
     bot1 = humanbot.HumanBot()
     bot2 = randombot.RandomBot()
     print("Human playing as Black and RandomBot as White !!!")    
     for i in range(total_games):
-        main(bot1, bot2, win_rec)
+        main(bot1, bot2, win_rec, encoder)
 
 
 
