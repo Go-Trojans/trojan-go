@@ -1,6 +1,7 @@
 import random
 from algos.godomain import Move
 from algos.gohelper import Point, is_point_an_eye
+from algos.utils import point_from_alphaNumnericMove
 
 __all__ = ['HumanBot']
 
@@ -13,9 +14,12 @@ class HumanBot():
         """Choose a move manually."""
         human_move = input('-- ')
         human_move = human_move.strip()
+        """
         r = int(human_move[0])
         c = int(human_move[1:])
         print("Move played by human : ", r,c)
         point = Point(row=r, col=c)
+        """
+        point = point_from_alphaNumnericMove(human_move)
         move = Move.play(point)
         return move

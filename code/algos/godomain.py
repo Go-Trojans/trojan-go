@@ -162,14 +162,13 @@ class GameState:
 
     def apply_move(self, move):
         """Return the new GameState after applying the move."""
-        # If the move is Invalid then print invalid move and return
-        if not self.board.is_on_grid(move.point):
-            #print("Invalid move")
-            raise ValueError("Invalid move as point is not on board")
-
 
         # if we don't pass
         if move.is_play:
+            # If the move is Invalid then print invalid move and return
+            if not self.board.is_on_grid(move.point):
+                #print("Invalid move")
+                raise ValueError("Invalid move as point is not on board")
             next_board = copy.deepcopy(self.board)
             next_board.place_stone(self.next_player, move.point)
         else:

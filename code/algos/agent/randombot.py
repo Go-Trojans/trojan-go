@@ -24,5 +24,6 @@ class RandomBot():
                                             game_state.next_player):
                 candidates.append(candidate)
         if not candidates:
+            #print("returning pass")
             return Move.pass_turn()
         return Move.play(random.choice(candidates))

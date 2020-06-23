@@ -1,7 +1,7 @@
 from algos.agent import randombot
 from algos import gohelper
 from algos import godomain
-from algos.utils import print_board, print_move
+from algos.utils import display_board, alphaNumnericMove_from_point
 import time
 import math
 
@@ -16,26 +16,27 @@ def main(win_rec):
     start = time.time()
     while not game.is_over():
         moves = moves + 1
-        #time.sleep(0.3)  # <1>
-        #print(chr(27) + "[2J")  # <2>
-        #print_board(game.board)
-        ##game.board.display_board()
+        #game.board.display_board()
+        display_board(game.board)
         bot_move = bots[game.next_player].select_move(game)
         #print_move(game.next_player, bot_move)
+        if bot_move.is_pass:
+            print(game.next_player, "PASS")
+        else:
+            print(game.next_player, alphaNumnericMove_from_point(bot_move.point))
         game = game.apply_move(bot_move)
 
     finish = time.time()    
-    #print(chr(27) + "[2J")  # <2>
-    #print_board(game.board)
-    ##game.board.display_board()
-    #print("Total moves : ", moves)
-    #print("Winner is ", game.winner())
+    #game.board.display_board()
+    display_board(game.board)
+    print("Total moves : ", moves)
+    print("Winner is ", game.winner())
     win_rec[game.winner()] = win_rec[game.winner()] + 1
-    #print("Time taken to play a game is {} secs".format(finish - start))
+    print("Time taken to play a game is {} secs".format(finish - start))
 
 
 if __name__ == '__main__':
-    total_games = 10000
+    total_games = 1
     start = time.time()
     win_rec = [0, 0 ,0] # draw, Black wins, White wins
     # Play total_games games

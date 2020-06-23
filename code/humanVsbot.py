@@ -2,7 +2,7 @@ from algos.agent import randombot
 from algos.agent import humanbot
 from algos import gohelper
 from algos import godomain
-from algos.utils import print_board, print_move
+from algos.utils import display_board, alphaNumnericMove_from_point
 from algos.encoders.trojangoPlane import TrojanGoPlane
 import time
 import math
@@ -19,7 +19,8 @@ def main(bot1, bot2, win_rec, encoder):
     moves = 0
     start = time.time()
     while not game.is_over():
-        game.board.display_board()
+        #game.board.display_board()
+        display_board(game.board)
         bot_move = bots[game.next_player].select_move(game)
         if not game.board.is_on_grid(bot_move.point):
             print("Invalid move, Try Again ...")
@@ -27,7 +28,7 @@ def main(bot1, bot2, win_rec, encoder):
             
         moves = moves + 1
             
-        #print_move(game.next_player, bot_move)
+        print(game.next_player, alphaNumnericMove_from_point(bot_move.point))
         game = game.apply_move(bot_move)
         """uncomment the print the encoder"""
         board_tensor = encoder.encode(game)
@@ -37,7 +38,8 @@ def main(bot1, bot2, win_rec, encoder):
 
     finish = time.time()    
 
-    game.board.display_board()
+    #game.board.display_board()
+    display_board(game.board)
     print("Total moves : ", moves)
     print("Winner is ", game.winner())
     win_rec[game.winner()] = win_rec[game.winner()] + 1
@@ -60,7 +62,7 @@ if __name__ == '__main__':
     # Play total_games between HumanBot and RandomBot
     bot1 = humanbot.HumanBot()
     bot2 = randombot.RandomBot()
-    print("Human playing as Black and RandomBot as White !!!")    
+    print("Human playing (move eg. C2) as Black and RandomBot as White !!!")    
     for i in range(total_games):
         main(bot1, bot2, win_rec, encoder)
 

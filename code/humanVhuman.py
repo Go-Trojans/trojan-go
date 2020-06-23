@@ -2,12 +2,12 @@ from algos.agent import randombot
 from algos.agent import humanbot
 from algos import gohelper
 from algos import godomain
-from algos.utils import print_board, print_move
+from algos.utils import display_board
 from algos.encoders.trojangoPlane import TrojanGoPlane
 import time
 import math
 
-def main(bot1, bot2, win_rec, encoder):
+def main(bot1, bot2, win_rec, encoder, chess_display=True):
     board_size = 5
     game = godomain.GameState.new_game(board_size)
     bots = {
@@ -19,16 +19,19 @@ def main(bot1, bot2, win_rec, encoder):
     moves = 0
     start = time.time()
     while not game.is_over():
-        game.board.display_board()
+        if chess_display:
+            display_board(game.board)
+        else:
+            game.board.display_board()
+        
         bot_move = bots[game.next_player].select_move(game)
         if not game.board.is_on_grid(bot_move.point):
             print("Invalid move, Try Again ...")
             continue
             
         moves = moves + 1
-            
-        #print_move(game.next_player, bot_move)
         game = game.apply_move(bot_move)
+        
         """uncomment the print the encoder"""
         board_tensor = encoder.encode(game)
         #print("Board tensor for this game state ...")
@@ -37,7 +40,11 @@ def main(bot1, bot2, win_rec, encoder):
 
     finish = time.time()    
 
-    game.board.display_board()
+    if chess_display:
+        display_board(game.board)
+    else:
+        game.board.display_board()
+        
     print("Total moves : ", moves)
     print("Winner is ", game.winner())
     win_rec[game.winner()] = win_rec[game.winner()] + 1
@@ -61,7 +68,7 @@ if __name__ == '__main__':
     bot1 = humanbot.HumanBot()
     bot2 = humanbot.HumanBot()
     print("Human Vs Human Match !!!")
-    print("SYNTAX e.g 2 2")
+    print("e.g C2 for chess display and 2 2 for simple display")
     for i in range(total_games):
         main(bot1, bot2, win_rec, encoder)
 
