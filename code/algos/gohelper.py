@@ -79,7 +79,7 @@ def is_point_an_eye(board, point, player):
             continue
         if not board.is_on_grid(point):
             continue
-        if board.grid[nr][nc] != player.value or n not in chain:
+        if board.grid[nr][nc] != player or n not in chain:
             return False
     return True
     
@@ -99,7 +99,7 @@ def find_connected(board, point, player):
             r, c = n
             if not board.is_on_grid(point) or not board.is_on_grid(Point(row=r, col=c)):
                 continue
-            if n not in visited and board.grid[r][c] == player.value:
+            if n not in visited and board.grid[r][c] == player:
                 queue.append(n)
     return visited
 

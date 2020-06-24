@@ -1,8 +1,8 @@
 import pytest
 import numpy as np
 import unittest
-import godomain
-import gohelper
+import algos.godomain as godomain
+import algos.gohelper as gohelper
 
 class TestGoDomain(object):
 
@@ -46,7 +46,7 @@ class TestGoDomain(object):
 
     def test_is_suicide(self) :
 
-        boards =  [godomain.GoBoard(5,5,0) for i in range(5)]
+        boards =  [godomain.GoBoard(5,5,0) for i in range(6)]
         boards[0].grid = np.zeros((5,5))
         boards[1].grid = np.array([
             [0, 0, 0, 0, 0],
@@ -70,6 +70,13 @@ class TestGoDomain(object):
             [0, 0, 0, 0, 0]
         ])
         boards[4].grid = np.array([
+            [0, 2, 0, 0, 0],
+            [2, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0]
+        ])
+        boards[5].grid = np.array([
             [0, 2, 0, 0, 0],
             [2, 0, 0, 0, 0],
             [0, 0, 0, 0, 0],
@@ -134,5 +141,25 @@ class TestGoDomain(object):
         assert states[3].is_valid_move(godomain.Move(gohelper.Point(row=0, col=0))) == True
         assert states[4].is_valid_move(godomain.Move(gohelper.Point(row=0, col=0))) == True
         assert states[4].is_valid_move(godomain.Move(gohelper.Point(row=0, col=1))) == False
+
+    def test_remove_dead_stones(self):
+        board = godomain.GoBoard(5, 5, 0)
+        board.grid= np.array([
+            [1, 0, 2, 0, 0],
+            [2, 2, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0]
+            ])
+        gs = godomain.GameState(board, godomain.Player.black, None, None)
+
+        player = godomain.Player.black
+        move = godomain.Move(gohelper.Point(row=0, col=1))
+
+        assert gs.is_suicide(godomain.Player.black, move) == True
+        with pytest.raises(ValueError):
+            gs = gs.apply_move(move)
+            gs.board.display_board()
+
 if __name__ == "__main__":
     unittest.main()

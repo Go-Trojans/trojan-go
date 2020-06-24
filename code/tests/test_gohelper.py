@@ -1,8 +1,8 @@
 import pytest
 import numpy as np
 
-import godomain
-import gohelper 
+import algos.godomain as godomain
+import algos.gohelper as gohelper
 
 class TestGoHelper(object):
 
