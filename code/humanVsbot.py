@@ -2,10 +2,15 @@ from algos.agent import randombot
 from algos.agent import humanbot
 from algos import gohelper
 from algos import godomain
-from algos.utils import display_board, alphaNumnericMove_from_point
+from algos.utils import display_board, alphaNumnericMove_from_point, LOG_FORMAT
 from algos.encoders.trojangoPlane import TrojanGoPlane
 import time
+import logging
 import math
+
+logging.basicConfig(format=LOG_FORMAT)
+logger = logging.getLogger('human_vs_bot')
+logger.setLevel(logging.INFO)
 
 def main(bot1, bot2, win_rec, encoder):
     board_size = 5
@@ -22,6 +27,7 @@ def main(bot1, bot2, win_rec, encoder):
         #game.board.display_board()
         display_board(game.board)
         bot_move = bots[game.next_player].select_move(game)
+        logger.info("Player: %s, Move: %s", game.next_player, bot_move.point)
         if not game.board.is_on_grid(bot_move.point):
             print("Invalid move, Try Again ...")
             continue
@@ -66,10 +72,11 @@ if __name__ == '__main__':
     for i in range(total_games):
         main(bot1, bot2, win_rec, encoder)
 
-
-
-
     finish = time.time()
+
+    logger.info("Time taken to play {} games is {} secs".format(total_games, math.floor(finish - start)))
     print("Time taken to play {} games is {} secs".format(total_games, math.floor(finish - start)))
+
+    logger.info("Draws: {} Black wins: {} White wins: {}  ".format(win_rec[0],win_rec[1], win_rec[2]))
     print("Draws: {} Black wins: {} White wins: {}  ".format(win_rec[0],win_rec[1], win_rec[2]))
     

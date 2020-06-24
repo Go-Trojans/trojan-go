@@ -152,10 +152,7 @@ class TestGoDomain(object):
             [0, 0, 0, 0, 0]
             ])
         gs = godomain.GameState(board, godomain.Player.black, None, None)
-
-        player = godomain.Player.black
         move = godomain.Move(gohelper.Point(row=0, col=1))
-
         assert gs.is_suicide(godomain.Player.black, move) == True
         with pytest.raises(ValueError):
             gs = gs.apply_move(move)
