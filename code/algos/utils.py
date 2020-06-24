@@ -1,7 +1,7 @@
 import numpy as np
 from algos import gohelper
 
-COLUMNS = 'ABCDEFGHJKLMNOPQRSTUVWXYZ'
+COLUMNS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 PLAYER_TO_CHAR = {
     None: ' . ',
     gohelper.Player.black: ' x ',
