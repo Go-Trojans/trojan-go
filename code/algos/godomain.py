@@ -211,6 +211,9 @@ class GameState:
 
     def is_suicide(self,player,move):
 
+        if not move.is_play:
+            return False
+
         grid = self.board.grid
         point = move.point
         ally_members = self.ally_dfs(player,point)
@@ -225,6 +228,9 @@ class GameState:
         return True
 
     def violate_ko(self, player, move):
+
+        if not move.is_play:
+            return False
 
         test_board = self.board.copy_board()
         test_board.place_stone(player,move.point)
@@ -248,10 +254,19 @@ class GameState:
                 move = Move(point=Point(row=r,col=c))
                 if self.is_valid_move(move) :
                     leg_moves.append(move)
-
+                    
+        leg_moves.append(Move.pass_turn())
+        leg_moves.append(Move.resign())
+        
         return leg_moves
 
     def is_valid_move(self, move):
+
+        if self.is_over():
+            return False
+
+        if move.is_pass or move.is_resign:
+            return True
 
         point = move.point
         r,c = point
