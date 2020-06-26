@@ -11,8 +11,7 @@ Gamestate class is using GoBoard class.
 
 import copy
 import numpy as np
-from gohelper import Player, Point
-import remove_dead_stones
+from algos.gohelper import Player, Point
 
 __all__ = [
     'GoBoard',
@@ -25,7 +24,7 @@ class GoBoard:
     def __init__(self, board_width, board_height, moves=0):
         self.board_width = board_width
         self.board_height = board_width
-        self.grid = np.zeros((board_width, board_width))
+        self.grid = np.zeros((board_width, board_width), dtype=int)
         self.komi = 0                                  # <2>
         self.verbose = True                            # <3>
         self.max_move = board_width * board_height * 2 # <4>
@@ -51,8 +50,89 @@ class GoBoard:
         calling this function. Just sets the coordinates on grid.
         """
         r, c = point
+        #move = Move.play(Point(row=r, col=c))
+        
         self.grid[r][c] = player.value
-        remove_dead_stones.remove_dead_stones(self.grid, player.value)
+        self.remove_dead_stones(player, np.array([r,c]))
+
+    def remove_dead_stones(self, player, move):
+        """
+
+            :param 
+                   player: Current player
+                   move: The latest move played
+            :return: board: A 2-Dimensional numpy array with the dead pieces removed (Not needed)
+
+            Basic intuition:
+                find enemy groups neighbouring the latest move with no liberties and remove them from the board.
+            """
+        board = self.grid # this is not board but just a grid.
+        piece = player.value
+        
+        
+        visited = set()
+        m = board.shape[0]
+        n = board.shape[1]
+        #print("DEBUG : ", m, n, move, piece)
+        piece = 3 - piece
+        """
+        print("*"*60)
+        r, c = move
+        point = Point(row=r, col=c)
+        print(point)
+        neighs = point.neighbors()
+        print(neighs)
+        print("*"*60)
+        """
+        
+        offset = np.array([[1, 0], [0, 1], [-1, 0], [0, -1]])
+        move_neighbours = offset + move
+        #print(type(move_neighbours))
+        #print(move_neighbours)
+
+
+        
+        for move_neighbour in move_neighbours:
+            #print("type :", type(move_neighbour))
+            #print("val : ", move_neighbour)
+            r, c = move_neighbour[0], move_neighbour[1]
+            #print("r c :", r, c)
+            point = Point(row=r, col=c)
+            if not self.is_on_grid(point):
+                continue
+            
+            if board[move_neighbour[0]][move_neighbour[1]] == piece:
+                if (move_neighbour[0], move_neighbour[1]) in visited:
+                    continue
+                liberty_found = False
+                remove_group = []
+                queue = set()
+                queue.add((move_neighbour[0], move_neighbour[1]))
+                while queue:
+                    node_x, node_y = queue.pop()
+                    if (node_x, node_y) in visited:
+                        continue
+                    visited.add((node_x, node_y))
+                    remove_group.append([node_x, node_y])
+                    neighbours = offset + np.array([node_x, node_y])
+                    for neighbour in neighbours:
+                        if (neighbour[0], neighbour[1]) in visited:
+                            continue
+                        if 0 <= neighbour[0] < m and 0 <= neighbour[1] < n:
+                            val = board[neighbour[0]][neighbour[1]]
+                            if val == 0:
+                                liberty_found = True
+                            if val == piece:
+                                queue.add((neighbour[0], neighbour[1]))
+
+                # print(queue,remove_group)
+                if not liberty_found:
+                    while remove_group:
+                        del_node_x, del_node_y = remove_group.pop()
+                        board[del_node_x][del_node_y] = 0
+                    # board[[remove_group]] = 0
+        #return board
+        return None            
 
     def is_on_grid(self, point):
         return 0 <= point.row < self.board_width and \
@@ -85,12 +165,16 @@ class GameState:
 
         # if we don't pass
         if move.is_play:
+            # If the move is Invalid then print invalid move and return
+            if not self.board.is_on_grid(move.point):
+                #print("Invalid move")
+                raise ValueError("Invalid move as point is not on board")
             next_board = copy.deepcopy(self.board)
             next_board.place_stone(self.next_player, move.point)
         else:
             next_board = self.board
         self.update_total_moves()
-        return GameState(next_board, self.next_player.other, self, move,self.moves)
+        return GameState(next_board, self.next_player.opp, self, move,self.moves)
 
     @classmethod
     def new_game(cls, board_size):
@@ -127,6 +211,9 @@ class GameState:
 
     def is_suicide(self,player,move):
 
+        if not move.is_play:
+            return False
+
         grid = self.board.grid
         point = move.point
         ally_members = self.ally_dfs(player,point)
@@ -141,6 +228,9 @@ class GameState:
         return True
 
     def violate_ko(self, player, move):
+
+        if not move.is_play:
+            return False
 
         test_board = self.board.copy_board()
         test_board.place_stone(player,move.point)
@@ -164,10 +254,19 @@ class GameState:
                 move = Move(point=Point(row=r,col=c))
                 if self.is_valid_move(move) :
                     leg_moves.append(move)
-
+                    
+        leg_moves.append(Move.pass_turn())
+        leg_moves.append(Move.resign())
+        
         return leg_moves
 
     def is_valid_move(self, move):
+
+        if self.is_over():
+            return False
+
+        if move.is_pass or move.is_resign:
+            return True
 
         point = move.point
         r,c = point
@@ -185,9 +284,21 @@ class GameState:
         self.moves = self.moves + 1
 
     def is_over(self):
-        raise NotImplementedError()
+        """
+        if self.moves>(self.board.board_width *self.board.board_height * 2):
+            return True
+        """
+        if self.last_move is None:
+            return False
+   
+        if self.last_move.is_resign:
+            return False
     
-    def winner(self,board):
+        if self.last_move.is_pass and self.previous_state.last_move.is_pass:
+            return True
+        return False
+    
+    def winner(self):
         """
 
             :param board: A 2-Dimensional numpy array
@@ -203,6 +314,7 @@ class GameState:
                     if blank sites are completely surrounded by white then points for white increases by the group size
                     if blank sites are completely surrounded by both then points for both increases by (group size)/2
             """
+        board = self.board.grid
         visited = set()
         m = board.shape[0]
         n = board.shape[1]
@@ -210,10 +322,10 @@ class GameState:
             komi = 3.75
         else:
             komi = (m / 2) - 1
-        print(komi)
+        #print(komi)
         count_black = -komi
         count_white = komi
-        print(count_white, count_black)
+        #print(count_white, count_black)
         offset = np.array([[1, 0], [0, 1], [-1, 0], [0, -1]])
         for i in range(m):
             for j in range(n):
@@ -221,10 +333,10 @@ class GameState:
                     continue
                 elif board[i][j] == 1:
                     count_black += 1
-                    print("black_increase", i, j, count_black)
+                    #print("black_increase", i, j, count_black)
                 elif board[i][j] == 2:
                     count_white += 1
-                    print("white_increase", i, j, count_white)
+                    #print("white_increase", i, j, count_white)
                 elif board[i][j] == 0:
                     queue = set()
                     queue.add((i, j))
@@ -255,10 +367,10 @@ class GameState:
                         pass
                     elif black_neighbour:
                         count_black += group_count
-                        print("black_group_inc", group_count, count_black)
+                        #print("black_group_inc", group_count, count_black)
                     elif white_neighbour:
                         count_white += group_count
-                        print("white_group_inc", group_count, count_white)
+                        #print("white_group_inc", group_count, count_white)
         # print(count_white, count_black)
         if count_white > count_black:
             return 2
@@ -269,11 +381,12 @@ class GameState:
 
 
 class Move:
-    def __init__(self, point=None, is_pass=False):
+    def __init__(self, point=None, is_pass=False, is_resign=False):
         self.point = point
         self.is_play = (self.point is not None)
         self.is_pass = is_pass
         self.is_selected = False
+        self.is_resign = is_resign
 
     @classmethod
     def play(cls, point):
@@ -287,16 +400,17 @@ class Move:
     def ply_selected(cls):
         return Move(is_selected=True)
 
+    @classmethod
+    def resign(cls):
+        return Move(is_resign=True)
 
-"""
-Driver code
 """
 if __name__ == "__main__":
     BOARD_SIZE = 5
 
-    """
-    usage of Move class
-    """
+
+    #usage of Move class
+
     # Move is (1,1)
     move = Move.play(Point(row=1, col=1))
     print(move.point, move.is_play, move.is_pass, move.is_selected)  # Point(row=1, col=1) True False False
@@ -305,7 +419,7 @@ if __name__ == "__main__":
     move = Move.pass_turn()
     print(move.point, move.is_play, move.is_pass, move.is_selected)  # None False True False
 
-    """GameState new_game"""
+    
     gamestate = GameState.new_game(BOARD_SIZE)
     print(gamestate.board.display_board())  # display the board for this gamestate
 
@@ -325,7 +439,7 @@ if __name__ == "__main__":
     new_state = gamestate.apply_move(Move(Point(0, 0)))
     print(new_state.board.display_board())
 
-    """
+ 
     bot1 = RandomAgent(Player.black)
     bot2 = RandomAgent(Player.white)
 
@@ -333,5 +447,5 @@ if __name__ == "__main__":
     move = bot1.select_move(gamestate) or move = Move.play(Point(3,3))
     gamestate = gamestate.apply_move(move)
 
-    """
 
+"""

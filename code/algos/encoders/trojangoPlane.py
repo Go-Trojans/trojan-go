@@ -8,8 +8,14 @@ Description : Generate Input features.
 """
 
 import numpy as np
-from algos import GlobalConfig
-from utility import convert2to1and1to0, convert2to0
+#from algos import GlobalConfig
+from algos.encoders.utility import convert2to1and1to0, convert2to0
+
+#import sys
+#sys.path.append('/Users/pujakumari/Desktop/TROJANGO/trojan-go/code/algos')
+
+from algos.gohelper import Point, Player
+#from algos.godomain import Move, GameState
 
 
 """
@@ -41,7 +47,7 @@ Current Player          1               Player stone / opponent stone / empty
 Current 8 history       8               Cuurent/Next Player 8 history states
 Opposition 8 history    8               Opposition player 8 history states
 """
-
+num_planes = 7
 
 FEATURE_OFFSETS = {
     "next_player": 0,    # <1>
@@ -59,7 +65,8 @@ def offset(feature):
 
 
 
-class TrojanGoPlane(Encoder):
+#class TrojanGoPlane(Encoder):
+class TrojanGoPlane():
         def __init__(self, board_size, plane_size):
             self.board_width, self.board_height = board_size
             self.num_planes = plane_size
@@ -67,7 +74,6 @@ class TrojanGoPlane(Encoder):
         def name(self):
             return 'trojangoplane'
 
-        # Need to define Point, Player, game_state (previous game_state info, 1 black, 2 white and 0 for blank point)
         def encode(self, game_state):    # <1> 
             board_tensor = np.zeros(self.shape())  # (17*19*19) (7*5*5)
 
@@ -138,7 +144,7 @@ class TrojanGoPlane(Encoder):
             new_board_tensor = np.zeros(self.shape())
             new_board_tensor[-1] = board_tensor[0]
 
-            j = (self.num_planes - 1) / 2      # number of history staes for any player
+            j = int((self.num_planes - 1) / 2)      # number of history staes for any player
             k = -1
             for i in range(self.num_planes - 1):
                 if i%2 == 0:                  # next/current player planes re-sequencing X{t}
@@ -168,8 +174,8 @@ def create(board_size, num_planes):
 
 
 """
-Driver code
-"""
+#Driver code
+
 if __name__ == "__main__":
     board_size = 5
     num_planes = 7
@@ -199,4 +205,4 @@ if __name__ == "__main__":
     print("Input feature stacks ...")
     print(planes_tensor)
     
-                
+"""                

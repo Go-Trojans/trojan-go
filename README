@@ -2,15 +2,18 @@ TrojanGo : Go Game Using AlphaZero
 
 Where to place your code:
 
+Driver code              : trojan-go/code/
 Input feature / encoding : trojan-go/code/algos/encoders/
 Neural Network Coding    : trojan-go/code/algos/nn/
 MCTS related Coding      : trojan-go/code/algos/mcts/
 Reinforcement Learning   : trojan-go/code/algos/rl/
-Go board and rules       : trojan-go/code/goboard/
+Go board and rules       : trojan-go/code/algos/
 Temporary placeholding   : trojan-go/code/placeholder/
 Sample code              : trojan-go/code/samples/
 Self-Play generated games: trojan-go/code/generated_games
 Checkpointed model       : trojan-go/code/checkpoints
+Agent code               : trojan-go/code/algos/agent
+
 
 
 
@@ -39,9 +42,6 @@ code/                               Top-level package
               rl/                           Subpackage for Reinforcement learning
                        __init__.py
                        ...
-      goboards/                     Subpackage for goboards (go board rules)
-              __init__.py
-              ...
       placeholder/                  Subpackage for placeholder
               __init__.py
               ...
