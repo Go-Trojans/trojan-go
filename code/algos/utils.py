@@ -8,6 +8,8 @@ PLAYER_TO_CHAR = {
     gohelper.Player.white: ' o ',
 }
 
+LOG_FORMAT = "%(asctime)s -- [%(pathname)s]:%(levelname)s %(message)s"
+
 def display_board(board):
     for row in range(board.board_width):
         bump = " " if row <= 9 else ""

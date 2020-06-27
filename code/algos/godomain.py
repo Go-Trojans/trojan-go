@@ -73,30 +73,13 @@ class GoBoard:
         visited = set()
         m = board.shape[0]
         n = board.shape[1]
-        #print("DEBUG : ", m, n, move, piece)
         piece = 3 - piece
-        """
-        print("*"*60)
-        r, c = move
-        point = Point(row=r, col=c)
-        print(point)
-        neighs = point.neighbors()
-        print(neighs)
-        print("*"*60)
-        """
         
         offset = np.array([[1, 0], [0, 1], [-1, 0], [0, -1]])
         move_neighbours = offset + move
-        #print(type(move_neighbours))
-        #print(move_neighbours)
 
-
-        
         for move_neighbour in move_neighbours:
-            #print("type :", type(move_neighbour))
-            #print("val : ", move_neighbour)
             r, c = move_neighbour[0], move_neighbour[1]
-            #print("r c :", r, c)
             point = Point(row=r, col=c)
             if not self.is_on_grid(point):
                 continue
@@ -125,14 +108,10 @@ class GoBoard:
                             if val == piece:
                                 queue.add((neighbour[0], neighbour[1]))
 
-                # print(queue,remove_group)
                 if not liberty_found:
                     while remove_group:
                         del_node_x, del_node_y = remove_group.pop()
                         board[del_node_x][del_node_y] = 0
-                    # board[[remove_group]] = 0
-        #return board
-        return None            
 
     def is_on_grid(self, point):
         return 0 <= point.row < self.board_width and \
@@ -166,9 +145,8 @@ class GameState:
         # if we don't pass
         if move.is_play:
             # If the move is Invalid then print invalid move and return
-            if not self.board.is_on_grid(move.point):
-                #print("Invalid move")
-                raise ValueError("Invalid move as point is not on board")
+            if not self.board.is_on_grid(move.point) or not self.is_valid_move(move):
+                raise ValueError("Invalid move")
             next_board = copy.deepcopy(self.board)
             next_board.place_stone(self.next_player, move.point)
         else:
@@ -223,7 +201,7 @@ class GameState:
                 if self.board.is_on_grid(piece) :
                     nR,nC = piece
                     # If there is empty space around a piece, it has liberty
-                    if grid[nR][nC] == 0:
+                    if grid[nR][nC] == 0 and move.point != piece:
                         return False
         return True
 
