@@ -28,9 +28,19 @@ def main(bot1, bot2, win_rec, encoder, chess_display=True):
         if not game.board.is_on_grid(bot_move.point):
             print("Invalid move, Try Again ...")
             continue
+        
+        if not game.is_valid_move(bot_move):
+            print("Invalid move, Try Again ...")
+            continue
+
+        # Avoid playing to your own eye.
+        if gohelper.is_point_an_eye(game.board, bot_move.point, game.next_player):
+            print("Avoid playing to your own eye !!!")
+            #continue
             
-        moves = moves + 1
         game = game.apply_move(bot_move)
+        moves = moves + 1    
+        
         
         """uncomment the print the encoder"""
         board_tensor = encoder.encode(game)
