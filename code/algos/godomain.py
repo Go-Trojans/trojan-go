@@ -139,6 +139,10 @@ class GameState:
     # <4> last_move      : Last move played (Move.point)
     # <5> moves          : Total moves played so far
 
+    def copy(self) :
+
+        return copy.deepcopy(self)
+
     def apply_move(self, move):
         """Return the new GameState after applying the move."""
 
@@ -381,6 +385,8 @@ class Move:
     @classmethod
     def resign(cls):
         return Move(is_resign=True)
+
+
 
 """
 if __name__ == "__main__":
