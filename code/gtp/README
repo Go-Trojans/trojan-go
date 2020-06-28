@@ -1,0 +1,6 @@
+"""
+Implement GTP: Go Text Protocol
+
+https://www.gnu.org/software/gnugo/gnugo_19.html
+Use: Will be used to play against Gnugo and Pachi
+"""

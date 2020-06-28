@@ -189,9 +189,33 @@ class TrojanGoPlane():
                     
                 else:
                     raise ValueError("INVALID PLAY LANDING")
-                    
-           
+
+            """
             return board_tensor
+            s{t} = [C, X{t=2}, X{t=1}, X{t=0}, Y{t=2}, Y{t=1}, Y{t=0}]
+            
+            AlphaZero: These planes are concatenated together to give input features
+            s{t} = [X{t}, Y{t}, X{t−1}, Y{t−1},..., X{t−7}, Y{t−7}, C].
+            So, re-sequence it to align with AlphaGoZero.
+            """
+            
+            new_board_tensor = np.zeros(self.shape())
+            new_board_tensor[-1] = board_tensor[0]
+
+            j = (self.num_planes - 1) / 2      # number of history staes for any player
+            j = int(j)
+            k = -1
+            for i in range(self.num_planes - 1):
+                if i%2 == 0:                  # current player planes re-sequencing X{t}
+                    new_board_tensor[i] = board_tensor[i+ (-1 * k)]
+                    k = k+1
+                else:                         # opp player planes re-sequencing Y{t}
+                    new_board_tensor[i] = board_tensor[i+j]
+                    j = j-1
+                    
+                
+            return new_board_tensor  # AlphaGoZero complaint
+
         
         def encode_point(self, point):
             raise NotImplementedError()
@@ -222,8 +246,9 @@ if __name__ == "__main__":
     #print(game_state.display())
 
     # Simulate a game for making 3-3 moves for black and white.
-    #moves = [(2,2), (2,3), (2,1), (3,3), (1,1), (1,2), (4,4), (0,0)]
-    moves = [(2,2), (2,3), (2,1), (3,3)]
+    #moves = [(2,2), (2,3), (2,1), (3,3), (1,1), (1,2)]
+    moves = [(2,2), (2,3), (2,1), (3,3), (1,1), (1,2), (4,4), (0,0)]
+    #moves = [(2,2), (2,3), (2,1), (3,3)]
     
     for coord in moves:
         game_state = game_state.playGame(coord)
