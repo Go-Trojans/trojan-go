@@ -45,7 +45,7 @@
 
 
 import keras
-from keras.layers import Activation, BatchNormalization
+from keras.layers import Activation, BatchNormalization,MaxPooling2D
 from keras.layers import Conv2D, Dense, Flatten, Input
 from keras.models import Model
 import numpy as np
