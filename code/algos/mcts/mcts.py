@@ -5,6 +5,7 @@ from algos.nn import AGZ
 import h5py
 import numpy as np
 from math import sqrt
+import copy
 
 class MCTSNode:
     """ A node in the game tree. Note wins is always from the viewpoint of playerJustMoved.
@@ -73,43 +74,6 @@ class MCTSNode:
         uct = self.q + c_puct*self.p*sqrt(N)/(1+self.visits)
         return uct
 
-    def uct_select_move(simulations, verbose = False):
-        """
-            Conduct
-        a
-        tree
-        search
-        for itermax iterations starting from rootstate.
-    Return
-    the
-    best
-    move
-    from the rootstate.
-    Assumes
-    2
-    alternating
-    players(player
-    1
-    starts), with game results in the range[-1, 1]."""
-        # Select
-# node is fully expanded and non-terminal
-
-        # Expand
-        # if we can expand (i.e. state/node is non-terminal)
-        # add child and descend tree
-
-        # Rollout - this can often be made orders of magnitude quicker using a state.GetRandomMove() function
-        # while state is non-terminal
-
-        # Backpropagate
-# backpropagate from the expanded node and work back to the root node
-# state is terminal. Update node with result from POV of node.playerJustMoved
-
-
-    # Output some information about the tree - can be omitted
-
-# return the move that was most visited
-
 
 class MCTSPlayer :
 
@@ -123,6 +87,31 @@ class MCTSPlayer :
 	def uct_select_move(gameState,simulations,nn,verbose = False):
 		 """ Takes in a GameState object representing the current game state and selects the best move using MCTS.Returns a Move object.Provides optional parameter to save the move to disk ( for use in self-play for training neural network)
         """
+         """
+        Conduct a tree search for itermax iterations starting from gameState.
+        Return the best move from the gameState. Assumes 2 alternating players(player 1 starts), with game results in the range[-1, 1].
+        """
+        rootnode = MCTSNode(state = gameState)
+        for i in range(itermax):
+            node = rootnode
+            state = copy.deepcopy(gameState)
+            # Select
+            while not node.untriedMoves and node.childNodes: # node is fully expanded and non-terminal
+                node = node.SelectChild()
+                state.apply_move(node.move)
+            # Expand
+            if node.untriedMoves:# if we can expand (i.e. state/node is non-terminal)
+                m = random.choice(node.untriedMoves)
+                state.apply_move(m)
+                node = node.expand(m,state)# add child and descend tree
+            # Rollout - this can often be made orders of magnitude quicker using a state.GetRandomMove() function
+            while state.legal_moves():# while state is non-terminal
+                state.apply_move(random.choice(state.legal_moves()))
+            # Backpropagate
+            while node:# backpropagate from the expanded node and work back to the root node
+                node.update(1 if state.winner() == node.playerJustMoved else -1)# state is terminal. Update node with result from POV of node.playerJustMoved
+                node = node.parentNode
+        return sorted(rootnode.childNodes,key=lambda c: c.visits)[-1].move# return the move that was most visited
 
 
 
@@ -215,12 +204,3 @@ class ExperienceBuffer:
     def display_experience_buffer(self):
         print("Model Input : ")
         print(self.model_input)
-
-
-
-
-
-
-
-
-
