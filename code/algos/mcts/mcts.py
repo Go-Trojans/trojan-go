@@ -81,10 +81,7 @@ class MCTSPlayer :
 
         self.player = player
 
-
-
-
-	def uct_select_move(gameState,simulations,nn,verbose = False):
+    def uct_select_move(gameState,simulations,nn,verbose = False):
 		 """ Takes in a GameState object representing the current game state and selects the best move using MCTS.Returns a Move object.Provides optional parameter to save the move to disk ( for use in self-play for training neural network)
         """
          """
