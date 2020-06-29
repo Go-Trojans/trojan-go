@@ -82,7 +82,10 @@ def is_point_an_eye(board, point, player):
         if n not in visited:
             curr_chain, adj_lib = find_connected(board, n, player)
             visited = visited.union(curr_chain)
-            adj_libs = adj_libs.union(adj_lib)
+            if len(adj_libs) > 0:
+                adj_libs = adj_libs.intersection(adj_lib)
+            else:
+                adj_libs = adj_lib
             chains.add(tuple(curr_chain))
 
     if len(chains) == 1:
