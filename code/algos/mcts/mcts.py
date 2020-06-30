@@ -6,6 +6,8 @@ import h5py
 import numpy as np
 from math import sqrt
 import copy
+import random
+from keras.optimizers import SGD
 
 class MCTSNode:
     """ A node in the game tree. Note wins is always from the viewpoint of playerJustMoved.
@@ -31,16 +33,14 @@ class MCTSNode:
         """
         # returns s which is a sorted list of child nodes according to win formula
         maxChild = np.argmax([child.UCT() for child in self.childNodes])
-        return self.maxChild[maxChild]
+        return self.childNodes[maxChild]
 
-    def expand(self, move):
+    def expand(self, state,move):
         """ Remove m from untriedMoves and add a new child node for this move.
             Return the added child node
         """
         self.untriedMoves.remove(move)
-        childState = self.state.copy()
-        childState.apply_move(move)
-        childNode = MCTSNode(childState,move=move,parent=self)
+        childNode = MCTSNode(state,move=move,parent=self)
         self.childNodes.append(childNode)
         return childNode
 
@@ -82,14 +82,12 @@ class MCTSPlayer :
         self.player = player
 
     def uct_select_move(gameState,simulations,nn,verbose = False):
-		 """ Takes in a GameState object representing the current game state and selects the best move using MCTS.Returns a Move object.Provides optional parameter to save the move to disk ( for use in self-play for training neural network)
         """
-         """
         Conduct a tree search for itermax iterations starting from gameState.
         Return the best move from the gameState. Assumes 2 alternating players(player 1 starts), with game results in the range[-1, 1].
         """
         rootnode = MCTSNode(state = gameState)
-        for i in range(itermax):
+        for i in range(simulations):
             node = rootnode
             state = copy.deepcopy(gameState)
             # Select
@@ -154,7 +152,7 @@ class MCTSSelfPlay :
          Play num_games of self play against two MCTS players and save move information to disk. """
 
         input_shape = (self.plane_size,self.board_size,self.board_size)
-        nn = AGZ.trojanGoZero().nn_model(input())
+        nn = AGZ.init_random_model()
         self.expBuff = ExperienceBuffer([],[],[])
         players = {
             gohelper.Player.black: MCTSPlayer(gohelper.Player.black),

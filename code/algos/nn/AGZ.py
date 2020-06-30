@@ -127,78 +127,51 @@ class trojanGoZero:
         return model
 
 
+
 # In[106]:
 
+def init_random_model(input_shape) :
+    net = trojanGoZero()
+    model = net.nn_model(input_shape)
+    #print(model.summary())
 
-net = trojanGoZero()
-input_shape = (7,5,5)
-model = net.nn_model(input_shape)
-print(model.summary())
-    
+    model_input = []
 
+    for _ in range(10000):
+        board_tensor = np.random.randint(0, 3, size=input_shape)
+        model_input.append(board_tensor)
 
-# In[147]:
-
-
-
-model_input = []
-
-for _ in range(10000):
-    board_tensor = np.random.randint(0, 3, size=(7, 5, 5))
-    model_input.append(board_tensor)
-
-model_input = np.array(model_input) 
- 
-
-action_target = []
-for _ in range (10000):
-    search_prob = np.random.randn(5,5)
-    search_prob_flat = search_prob.reshape(25,)
-    action_target.append(search_prob_flat)
-    
-action_target = np.array(action_target)    
+    model_input = np.array(model_input)
 
 
-value_target = np.random.rand(10000)
-value_target = np.array(value_target) 
+    action_target = []
+    for _ in range (10000):
+        size = input_shape[1]
+        search_prob = np.random.randn(size,size)
+        search_prob_flat = search_prob.reshape(size*size,)
+        action_target.append(search_prob_flat)
+
+    action_target = np.array(action_target)
 
 
-
-# In[148]:
-
-
-from keras.optimizers import SGD
-model.compile(SGD(lr=0.01), loss=['categorical_crossentropy', 'mse'])
+    value_target = np.random.rand(10000)
+    value_target = np.array(value_target)
 
 
-# In[150]:
+    from keras.optimizers import SGD
+    model.compile(SGD(lr=0.01), loss=['categorical_crossentropy', 'mse'])
 
-
-import time
-start = time.time()
-model.fit(model_input, [action_target, value_target], batch_size=64, epochs=1)
-finish = time.time()
-print("Time taken : ", finish - start)
+    import time
+    start = time.time()
+    model.fit(model_input, [action_target, value_target], batch_size=64, epochs=1)
+    finish = time.time()
+    print("Time taken : ", finish - start)
 
 
 # In[151]:
 
 
-X = model_input[0]
-X = np.expand_dims(X, axis=0)
-print(X.shape)
-prediction = model.predict(X)
-print(prediction)
-
-
-# In[156]:
-
-
-index = np.argmax(prediction[0])
-rows = int(index/5)
-cols = index%5
-print("Move : ", (rows, cols))
-print("Win chance :", prediction[1])
+    return model
 
 
 # In[ ]:
