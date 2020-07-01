@@ -196,13 +196,15 @@ class GameState:
         if not move.is_play:
             return False
 
-        grid = self.board.grid
+        test_state = self.copy()
+        grid = test_state.board.grid
         point = move.point
-        ally_members = self.ally_dfs(player,point)
+        test_state.board.place_stone(player,point)
+        ally_members = test_state.ally_dfs(player,point)
         for member in ally_members:
             neighbors = member.neighbors()
             for piece in neighbors:
-                if self.board.is_on_grid(piece) :
+                if test_state.board.is_on_grid(piece) :
                     nR,nC = piece
                     # If there is empty space around a piece, it has liberty
                     if grid[nR][nC] == 0 and move.point != piece:

@@ -171,7 +171,21 @@ def init_random_model(input_shape) :
 # In[151]:
 
 
-    return model
+    X = model_input[0]
+    X = np.expand_dims(X, axis=0)
+    #print(X.shape)
+    prediction = model.predict(X)
+    print(prediction)
+
+
+# In[156]:
+
+
+    index = np.argmax(prediction[0])
+    rows = int(index/size)
+    cols = index%5
+    print("Move : ", (rows, cols))
+    print("Win chance :", prediction[1])
 
 
 # In[ ]:
