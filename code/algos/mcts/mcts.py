@@ -35,14 +35,15 @@ class MCTSNode:
         maxChild = np.argmax([child.UCT() for child in self.childNodes])
         return self.childNodes[maxChild]
 
-    def expand(self, state,move):
+    def expand(self,state, pred):
         """ Remove m from untriedMoves and add a new child node for this move.
             Return the added child node
         """
-        self.untriedMoves.remove(move)
-        childNode = MCTSNode(state,move=move,parent=self)
-        self.childNodes.append(childNode)
-        return childNode
+        boardSize = self.state.board.board_width
+        index = pred.len()
+        moves = [godomain.Move(gohelper.Point(int(i/boardSize),i%boardSize)) for i in range(index)]
+        self.childNodes = [MCTSNode(self.state,move=move,parent=self) for move in moves if move in self.state.legal_moves()]
+
 
     def update(self, result):
         """Update this
@@ -58,7 +59,7 @@ class MCTSNode:
         playerJustmoved.
         """
         self.visits += 1
-        self.wins += self.v
+        self.wins += self.result
         self.q = self.wins / self.visits
 
     def UCT(self,c_puct):
@@ -81,32 +82,37 @@ class MCTSPlayer :
 
         self.player = player
 
-    def uct_select_move(gameState,simulations,nn,verbose = False):
+    def uct_select_move(gameState,encoder,simulations,nn,verbose = False):
         """
         Conduct a tree search for itermax iterations starting from gameState.
         Return the best move from the gameState. Assumes 2 alternating players(player 1 starts), with game results in the range[-1, 1].
         """
         rootnode = MCTSNode(state = gameState)
+        visited = set()
         for i in range(simulations):
             node = rootnode
             state = copy.deepcopy(gameState)
             # Select
-            while not node.untriedMoves and node.childNodes: # node is fully expanded and non-terminal
+            while node.state in visited: # node is fully expanded and non-terminal
                 node = node.SelectChild()
                 state.apply_move(node.move)
             # Expand
-            if node.untriedMoves:# if we can expand (i.e. state/node is non-terminal)
-                m = random.choice(node.untriedMoves)
-                state.apply_move(m)
-                node = node.expand(m,state)# add child and descend tree
-            # Rollout - this can often be made orders of magnitude quicker using a state.GetRandomMove() function
-            while state.legal_moves():# while state is non-terminal
-                state.apply_move(random.choice(state.legal_moves()))
+
+            if node.state not in visited:# if we can expand (i.e. state/node is non-terminal)
+                visited.add(node)
+                hero = node.playerJustmoved
+                tensor = encoder.encode(node.state)
+                p,v = nn.predict(tensor)
+                node.expand(p)# add child and descend tree
+            # # Rollout - this can often be made orders of magnitude quicker using a state.GetRandomMove() function
+            # while state.legal_moves():# while state is non-terminal
+            #     state.apply_move(random.choice(state.legal_moves()))
             # Backpropagate
+
             while node:# backpropagate from the expanded node and work back to the root node
-                node.update(1 if state.winner() == node.playerJustMoved else -1)# state is terminal. Update node with result from POV of node.playerJustMoved
+                node.update(v if hero == node.playerJustMoved else -v)# state is terminal. Update node with result from POV of node.playerJustMoved
                 node = node.parentNode
-        return sorted(rootnode.childNodes,key=lambda c: c.visits)[-1].move# return the move that was most visited
+        return sorted(rootnode.childNodes,key=lambda c: c.visits)# return the move that was most visited
 
 
 
@@ -167,7 +173,7 @@ class MCTSSelfPlay :
             moves = []
             while not game.is_over() :
 
-                move,searchProb = players[game.next_player].select_move(game,nn,1600)
+                move,searchProb = players[game.next_player].select_move(game,self.encoder,nn,1600)
 
                 game = game.apply_move(move)
 
