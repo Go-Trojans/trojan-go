@@ -34,7 +34,7 @@ class MCTSNode:
         maxChild = np.argmax([child.UCT() for child in self.childNodes])
         return self.childNodes[maxChild]
 
-    def expand(self, pred):
+    def expand(self, pred,dir = False):
         """ Remove m from untriedMoves and add a new child node for this move.
             Return the added child node
         """
@@ -84,7 +84,7 @@ class MCTSPlayer :
 
         self.player = player
 
-    def select_move(gameState,encoder,simulations,nn,verbose = False):
+    def select_move(gameState,encoder,simulations,nn,verbose = False,epsilon = 0.25,dcoeff = 0.03):
         """
         Conduct a tree search for itermax iterations starting from gameState.
         Return the best move from the gameState. Assumes 2 alternating players(player 1 starts), with game results in the range[-1, 1].
@@ -96,6 +96,10 @@ class MCTSPlayer :
             state = copy.deepcopy(gameState)
             # Select
             while node in visited: # node is fully expanded and non-terminal
+                if node == rootnode:
+                    for child in node.childNodes:
+                        # Dirichlet noise
+                        child.p = (1-epsilon)*child.p + epsilon*np.random.dirichlet(alpha = dcoeff)
                 node = node.SelectChild()
                 node.state = state.apply_move(node.move)
             # Expand
