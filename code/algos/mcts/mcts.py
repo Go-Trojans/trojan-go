@@ -94,12 +94,11 @@ class MCTSPlayer :
         for i in range(simulations):
             node = rootnode
             state = copy.deepcopy(gameState)
+            for child in node.childNodes:
+                # Dirichlet noise
+                child.p = (1-epsilon)*child.p + epsilon*np.random.dirichlet(alpha = dcoeff)
             # Select
             while node in visited: # node is fully expanded and non-terminal
-                if node == rootnode:
-                    for child in node.childNodes:
-                        # Dirichlet noise
-                        child.p = (1-epsilon)*child.p + epsilon*np.random.dirichlet(alpha = dcoeff)
                 node = node.SelectChild()
                 node.state = state.apply_move(node.move)
             # Expand
