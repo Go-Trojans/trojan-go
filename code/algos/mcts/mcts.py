@@ -21,7 +21,6 @@ class MCTSNode:
         self.childNodes = []
         self.wins = 0
         self.visits = 0
-        self.untriedMoves = state.legal_moves()  # future child nodes
         self.playerJustMoved = state.playerJustMoved  # the only part of the state that the Node needs later
         self.q = q  # q value of the node
         self.p = p
@@ -35,14 +34,17 @@ class MCTSNode:
         maxChild = np.argmax([child.UCT() for child in self.childNodes])
         return self.childNodes[maxChild]
 
-    def expand(self,state, pred):
+    def expand(self, pred):
         """ Remove m from untriedMoves and add a new child node for this move.
             Return the added child node
         """
         boardSize = self.state.board.board_width
         index = pred.len()
         moves = [godomain.Move(gohelper.Point(int(i/boardSize),i%boardSize)) for i in range(index)]
-        self.childNodes = [MCTSNode(self.state,move=move,parent=self) for move in moves if move in self.state.legal_moves()]
+        moveProb = zip(moves,pred)
+        for move,p in moveProb :
+            child = MCTSNode(self.state.apply_move(move),move=move,parent=self,p=p)
+            self.childNodes.append(child)
 
 
     def update(self, result):
@@ -82,7 +84,7 @@ class MCTSPlayer :
 
         self.player = player
 
-    def uct_select_move(gameState,encoder,simulations,nn,verbose = False):
+    def select_move(gameState,encoder,simulations,nn,verbose = False):
         """
         Conduct a tree search for itermax iterations starting from gameState.
         Return the best move from the gameState. Assumes 2 alternating players(player 1 starts), with game results in the range[-1, 1].
@@ -93,12 +95,12 @@ class MCTSPlayer :
             node = rootnode
             state = copy.deepcopy(gameState)
             # Select
-            while node.state in visited: # node is fully expanded and non-terminal
+            while node in visited: # node is fully expanded and non-terminal
                 node = node.SelectChild()
-                state.apply_move(node.move)
+                node.state = state.apply_move(node.move)
             # Expand
 
-            if node.state not in visited:# if we can expand (i.e. state/node is non-terminal)
+            if node not in visited:# if we can expand (i.e. state/node is non-terminal)
                 visited.add(node)
                 hero = node.playerJustmoved
                 tensor = encoder.encode(node.state)
