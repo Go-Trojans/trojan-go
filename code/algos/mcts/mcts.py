@@ -46,7 +46,8 @@ class MCTSNode:
         """
         boardSize = self.state.board.board_width
         numMoves = len(probs)
-        moves = [godomain.Move(gohelper.Point(int(idx/boardSize),idx%boardSize)) for idx in range(numMoves)]
+        moves = [godomain.Move(gohelper.Point(int(idx/boardSize),idx%boardSize)) for idx in range(numMoves-1)]
+        moves.append(godomain.Move(is_pass=True))
         moveProb = zip(moves,probs)
         legal_moves = self.state.legal_moves()
         for move,p in moveProb :
@@ -91,7 +92,6 @@ class MCTSPlayer :
         visited = set()
         for i in range(simulations):
             currNode = rootnode
-            state = copy.deepcopy(gameState)
             if i>0 :
                 for child in currNode.childNodes:
                     # Dirichlet noise
@@ -109,9 +109,12 @@ class MCTSPlayer :
                 tensor = np.expand_dims(tensor,axis=0)
                 p,v = nn.predict(tensor)
                 if i==0 :
-                    probs = np.array([])
-                    for prob in p.flatten() :
-                        probs.append((1-epsilon)*prob + epsilon*np.random.dirichlet(alpha = dcoeff))
+                    p = p.flatten()
+                    probs = []
+                    for prob in p :
+                        pNoise = ((1-epsilon)*prob + epsilon*np.random.dirichlet(alpha = dcoeff))[0]
+                        probs.append(pNoise)
+                    probs = np.array(probs)
                 else :
                     probs = p.flatten()
                 currNode.expand(probs)# add children

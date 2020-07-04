@@ -375,9 +375,11 @@ class Move:
     def __eq__(self, other):
 
         if isinstance(other,Move) :
-            if self.is_play==other.is_play :
-                comparison = self.point[0] == other.point[0] and self.point[1]==other.point[1] and self.is_pass==other.is_pass and self.is_resign==other.is_resign
-                return comparison
+            if self.is_play==other.is_play and self.is_pass==other.is_pass and self.is_resign==other.is_resign:
+                if self.is_play==True :
+                    return self.point[0] == other.point[0] and self.point[1]==other.point[1]
+                else :
+                    return True
             else :
                 return False
         return False
