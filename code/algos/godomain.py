@@ -155,7 +155,6 @@ class GameState:
             next_board.place_stone(self.next_player, move.point)
         else:
             next_board = self.board
-        #self.update_total_moves()
         return GameState(next_board, self.next_player.opp, self, move,self.moves+1)
 
     @classmethod
@@ -263,9 +262,6 @@ class GameState:
         if self.violate_ko(self.next_player,move) or self.is_suicide(self.next_player,move):
             return False
         return True
-
-    def update_total_moves(self):
-        self.moves = self.moves + 1
 
     def is_over(self):
         """
@@ -377,7 +373,7 @@ class Move:
         if isinstance(other,Move) :
             if self.is_play==other.is_play and self.is_pass==other.is_pass and self.is_resign==other.is_resign:
                 if self.is_play==True :
-                    return self.point[0] == other.point[0] and self.point[1]==other.point[1]
+                    return self.point==other.point
                 else :
                     return True
             else :

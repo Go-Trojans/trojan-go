@@ -1,13 +1,10 @@
-from algos import godomain,gohelper,utils
+from algos.godomain import *
+from algos.gohelper import *
 from algos.encoders import TrojanGoPlane
-import io, os, sys, types
 from algos.nn import AGZ
 import h5py
 import numpy as np
 from math import sqrt
-import copy
-import random
-from keras.optimizers import SGD
 
 class MCTSNode:
     """ A node in the game tree. Note wins is always from the viewpoint of playerJustMoved.
@@ -31,7 +28,7 @@ class MCTSNode:
             Returns the child node with the maximum PUCT score.
         """
 
-        puctNodes = [child.PUCT() for child in self.childNodes]
+        puctNodes = [child.PUCT(c) for child in self.childNodes]
         maxChild = np.argmax(puctNodes)
         return self.childNodes[maxChild]
 
@@ -42,8 +39,8 @@ class MCTSNode:
         """
         boardSize = self.state.board.board_width
         numMoves = len(probs)
-        moves = [godomain.Move(gohelper.Point(int(idx/boardSize),idx%boardSize)) for idx in range(numMoves-1)]
-        moves.append(godomain.Move(is_pass=True))
+        moves = [Move(Point(int(idx/boardSize),idx%boardSize)) for idx in range(numMoves-1)]
+        moves.append(Move.pass_turn())
         moveProb = zip(moves,probs)
         legal_moves = self.state.legal_moves()
         for move,p in moveProb :
@@ -62,7 +59,7 @@ class MCTSNode:
         self.wins += v
         self.q = self.wins / self.visits
 
-    def PUCT(self,c):
+    def PUCT(self,c=4):
         """
             Returns the PUCT score for the node.
         """
@@ -141,13 +138,12 @@ class MCTSSelfPlay :
 
 
 
-    def play(self,network,expFile,num_games=2500,c=4,tempMoves=30) :
+    def play(self,nn,expFile,num_games=2500,c=4,tempMoves=30) :
         """
         :param num_game:
         :return:
          Play num_games of self play against two MCTS players and save move information to disk. """
 
-        input_shape = (self.plane_size,self.board_size,self.board_size)
         model_input = []
         action_target = []
         value_target = []
@@ -161,7 +157,7 @@ class MCTSSelfPlay :
         for i in range(num_games) :
 
 
-            game = godomain.GameState.new_game(self.board_size)
+            game = GameState.new_game(self.board_size)
             moves = []
             moveNum = 0
             while not game.is_over() :
@@ -171,7 +167,6 @@ class MCTSSelfPlay :
                 else :
                     tau = float('inf')
                 mctsNodes =  players[game.next_player].select_move(game,self.encoder,1600,nn,c=c)
-
                 tempNodes = [node.visits**(1/tau) for node in mctsNodes]
                 tempNodeSum = sum(tempNodes)
                 searchProb = [n/tempNodeSum for n in tempNodes]
@@ -219,4 +214,4 @@ if __name__ == "__main__" :
     mctsSP = MCTSSelfPlay(7,5)
     input_shape = (7,5,5)
     nn = AGZ.init_random_model(input_shape)
-    mctsSP.play(nn,'mctsExperience.hdf5')
+    mctsSP.play(nn,'./data/experience_1.hdf5')
