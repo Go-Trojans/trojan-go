@@ -63,26 +63,62 @@ def is_point_an_eye(board, point, player):
         return False
 
     neighs = point.neighbors()
-    chain = set()
 
-    for n in neighs:
-        rn, rc = n
-        if not board.is_on_grid(Point(row=rn, col=rc)):
-            continue
-        if rn >= 0 and rc >= 0:
-            chain = find_connected(board, n, player)
-            break
+    chains = set()
+    visited = set()
+    adj_libs = set()
             
     # neighbors are the same color and are part of a chain
     for n in neighs: 
         nr, nc = n
-        if not board.is_on_grid(Point(row=nr, col=nc)):
+
+        # if neighbor is invalid then we skip computations
+        if nr < 0 or nc < 0 or not board.is_on_grid(Point(row=nr, col=nc)):
             continue
-        if not board.is_on_grid(point):
-            continue
-        if board.grid[nr][nc] != player or n not in chain:
+
+        # if a neighbor isn't occupied by current player, then it's not an eye
+        if board.grid[nr][nc] != player.value:
             return False
-    return True
+
+        if n not in visited:
+            curr_chain, adj_lib = find_connected(board, n, player)
+            visited = visited.union(curr_chain)
+            if len(adj_libs) > 0:
+                adj_libs = adj_libs.intersection(adj_lib)
+            else:
+                adj_libs = adj_lib
+            chains.add(tuple(curr_chain))
+
+    if len(chains) == 1:
+        return True
+
+    # print(chains)
+    # print(adj_libs)
+    lib_count = 0
+    for lib in adj_libs:
+        if lib == point:
+            continue
+        # print(lib)
+        board.grid[lib[0]][lib[1]] = player.value
+        c, _ = find_connected(board, lib, player)
+        ss_count = 0
+        for chain in chains:
+            # print("c %s" % c)
+            # print("chain %s" % str(chain))
+            # print(set(chain).issubset(c))
+            if set(chain).issubset(c):
+                ss_count += 1
+            else:
+                break
+        # print(ss_count)
+        if ss_count == len(chains):
+            # print(lib)
+            lib_count += 1
+        board.grid[lib[0]][lib[1]] = 0
+    # print(lib_count)
+    if lib_count > 1:
+        return True
+    return False
     
 def find_connected(board, point, player):
     """
@@ -91,7 +127,8 @@ def find_connected(board, point, player):
     #print("point, player : ", point, player)
     queue = [point]
 
-    visited = set()
+    visited = set() # you're only visiting neighbors in same chain
+    adj_lib = set()
     while len(queue) > 0:
         curr = queue.pop(0)
         neighs = curr.neighbors()
@@ -100,9 +137,11 @@ def find_connected(board, point, player):
             r, c = n
             if not board.is_on_grid(point) or not board.is_on_grid(Point(row=r, col=c)):
                 continue
-            if n not in visited and board.grid[r][c] == player:
+            if n not in visited and board.grid[r][c] == player.value:
                 queue.append(n)
-    return visited
+            if board.grid[r][c] == 0:
+                adj_lib.add(n)
+    return visited, adj_lib
 
 """
 #Driver code
