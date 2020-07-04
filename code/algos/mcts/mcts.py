@@ -37,19 +37,17 @@ class MCTSNode:
             if puct > max_score :
                 max_score = puct
                 best_child = child
-        if not self.childNodes :
-            return MCTSNode(move=godomain.Move(is_pass=True),state=self.state,parent=self)
         return best_child
 
-    def expand(self, prob):
+    def expand(self, probs):
         """
             Use probabilites given by the neural network to set the child nodes.
             Checks that the move is legal before adding the child.
         """
         boardSize = self.state.board.board_width
-        numMoves = prob.shape[1]
+        numMoves = len(probs)
         moves = [godomain.Move(gohelper.Point(int(idx/boardSize),idx%boardSize)) for idx in range(numMoves)]
-        moveProb = zip(moves,prob.flatten())
+        moveProb = zip(moves,probs)
         legal_moves = self.state.legal_moves()
         for move,p in moveProb :
             if move in legal_moves :
@@ -94,6 +92,10 @@ class MCTSPlayer :
         for i in range(simulations):
             currNode = rootnode
             state = copy.deepcopy(gameState)
+            if i>0 :
+                for child in currNode.childNodes:
+                    # Dirichlet noise
+                    child.p = (1-epsilon)*child.p + epsilon*np.random.dirichlet(alpha = dcoeff)
             # Select
             while currNode in visited: # node is fully expanded and non-terminal
                 currNode = currNode.SelectChild(c)
@@ -106,11 +108,13 @@ class MCTSPlayer :
                 tensor = encoder.encode(currNode.state)
                 tensor = np.expand_dims(tensor,axis=0)
                 p,v = nn.predict(tensor)
-                currNode.expand(p)# add child and descend tree
-            for child in currNode.childNodes:
-                # Dirichlet noise
-                child.p = (1-epsilon)*child.p + epsilon*np.random.dirichlet(alpha = dcoeff)
-
+                if i==0 :
+                    probs = np.array([])
+                    for prob in p.flatten() :
+                        probs.append((1-epsilon)*prob + epsilon*np.random.dirichlet(alpha = dcoeff))
+                else :
+                    probs = p.flatten()
+                currNode.expand(probs)# add children
             # Backpropagate
             while currNode:# backpropagate from the expanded node and work back to the root node
                 currNode.update(v if hero == currNode.state.next_player else -v)# state is terminal. Update node with result from POV of node.playerJustMoved
@@ -194,7 +198,7 @@ class MCTSSelfPlay :
                 moves.append((game,searchProb))
 
             winner = game.winner()
-            self.saveMoves(moves,winner)
+            self.save_moves(moves,winner)
 
 
 
