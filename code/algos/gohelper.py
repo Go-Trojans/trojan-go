@@ -14,6 +14,7 @@ import operator
 __all__ = [
     'Player',
     'Point',
+    'is_point_an_eye',
 ]
 
 def directionVector_add(a, b):
