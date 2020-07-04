@@ -30,14 +30,10 @@ class MCTSNode:
             Use PUCT to select a child.
             Returns the child node with the maximum PUCT score.
         """
-        max_score = -float('inf')
-        best_child = None
-        for child in self.childNodes :
-            puct = child.PUCT(c)
-            if puct > max_score :
-                max_score = puct
-                best_child = child
-        return best_child
+
+        puctNodes = [child.PUCT() for child in self.childNodes]
+        maxChild = np.argmax(puctNodes)
+        return self.childNodes[maxChild]
 
     def expand(self, probs):
         """
@@ -85,8 +81,9 @@ class MCTSPlayer :
 
     def select_move(self,gameState,encoder,simulations,nn,epsilon = 0.25,dcoeff = [0.03],c=4):
         """
-        Conduct a tree search for itermax iterations starting from gameState.
-        Return the best move from the gameState. Assumes 2 alternating players(player 1 starts), with game results in the range[-1, 1].
+        Conduct a tree search for simulations iterations starting from gameState.
+        Assumes 2 alternating players(player 1 starts), with game results in the range[-1, 1].
+        Return the child MCTS nodes of the root node/gameState.
         """
         rootnode = MCTSNode(state = gameState)
         visited = set()
@@ -99,7 +96,6 @@ class MCTSPlayer :
             # Select
             while currNode in visited: # node is fully expanded and non-terminal
                 currNode = currNode.SelectChild(c)
-                #currNode.state = state.apply_move(currNode.move)
 
             # Expand
             if currNode not in visited:# if we can expand (i.e. state/node is non-terminal)
@@ -108,16 +104,7 @@ class MCTSPlayer :
                 tensor = encoder.encode(currNode.state)
                 tensor = np.expand_dims(tensor,axis=0)
                 p,v = nn.predict(tensor)
-                if i==0 :
-                    p = p.flatten()
-                    probs = []
-                    for prob in p :
-                        pNoise = ((1-epsilon)*prob + epsilon*np.random.dirichlet(alpha = dcoeff))[0]
-                        probs.append(pNoise)
-                    probs = np.array(probs)
-                else :
-                    probs = p.flatten()
-                currNode.expand(probs)# add children
+                currNode.expand(p.flatten())# add children
             # Backpropagate
             while currNode:# backpropagate from the expanded node and work back to the root node
                 currNode.update(v if hero == currNode.state.next_player else -v)# state is terminal. Update node with result from POV of node.playerJustMoved
@@ -152,12 +139,6 @@ class MCTSSelfPlay :
                 else :
                     self.expBuff.value_target.append(-1)
 
-            model_input = np.array(self.expBuff.model_input)
-            action_target = np.array(self.expBuff.action_target)
-            value_target = np.array(self.expBuff.value_target)
-
-            with h5py.File(self.expFile, 'w') as exp_out:
-                ExperienceBuffer(model_input, action_target, value_target).serialize(exp_out)
 
 
     def play(self,network,expFile,num_games=2500,c=4,tempMoves=30) :
@@ -167,8 +148,10 @@ class MCTSSelfPlay :
          Play num_games of self play against two MCTS players and save move information to disk. """
 
         input_shape = (self.plane_size,self.board_size,self.board_size)
-
-        self.expBuff = ExperienceBuffer([],[],[])
+        model_input = []
+        action_target = []
+        value_target = []
+        self.expBuff = ExperienceBuffer(model_input,action_target,value_target)
         self.expFile = expFile
         players = {
             gohelper.Player.black: MCTSPlayer(gohelper.Player.black),
@@ -188,13 +171,11 @@ class MCTSSelfPlay :
                 else :
                     tau = float('inf')
                 mctsNodes =  players[game.next_player].select_move(game,self.encoder,1600,nn,c=c)
-                if not mctsNodes :
-                    move = godomain.Move(is_pass=True)
-                else :
-                    tempNodes = [node.visits**(1/tau) for node in mctsNodes]
-                    tempNodeSum = sum(tempNodes)
-                    searchProb = [n/tempNodeSum for n in tempNodes]
-                    move = np.random.choice(a=mctsNodes,p=searchProb).move
+
+                tempNodes = [node.visits**(1/tau) for node in mctsNodes]
+                tempNodeSum = sum(tempNodes)
+                searchProb = [n/tempNodeSum for n in tempNodes]
+                move = np.random.choice(a=mctsNodes,p=searchProb).move
 
                 game = game.apply_move(move)
 
@@ -203,6 +184,12 @@ class MCTSSelfPlay :
             winner = game.winner()
             self.save_moves(moves,winner)
 
+        model_input = np.array(self.expBuff.model_input)
+        action_target = np.array(self.expBuff.action_target)
+        value_target = np.array(self.expBuff.value_target)
+
+        with h5py.File(self.expFile, 'w') as exp_out:
+            ExperienceBuffer(model_input, action_target, value_target).serialize(exp_out)
 
 
 class ExperienceBuffer:
