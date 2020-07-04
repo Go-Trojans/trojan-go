@@ -13,7 +13,11 @@ Mainly suited for small board size but can be used for any baord size.
 from keras.layers import Activation, BatchNormalization
 from keras.layers import Conv2D, Dense, Flatten, Input
 from keras.models import Model
+from keras.optimizers import SGD
 #from encoders.trojangoPlane import TrojanGoPlane
+
+import numpy as np
+import time
 
 class smallNN:
     def __init__(self):
@@ -71,6 +75,49 @@ if __name__ == "__main__":
     net = smallNN()
     model = net.nn_model()
     print(model.summary())
+
+    model_input = []
+
+    for _ in range(100):
+        board_tensor = np.random.randint(0, 3, size=(7, 5, 5))
+        model_input.append(board_tensor)
+
+    model_input = np.array(model_input) 
+     
+
+    action_target = []
+    for _ in range (100):
+        search_prob = np.random.randn(26)
+        #search_prob_flat = search_prob.reshape(25,)
+        action_target.append(search_prob)
+        
+    action_target = np.array(action_target)    
+
+
+    value_target = np.random.rand(100)
+    value_target = np.array(value_target)
+
+    
+    model.compile(SGD(lr=0.01), loss=['categorical_crossentropy', 'mse'])
+
+    start = time.time()
+    model.fit(model_input, [action_target, value_target], batch_size=64, epochs=1)
+    finish = time.time()
+    print("Time taken : ", finish - start)
+
+    X = model_input[0]
+    X = np.expand_dims(X, axis=0)
+    print(X.shape)
+    prediction = model.predict(X)
+    print(prediction)
+
+    index = np.argmax(prediction[0])
+    rows = int(index/5)
+    cols = index%5
+    print("Move : ", (rows, cols))
+    print("Win chance :", prediction[1])
+
+    
 
 """
 Model: "model_1"
