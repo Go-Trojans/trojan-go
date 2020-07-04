@@ -155,8 +155,8 @@ class GameState:
             next_board.place_stone(self.next_player, move.point)
         else:
             next_board = self.board
-        self.update_total_moves()
-        return GameState(next_board, self.next_player.opp, self, move,self.moves)
+        #self.update_total_moves()
+        return GameState(next_board, self.next_player.opp, self, move,self.moves+1)
 
     @classmethod
     def new_game(cls, board_size):
@@ -233,8 +233,8 @@ class GameState:
     def legal_moves(self) :
         leg_moves = []
         board = self.board
-        for r in board.board_height :
-            for c in board.board_width :
+        for r in range(board.board_height) :
+            for c in range(board.board_width) :
                 move = Move(point=Point(row=r,col=c))
                 if self.is_valid_move(move) :
                     leg_moves.append(move)
@@ -371,6 +371,16 @@ class Move:
         self.is_pass = is_pass
         self.is_selected = False
         self.is_resign = is_resign
+
+    def __eq__(self, other):
+
+        if isinstance(other,Move) :
+            if self.is_play==other.is_play :
+                comparison = self.point[0] == other.point[0] and self.point[1]==other.point[1] and self.is_pass==other.is_pass and self.is_resign==other.is_resign
+                return comparison
+            else :
+                return False
+        return False
 
     @classmethod
     def play(cls, point):

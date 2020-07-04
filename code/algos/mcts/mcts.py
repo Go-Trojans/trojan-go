@@ -16,66 +16,66 @@ class MCTSNode:
     def __init__(self, state, p=0,v=0,q=0,move=None,parent=None):
         self.move = move  # the move that got us to this node - "None" for the root node
         self.state = state  # GameState object that the node represents
-
         self.parentNode = parent  # "None" for the root node
         self.childNodes = []
-        self.wins = 0
-        self.visits = 0
-        self.playerJustMoved = state.playerJustMoved  # the only part of the state that the Node needs later
-        self.q = q  # q value of the node
-        self.p = p
-        self.v = v
+        self.wins = 0 # Win count
+        self.visits = 0 # Visit count
+        self.q = q  # Q value of the node
+        self.p = p # Move probability given by the neural network
+        self.v = v # Value given by the neural network
 
 
-    def SelectChild(self):
-        """ Use Q+U to select action
+    def SelectChild(self,c=4):
         """
-        # returns s which is a sorted list of child nodes according to win formula
-        maxChild = np.argmax([child.UCT() for child in self.childNodes])
-        return self.childNodes[maxChild]
+            Use PUCT to select a child.
+            Returns the child node with the maximum PUCT score.
+        """
+        max_score = -float('inf')
+        best_child = None
+        for child in self.childNodes :
+            puct = child.PUCT(c)
+            if puct > max_score :
+                max_score = puct
+                best_child = child
+        if not self.childNodes :
+            return MCTSNode(move=godomain.Move(is_pass=True),state=self.state,parent=self)
+        return best_child
 
-    def expand(self, pred,dir = False):
-        """ Remove m from untriedMoves and add a new child node for this move.
-            Return the added child node
+    def expand(self, prob):
+        """
+            Use probabilites given by the neural network to set the child nodes.
+            Checks that the move is legal before adding the child.
         """
         boardSize = self.state.board.board_width
-        index = pred.len()
-        moves = [godomain.Move(gohelper.Point(int(i/boardSize),i%boardSize)) for i in range(index)]
-        moveProb = zip(moves,pred)
+        numMoves = prob.shape[1]
+        moves = [godomain.Move(gohelper.Point(int(idx/boardSize),idx%boardSize)) for idx in range(numMoves)]
+        moveProb = zip(moves,prob.flatten())
+        legal_moves = self.state.legal_moves()
         for move,p in moveProb :
-            child = MCTSNode(self.state.apply_move(move),move=move,parent=self,p=p)
-            self.childNodes.append(child)
+            if move in legal_moves :
+                childState = self.state.apply_move(move)
+                child = MCTSNode(state=childState,move=move,parent=self,p=p)
+                self.childNodes.append(child)
 
 
-    def update(self, result):
-        """Update this
-        node - one
-        additional
-        visit and result
-        additional
-        wins.result
-        must
-        be
-        from the viewpoint
-        of
-        playerJustmoved.
+    def update(self, v):
+        """
+            Update this node - one additional visit and v additional wins.
+            v is given from the neural network and must be from the viewpoint of playerJustmoved.
         """
         self.visits += 1
-        self.wins += self.result
+        self.wins += v
         self.q = self.wins / self.visits
 
-    def UCT(self,c_puct):
+    def PUCT(self,c):
         """
-        Returns
-        UCT
-        Score
-        for node
+            Returns the PUCT score for the node.
         """
         N = 0
-        for child in self.childNodes() :
+        for child in self.childNodes :
             N += child.visits
-        uct = self.q + c_puct*self.p*sqrt(N)/(1+self.visits)
-        return uct
+        puct = self.q + c*self.p*sqrt(N)/(1+self.visits)
+        return puct
 
 
 class MCTSPlayer :
@@ -84,7 +84,7 @@ class MCTSPlayer :
 
         self.player = player
 
-    def select_move(gameState,encoder,simulations,nn,verbose = False,epsilon = 0.25,dcoeff = 0.03):
+    def select_move(self,gameState,encoder,simulations,nn,epsilon = 0.25,dcoeff = [0.03],c=4):
         """
         Conduct a tree search for itermax iterations starting from gameState.
         Return the best move from the gameState. Assumes 2 alternating players(player 1 starts), with game results in the range[-1, 1].
@@ -92,44 +92,41 @@ class MCTSPlayer :
         rootnode = MCTSNode(state = gameState)
         visited = set()
         for i in range(simulations):
-            node = rootnode
+            currNode = rootnode
             state = copy.deepcopy(gameState)
-            for child in node.childNodes:
+            # Select
+            while currNode in visited: # node is fully expanded and non-terminal
+                currNode = currNode.SelectChild(c)
+                #currNode.state = state.apply_move(currNode.move)
+
+            # Expand
+            if currNode not in visited:# if we can expand (i.e. state/node is non-terminal)
+                visited.add(currNode)
+                hero = currNode.state.next_player
+                tensor = encoder.encode(currNode.state)
+                tensor = np.expand_dims(tensor,axis=0)
+                p,v = nn.predict(tensor)
+                currNode.expand(p)# add child and descend tree
+            for child in currNode.childNodes:
                 # Dirichlet noise
                 child.p = (1-epsilon)*child.p + epsilon*np.random.dirichlet(alpha = dcoeff)
-            # Select
-            while node in visited: # node is fully expanded and non-terminal
-                node = node.SelectChild()
-                node.state = state.apply_move(node.move)
-            # Expand
 
-            if node not in visited:# if we can expand (i.e. state/node is non-terminal)
-                visited.add(node)
-                hero = node.playerJustmoved
-                tensor = encoder.encode(node.state)
-                p,v = nn.predict(tensor)
-                node.expand(p)# add child and descend tree
-            # # Rollout - this can often be made orders of magnitude quicker using a state.GetRandomMove() function
-            # while state.legal_moves():# while state is non-terminal
-            #     state.apply_move(random.choice(state.legal_moves()))
             # Backpropagate
-
-            while node:# backpropagate from the expanded node and work back to the root node
-                node.update(v if hero == node.playerJustMoved else -v)# state is terminal. Update node with result from POV of node.playerJustMoved
-                node = node.parentNode
-        return sorted(rootnode.childNodes,key=lambda c: c.visits)# return the move that was most visited
+            while currNode:# backpropagate from the expanded node and work back to the root node
+                currNode.update(v if hero == currNode.state.next_player else -v)# state is terminal. Update node with result from POV of node.playerJustMoved
+                currNode = currNode.parentNode
+        return rootnode.childNodes
 
 
 
 class MCTSSelfPlay :
 
-    def __init__(self,board_size,plane_size,expFile):
+    def __init__(self,plane_size,board_size):
 
         self.board_size = board_size
         self.plane_size = plane_size
-        self.encoder = TrojanGoPlane(board_size,plane_size)
-        self.expFile = expFile
-        self.expBuff = ExperienceBuffer([], [], [])
+        self.encoder = TrojanGoPlane((board_size,board_size),plane_size)
+
 
 
     def save_moves(self, moves, winner):
@@ -156,29 +153,41 @@ class MCTSSelfPlay :
                 ExperienceBuffer(model_input, action_target, value_target).serialize(exp_out)
 
 
-    def play(self,num_games=2500) :
+    def play(self,network,expFile,num_games=2500,c=4,tempMoves=30) :
         """
         :param num_game:
         :return:
          Play num_games of self play against two MCTS players and save move information to disk. """
 
         input_shape = (self.plane_size,self.board_size,self.board_size)
-        nn = AGZ.init_random_model()
+
         self.expBuff = ExperienceBuffer([],[],[])
+        self.expFile = expFile
         players = {
             gohelper.Player.black: MCTSPlayer(gohelper.Player.black),
             gohelper.Player.white: MCTSPlayer(gohelper.Player.white)
         }
 
-        winner = 0
-        for i in num_games :
+        for i in range(num_games) :
 
 
             game = godomain.GameState.new_game(self.board_size)
             moves = []
+            moveNum = 0
             while not game.is_over() :
-
-                move,searchProb = players[game.next_player].select_move(game,self.encoder,nn,1600)
+                moveNum += 1
+                if moveNum <= tempMoves :
+                    tau = 1
+                else :
+                    tau = float('inf')
+                mctsNodes =  players[game.next_player].select_move(game,self.encoder,1600,nn,c=c)
+                if not mctsNodes :
+                    move = godomain.Move(is_pass=True)
+                else :
+                    tempNodes = [node.visits**(1/tau) for node in mctsNodes]
+                    tempNodeSum = sum(tempNodes)
+                    searchProb = [n/tempNodeSum for n in tempNodes]
+                    move = np.random.choice(a=mctsNodes,p=searchProb).move
 
                 game = game.apply_move(move)
 
@@ -193,7 +202,7 @@ class ExperienceBuffer:
     def __init__(self, model_input, action_target, value_target):
         self.model_input = model_input
         self.action_target = action_target
-        self.value_target = self.value_target
+        self.value_target = value_target
 
     def serialize(self, h5file):
         h5file.create_group('experience')
@@ -210,3 +219,10 @@ class ExperienceBuffer:
     def display_experience_buffer(self):
         print("Model Input : ")
         print(self.model_input)
+
+if __name__ == "__main__" :
+
+    mctsSP = MCTSSelfPlay(7,5)
+    input_shape = (7,5,5)
+    nn = AGZ.init_random_model(input_shape)
+    mctsSP.play(nn,'mctsExperience.hdf5')

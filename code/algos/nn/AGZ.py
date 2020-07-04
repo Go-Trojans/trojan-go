@@ -49,6 +49,10 @@ from keras.layers import Activation, BatchNormalization,MaxPooling2D
 from keras.layers import Conv2D, Dense, Flatten, Input
 from keras.models import Model
 import numpy as np
+import tensorflow as tf
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+sess = tf.Session(config=config)
 
 
 
