@@ -5,6 +5,7 @@ from algos.nn import AGZ
 import h5py
 import numpy as np
 from math import sqrt
+from operator import attrgetter
 
 class MCTSNode:
     """ A node in the game tree. Note wins is always from the viewpoint of playerJustMoved.
@@ -44,7 +45,7 @@ class MCTSNode:
         moveProb = zip(moves,probs)
         legal_moves = self.state.legal_moves()
         for move,p in moveProb :
-            if move in legal_moves :
+             if move in legal_moves :
                 childState = self.state.apply_move(move)
                 child = MCTSNode(state=childState,move=move,parent=self,p=p)
                 self.childNodes.append(child)
@@ -76,11 +77,11 @@ class MCTSPlayer :
 
         self.player = player
 
-    def select_move(self,gameState,encoder,simulations,nn,epsilon = 0.25,dcoeff = [0.03],c=4):
+    def select_move(self,gameState,encoder,simulations,nn,epsilon = 0.25,dcoeff = [0.03],c=4,stoch=True):
         """
         Conduct a tree search for simulations iterations starting from gameState.
         Assumes 2 alternating players(player 1 starts), with game results in the range[-1, 1].
-        Return the child MCTS nodes of the root node/gameState.
+        Return the child MCTS nodes of the root node/gameState for exploratory play, or the move with the most visits for competitive play.
         """
         rootnode = MCTSNode(state = gameState)
         visited = set()
@@ -106,7 +107,10 @@ class MCTSPlayer :
             while currNode:# backpropagate from the expanded node and work back to the root node
                 currNode.update(v if hero == currNode.state.next_player else -v)# state is terminal. Update node with result from POV of node.playerJustMoved
                 currNode = currNode.parentNode
-        return rootnode.childNodes
+        if stoch :
+           return rootnode.childNodes
+        else :
+            return max(rootnode.childNodes, key=attrgetter('visits')).move
 
 
 
@@ -125,9 +129,8 @@ class MCTSSelfPlay :
             Save input feature stack, search probabilities,and game winner to disk
             """
 
-            for gameState, searchProb in moves:
-                encodedState = self.encoder.encode(gameState)
-                self.expBuff.model_input.append(encodedState)
+            for gameState,tensor, searchProb in moves:
+                self.expBuff.model_input.append(tensor)
                 self.expBuff.action_target.append(searchProb)
                 if winner == 0 :
                     self.expBuff.value_target.append(0)
@@ -138,7 +141,7 @@ class MCTSSelfPlay :
 
 
 
-    def play(self,nn,expFile,num_games=2500,c=4,tempMoves=30) :
+    def play(self,nn,expFile,num_games=2500,c=4,vResign=0.2,tempMoves=10) :
         """
         :param num_game:
         :return:
@@ -150,11 +153,11 @@ class MCTSSelfPlay :
         self.expBuff = ExperienceBuffer(model_input,action_target,value_target)
         self.expFile = expFile
         players = {
-            gohelper.Player.black: MCTSPlayer(gohelper.Player.black),
-            gohelper.Player.white: MCTSPlayer(gohelper.Player.white)
+            Player.black: MCTSPlayer(Player.black),
+            Player.white: MCTSPlayer(Player.white)
         }
 
-        for i in range(num_games) :
+        for i in range(1) :
 
 
             game = GameState.new_game(self.board_size)
@@ -166,15 +169,30 @@ class MCTSSelfPlay :
                     tau = 1
                 else :
                     tau = float('inf')
-                mctsNodes =  players[game.next_player].select_move(game,self.encoder,1600,nn,c=c)
-                tempNodes = [node.visits**(1/tau) for node in mctsNodes]
+                mctsNodes =  players[game.next_player].select_move(game,self.encoder,2,nn,c=c)
+                tensor = self.encoder.encode(game)
+                tensor = np.expand_dims(tensor, axis=0)
+                _, rootV = nn.predict(tensor)
+                childVals = []
+                tempNodes = []
+                for child in mctsNodes :
+                    childTensor = self.encoder.encode(child.state)
+                    childTensor = np.expand_dims(childTensor, axis=0)
+                    _,childV = nn.predict(childTensor)
+                    visits = child.visits**(1/tau)
+                    tempNodes.append(visits)
+                    childVals.append(childV.item())
                 tempNodeSum = sum(tempNodes)
-                searchProb = [n/tempNodeSum for n in tempNodes]
-                move = np.random.choice(a=mctsNodes,p=searchProb).move
+                searchProb = np.array([n/tempNodeSum for n in tempNodes])
+                if rootV.item() < vResign and max(childV) < vResign :
+                    move = Move.resign()
+                else :
+                    move = np.random.choice(a=mctsNodes,p=searchProb).move
 
+                moves.append((game,tensor,searchProb))
                 game = game.apply_move(move)
 
-                moves.append((game,searchProb))
+
 
             winner = game.winner()
             self.save_moves(moves,winner)
