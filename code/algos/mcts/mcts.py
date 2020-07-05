@@ -184,7 +184,7 @@ class MCTSSelfPlay :
                     childVals.append(childV.item())
                 tempNodeSum = sum(tempNodes)
                 searchProb = np.array([n/tempNodeSum for n in tempNodes])
-                if rootV.item() < vResign and max(childV) < vResign :
+                if rootV.item() < vResign and max(childVals) < vResign :
                     move = Move.resign()
                 else :
                     move = np.random.choice(a=mctsNodes,p=searchProb).move
