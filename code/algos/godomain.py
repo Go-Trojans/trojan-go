@@ -268,11 +268,11 @@ class GameState:
         if self.moves>(self.board.board_width *self.board.board_height * 2):
             return True
         """
-        if self.last_move is None:
+        if not self.last_move:
             return False
    
         if self.last_move.is_resign:
-            return False
+            return True
     
         if self.last_move.is_pass and self.previous_state.last_move.is_pass:
             return True

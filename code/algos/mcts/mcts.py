@@ -134,14 +134,14 @@ class MCTSSelfPlay :
                 self.expBuff.action_target.append(searchProb)
                 if winner == 0 :
                     self.expBuff.value_target.append(0)
-                elif winner == gameState.next_player :
+                elif winner == gameState.next_player.value :
                     self.expBuff.value_target.append(1)
                 else :
                     self.expBuff.value_target.append(-1)
 
 
 
-    def play(self,nn,expFile,num_games=2500,c=4,vResign=0.2,tempMoves=10) :
+    def play(self,nn,expFile,num_games=2500,simulations=1600,c=4,vResign=0,tempMoves=10) :
         """
         :param num_game:
         :return:
@@ -157,7 +157,7 @@ class MCTSSelfPlay :
             Player.white: MCTSPlayer(Player.white)
         }
 
-        for i in range(1) :
+        for i in range(num_games) :
 
 
             game = GameState.new_game(self.board_size)
@@ -169,30 +169,39 @@ class MCTSSelfPlay :
                     tau = 1
                 else :
                     tau = float('inf')
-                mctsNodes =  players[game.next_player].select_move(game,self.encoder,2,nn,c=c)
+                mctsNodes =  players[game.next_player].select_move(game,self.encoder,simulations,nn,c=c)
                 tensor = self.encoder.encode(game)
                 tensor = np.expand_dims(tensor, axis=0)
                 _, rootV = nn.predict(tensor)
                 childVals = []
+
+                searchProb = np.zeros((self.board_size**2 + 1,),dtype='float')
                 tempNodes = []
                 for child in mctsNodes :
                     childTensor = self.encoder.encode(child.state)
                     childTensor = np.expand_dims(childTensor, axis=0)
                     _,childV = nn.predict(childTensor)
-                    visits = child.visits**(1/tau)
-                    tempNodes.append(visits)
+                    if child.move.is_play :
+                        r,c = child.move.point
+                        i = self.board_size*r + c
+                    else :
+                        i = self.board_size**2
+                    searchProb[i] = child.visits**(1/tau)
+                    tempNodes.append(child.visits**(1/tau))
+                    if childV.item() < 0 :
+                        x = 2
                     childVals.append(childV.item())
-                tempNodeSum = sum(tempNodes)
-                searchProb = np.array([n/tempNodeSum for n in tempNodes])
+                probSum = sum(tempNodes)
+                tempNodes = np.divide(tempNodes,probSum)
+                searchProb = np.divide(searchProb,probSum)
+
                 if rootV.item() < vResign and max(childVals) < vResign :
                     move = Move.resign()
                 else :
-                    move = np.random.choice(a=mctsNodes,p=searchProb).move
+                    move = np.random.choice(a=mctsNodes,p=tempNodes).move
 
                 moves.append((game,tensor,searchProb))
                 game = game.apply_move(move)
-
-
 
             winner = game.winner()
             self.save_moves(moves,winner)
@@ -232,4 +241,4 @@ if __name__ == "__main__" :
     mctsSP = MCTSSelfPlay(7,5)
     input_shape = (7,5,5)
     nn = AGZ.init_random_model(input_shape)
-    mctsSP.play(nn,'./data/experience_1.hdf5')
+    mctsSP.play(nn,'./data/experience_1.hdf5',num_games=2)
