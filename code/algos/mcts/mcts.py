@@ -165,8 +165,6 @@ class MCTSSelfPlay :
             moveNum = 0
             visited = set()
             rootnode = None
-            resigned  = False
-            hero = 0
             while not game.is_over() :
                 moveNum += 1
                 if moveNum <= tempMoves :
@@ -177,8 +175,7 @@ class MCTSSelfPlay :
                     rootnode  = MCTSNode(state = game)
                 mctsNodes =  players[game.next_player].select_move(rootnode,visited ,self.encoder,simulations,nn,c=c)
                 tensor = self.encoder.encode(game)
-                tensor = np.expand_dims(tensor, axis=0)
-                _, rootV = nn.predict(tensor)
+                _, rootV = nn.predict(np.expand_dims(tensor, axis=0))
                 childVals = []
                 searchProb = np.zeros((self.board_size**2 + 1,),dtype='float')
                 tempNodes = []
@@ -201,22 +198,15 @@ class MCTSSelfPlay :
                 searchProb = np.divide(searchProb,probSum)
                 if rootV.item() < vResign and max(childVals) < vResign :
                     move = Move.resign()
-                    moves.append((game,tensor,searchProb))
-                    game = game.apply_move(move)
-                    resigned = True
-                    hero = rootnode.next_player
-                    break
                 else :
                     rootnode = np.random.choice(a=mctsNodes,p=tempNodes)
+                    move = rootnode.move
 
                 moves.append((game,tensor,searchProb))
-                game = game.apply_move(rootnode.move)
+                game = game.apply_move(move)
 
 
-            if resigned:
-                winner = 3 - hero
-            else: 
-                winner = game.winner()
+            winner = game.winner()
             self.save_moves(moves,winner)
 
         model_input = np.array(self.expBuff.model_input)
@@ -254,4 +244,4 @@ if __name__ == "__main__" :
     mctsSP = MCTSSelfPlay(7,5)
     input_shape = (7,5,5)
     nn = AGZ.init_random_model(input_shape)
-    mctsSP.play(nn,'./data/experience_1.hdf5',num_games=2)
+    mctsSP.play(nn,'./data/experience_1.hdf5',num_games=2500,simulations=1600)

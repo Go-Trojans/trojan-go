@@ -268,7 +268,7 @@ class GameState:
         if self.moves>(self.board.board_width *self.board.board_height * 2):
             return True
         """
-        if not self.last_move:
+        if not self.last_move or not self.previous_state:
             return False
    
         if self.last_move.is_resign:
@@ -294,6 +294,9 @@ class GameState:
                     if blank sites are completely surrounded by white then points for white increases by the group size
                     if blank sites are completely surrounded by both then points for both increases by (group size)/2
             """
+        if self.last_move.is_resign :
+            return self.next_player
+
         board = self.board.grid
         visited = set()
         m = board.shape[0]
