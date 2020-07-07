@@ -139,6 +139,10 @@ class GameState:
     # <4> last_move      : Last move played (Move.point)
     # <5> moves          : Total moves played so far
 
+    def copy(self) :
+
+        return copy.deepcopy(self)
+
     def apply_move(self, move):
         """Return the new GameState after applying the move."""
 
@@ -151,8 +155,7 @@ class GameState:
             next_board.place_stone(self.next_player, move.point)
         else:
             next_board = self.board
-        self.update_total_moves()
-        return GameState(next_board, self.next_player.opp, self, move,self.moves)
+        return GameState(next_board, self.next_player.opp, self, move,self.moves+1)
 
     @classmethod
     def new_game(cls, board_size):
@@ -192,13 +195,15 @@ class GameState:
         if not move.is_play:
             return False
 
-        grid = self.board.grid
+        test_state = self.copy()
+        grid = test_state.board.grid
         point = move.point
-        ally_members = self.ally_dfs(player,point)
+        test_state.board.place_stone(player,point)
+        ally_members = test_state.ally_dfs(player,point)
         for member in ally_members:
             neighbors = member.neighbors()
             for piece in neighbors:
-                if self.board.is_on_grid(piece) :
+                if test_state.board.is_on_grid(piece) :
                     nR,nC = piece
                     # If there is empty space around a piece, it has liberty
                     if grid[nR][nC] == 0 and move.point != piece:
@@ -227,8 +232,8 @@ class GameState:
     def legal_moves(self) :
         leg_moves = []
         board = self.board
-        for r in board.board_height :
-            for c in board.board_width :
+        for r in range(board.board_height) :
+            for c in range(board.board_width) :
                 move = Move(point=Point(row=r,col=c))
                 if self.is_valid_move(move) :
                     leg_moves.append(move)
@@ -258,19 +263,16 @@ class GameState:
             return False
         return True
 
-    def update_total_moves(self):
-        self.moves = self.moves + 1
-
     def is_over(self):
         """
         if self.moves>(self.board.board_width *self.board.board_height * 2):
             return True
         """
-        if self.last_move is None:
+        if not self.last_move or not self.previous_state:
             return False
    
         if self.last_move.is_resign:
-            return False
+            return True
     
         if self.last_move.is_pass and self.previous_state.last_move.is_pass:
             return True
@@ -292,6 +294,9 @@ class GameState:
                     if blank sites are completely surrounded by white then points for white increases by the group size
                     if blank sites are completely surrounded by both then points for both increases by (group size)/2
             """
+        if self.last_move.is_resign :
+            return self.next_player
+
         board = self.board.grid
         visited = set()
         m = board.shape[0]
@@ -366,6 +371,18 @@ class Move:
         self.is_selected = False
         self.is_resign = is_resign
 
+    def __eq__(self, other):
+
+        if isinstance(other,Move) :
+            if self.is_play==other.is_play and self.is_pass==other.is_pass and self.is_resign==other.is_resign:
+                if self.is_play==True :
+                    return self.point==other.point
+                else :
+                    return True
+            else :
+                return False
+        return False
+
     @classmethod
     def play(cls, point):
         return Move(point=point)
@@ -381,6 +398,8 @@ class Move:
     @classmethod
     def resign(cls):
         return Move(is_resign=True)
+
+
 
 """
 if __name__ == "__main__":
