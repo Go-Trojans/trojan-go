@@ -64,7 +64,7 @@ class smallNN:
         # self.board_input = Input(shape=TrojanGoPlane.shape(), name='board_input')
         self.board_input = Input(shape=(7, 5, 5), name='board_input')
 
-    def nn_model(self):
+    def nn_model(self, input_shape):
         pb = self.board_input
         for i in range(4):  # <1>
             pb = Conv2D(64, (3, 3),  # <1>
@@ -223,7 +223,8 @@ class trojanGoZero:
 # In[106]:
 
 def init_random_model(input_shape) :
-    net = trojanGoZero()
+    #net = trojanGoZero()
+    net = smallNN()
     model = net.nn_model(input_shape)
     return model
 
