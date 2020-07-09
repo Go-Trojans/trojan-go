@@ -249,7 +249,7 @@ class MCTSSelfPlay :
         print("Total time taken to play {} game(s) is {}".format(num_games, num_games_end - num_games_start))
 
         """ Save the examples generated after playing 'num_games' self-play games to file """
-        print("Going to save the examples to the file ...")
+        print("Going to save the examples here : ", self.expFile)
         with h5py.File(self.expFile, 'w') as exp_out:
             ExperienceBuffer(model_input, action_target, value_target).serialize(exp_out)
 
