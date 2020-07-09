@@ -7,9 +7,32 @@ import numpy as np
 from math import sqrt
 from operator import attrgetter
 import time
+import tensorflow as tf
 
 from algos.utils import display_board, alphaNumnericMove_from_point, LOG_FORMAT
 
+
+
+
+
+class ExperienceBuffer:
+    def __init__(self, model_input, action_target, value_target):
+        self.model_input = model_input
+        self.action_target = action_target
+        self.value_target = value_target
+
+    def serialize(self, h5file):
+        h5file.create_group('experience')
+        h5file['experience'].create_dataset('model_input', data=self.model_input)
+        h5file['experience'].create_dataset('action_target', data=self.action_target)
+        h5file['experience'].create_dataset('value_target', data=self.value_target)
+
+
+def load_experience(h5file):
+    return ExperienceBuffer(model_input=np.array(h5file['experience']['model_input']),
+                            action_target=np.array(h5file['experience']['action_target']),
+                            value_target=np.array(h5file['experience']['value_target'])
+                            )
 
 class MCTSNode:
     """ A node in the game tree. Note wins is always from the viewpoint of playerJustMoved.
@@ -77,8 +100,8 @@ class MCTSNode:
 
 class MCTSPlayer :
 
-    def __init__(self,player):
-
+    def __init__(self, model, player):
+        self.model = model
         self.player = player
 
     def select_move(self,rootnode,visited,encoder,simulations,nn,epsilon = 0.25,dcoeff = [0.03],c=4,stoch=True):
@@ -157,8 +180,8 @@ class MCTSSelfPlay :
         self.expBuff = ExperienceBuffer(model_input,action_target,value_target)
         self.expFile = expFile
         players = {
-            Player.black: MCTSPlayer(Player.black),
-            Player.white: MCTSPlayer(Player.white)
+            Player.black: MCTSPlayer(Player.black, nn),
+            Player.white: MCTSPlayer(Player.white, nn)
         }
 
         num_games_start = time.time()
@@ -174,7 +197,7 @@ class MCTSSelfPlay :
             """ Code to play single game using self-play rl and MCTS """
             while not game.is_over() :
                 move_start = time.time()
-                display_board(game.board)
+                #display_board(game.board)
                 moveNum += 1
                 if moveNum <= tempMoves :
                     tau = 1
@@ -222,23 +245,26 @@ class MCTSSelfPlay :
                     
                 moves.append((game,tensor,searchProb))
                 if move.is_play:
-                    print(game.next_player, alphaNumnericMove_from_point(move.point))
+                    #print(game.next_player, alphaNumnericMove_from_point(move.point))
+                    pass
                 if move.is_pass:
-                    print(game.next_player, "PASS")
+                    #print(game.next_player, "PASS")
+                    pass
                 if move.is_resign:
-                    print(game.next_player, "Resign")
+                    #print(game.next_player, "Resign")
+                    pass
                 game = game.apply_move(move)
                 move_end = time.time()
-                print("Move time: ", move_end - move_start)
+                #print("Move time: ", move_end - move_start)
 
 
             winner = game.winner()
-            print("*"*60)
-            display_board(game.board)
-            print("Total moves : ", moveNum)
-            print("Winner is ", game.winner(), winner)
+            #print("*"*60)
+            #display_board(game.board)
+            #print("Total moves : ", moveNum)
+            #print("Winner is ", game.winner(), winner)
             game_end = time.time()
-            print("Time taken to play 1 game : ", game_end - game_start)
+            #print("Time taken to play 1 game : ", game_end - game_start)
             self.save_moves(moves,winner)
 
         model_input = np.array(self.expBuff.model_input)
@@ -254,27 +280,83 @@ class MCTSSelfPlay :
             ExperienceBuffer(model_input, action_target, value_target).serialize(exp_out)
 
 
-class ExperienceBuffer:
-    def __init__(self, model_input, action_target, value_target):
-        self.model_input = model_input
-        self.action_target = action_target
-        self.value_target = value_target
 
-    def serialize(self, h5file):
-        h5file.create_group('experience')
-        h5file['experience'].create_dataset('model_input', data=self.model_input)
-        h5file['experience'].create_dataset('action_target', data=self.action_target)
-        h5file['experience'].create_dataset('value_target', data=self.value_target)
+        """ filename is saved experienced file inside data dir
+            source : https://www.tensorflow.org/tutorials/keras/save_and_load
+            NOTE: tf.distribute.Strategy() is not used as of now.
+        """
+        
+        def train(self, filename, learning_rate=0.01, batch_size=128, epochs=1):
+            with h5py.File(filename, 'r') as exp_input:
+                experience_buffer = load_experience(exp_input)
 
-    def load_experience(self, h5file):
-        return ExperienceBuffer(model_input=np.array(h5file['experience']['model_input']),
-                                action_target=np.array(h5file['experience']['action_target']),
-                                value_target=np.array(h5file['experience']['value_target'])
-                                )
+            num_examples = experience_buffer.model_input.shape[0]
 
-    def display_experience_buffer(self):
-        print("Model Input : ")
-        print(self.model_input)
+            model_input = experience_buffer.model_input
+            action_target = experience_buffer.action_target
+            value_target = experience_buffer.value_target
+
+            self.model.compile(
+                        SGD(lr=learning_rate),
+                        loss=['categorical_crossentropy', 'mse'])
+
+            
+
+            """ logic code for checkpointing.
+                 This is to understand how many epochs is best for training
+                 as loss may start increasing after a certain eochs.
+                 TARGET : WE NEED TO FIND THE BEST CHECKPOINTED MODELS. 
+            """
+            # Include the epoch in the file name (uses `str.format`)
+            checkpoint_path = "checkpoints/epochs_chkpts/cp-{epoch:04d}.ckpt"
+            checkpoint_dir = os.path.dirname(checkpoint_path)
+
+            # Create a callback that saves the model's weights every 5 epochs.
+            # last checkpoint will be equivalent to the entire model saving after training gets over.
+            cp_callback = tf.keras.callbacks.ModelCheckpoint(
+                                                 filepath=checkpoint_path, 
+                                                 verbose=1, 
+                                                 save_weights_only=True,
+                                                 period=5)
+            
+            # Save the weights using the `checkpoint_path` format
+            model.save_weights(checkpoint_path.format(epoch=0))
+
+ 
+            # Train the model with the callback
+            self.model.fit(
+                        model_input, [action_target, value_target],
+                        epochs=epochs,
+                        batch_size=batch_size,
+                        callbacks=[cp_callback])  # Pass callback to training
+            
+            # This may generate warnings related to saving the state of the optimizer.
+            # These warnings (and similar warnings throughout this notebook)
+            # are in place to discourage outdated usage, and can be ignored.
+
+            #latest = tf.train.latest_checkpoint(checkpoint_dir)
+            
+            # Loads the weights (syntx)
+            # model.load_weights(checkpoint_path)
+
+
+            
+
+            """ After training, save the entire model in 'checkpoints/iteration_Savedmodel/' dir """
+            my_model = filename.split("/")[-1].split(".")[0]
+            model_name = 'checkpoints/iteration_Savedmodel/' + my_model + '_model'
+            model.save(model_name)
+
+            # Save the entire model to a HDF5 file.
+            # The '.h5' extension indicates that the model should be saved to HDF5.
+            model_name = model_name + ".h5"
+            model.save(model_name) 
+            
+            #Reload a fresh Keras model from the saved model.
+            #Recreate the exact same model, including its weights and the optimizer
+            #new_model = tf.keras.models.load_model(model_name)
+
+
 """
 if __name__ == "__main__" :
 

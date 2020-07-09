@@ -10,7 +10,7 @@ Simulate "num_games" games using self-play rl and MCTS
 """
 def main(i):
     parser = argparse.ArgumentParser()
-    parser.add_argument('--num-games', '-n', type=int, default=2500)
+    parser.add_argument('--num-games', '-n', type=int, default=2)
 
     args = parser.parse_args()
     
@@ -18,7 +18,7 @@ def main(i):
     mctsSP = MCTSSelfPlay(7,5)
     input_shape = (7,5,5)
     nn = AGZ.init_random_model(input_shape)
-    mctsSP.play(nn,filename,num_games=args.num_games,simulations=400)
+    mctsSP.play(nn,filename,num_games=args.num_games,simulations=10)
     #mctsSP.play(nn,filename,num_games=10,simulations=400)
     
 
