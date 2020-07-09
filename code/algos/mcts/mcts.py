@@ -162,6 +162,7 @@ class MCTSSelfPlay :
         }
 
         num_games_start = time.time()
+        """ Play num_games games using self-play rl and MCTS """
         for i in range(num_games) :
 
             game_start = time.time()
@@ -170,6 +171,7 @@ class MCTSSelfPlay :
             moveNum = 0
             visited = set()
             rootnode = None
+            """ Code to play single game using self-play rl and MCTS """
             while not game.is_over() :
                 move_start = time.time()
                 display_board(game.board)
@@ -180,6 +182,7 @@ class MCTSSelfPlay :
                     tau = float('inf')
                 if not rootnode:
                     rootnode  = MCTSNode(state = game)
+                """ logic code to select a move using MCTS simulations """    
                 mctsNodes =  players[game.next_player].select_move(rootnode,visited ,self.encoder,simulations,nn,c=c)
                 tensor = self.encoder.encode(game)
                 _, rootV = nn.predict(np.expand_dims(tensor, axis=0))
@@ -245,7 +248,7 @@ class MCTSSelfPlay :
         num_games_end = time.time()
         print("Total time taken to play {} game(s) is {}".format(num_games, num_games_end - num_games_start))
 
-        
+        """ Save the examples generated after playing 'num_games' self-play games to file """
         print("Going to save the examples to the file ...")
         with h5py.File(self.expFile, 'w') as exp_out:
             ExperienceBuffer(model_input, action_target, value_target).serialize(exp_out)
