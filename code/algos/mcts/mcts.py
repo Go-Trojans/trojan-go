@@ -6,6 +6,10 @@ import h5py
 import numpy as np
 from math import sqrt
 from operator import attrgetter
+import time
+
+from algos.utils import display_board, alphaNumnericMove_from_point, LOG_FORMAT
+
 
 class MCTSNode:
     """ A node in the game tree. Note wins is always from the viewpoint of playerJustMoved.
@@ -157,15 +161,18 @@ class MCTSSelfPlay :
             Player.white: MCTSPlayer(Player.white)
         }
 
+        num_games_start = time.time()
         for i in range(num_games) :
 
-
+            game_start = time.time()
             game = GameState.new_game(self.board_size)
             moves = []
             moveNum = 0
             visited = set()
             rootnode = None
             while not game.is_over() :
+                move_start = time.time()
+                display_board(game.board)
                 moveNum += 1
                 if moveNum <= tempMoves :
                     tau = 1
@@ -196,23 +203,50 @@ class MCTSSelfPlay :
                 probSum = sum(tempNodes)
                 tempNodes = np.divide(tempNodes,probSum)
                 searchProb = np.divide(searchProb,probSum)
+                
+                # Disabling self-resign feature as it looks like it is not working properly.
+                """
                 if rootV.item() < vResign and max(childVals) < vResign :
                     move = Move.resign()
+                    print("It's a Resign !!!")
                 else :
                     rootnode = np.random.choice(a=mctsNodes,p=tempNodes)
                     move = rootnode.move
+                """
 
+                rootnode = np.random.choice(a=mctsNodes,p=tempNodes)
+                move = rootnode.move
+                    
                 moves.append((game,tensor,searchProb))
+                if move.is_play:
+                    print(game.next_player, alphaNumnericMove_from_point(move.point))
+                if move.is_pass:
+                    print(game.next_player, "PASS")
+                if move.is_resign:
+                    print(game.next_player, "Resign")
                 game = game.apply_move(move)
+                move_end = time.time()
+                print("Move time: ", move_end - move_start)
 
 
             winner = game.winner()
+            print("*"*60)
+            display_board(game.board)
+            print("Total moves : ", moveNum)
+            print("Winner is ", game.winner(), winner)
+            game_end = time.time()
+            print("Time taken to play 1 game : ", game_end - game_start)
             self.save_moves(moves,winner)
 
         model_input = np.array(self.expBuff.model_input)
         action_target = np.array(self.expBuff.action_target)
         value_target = np.array(self.expBuff.value_target)
 
+        num_games_end = time.time()
+        print("Total time taken to play {} game(s) is {}".format(num_games, num_games_end - num_games_start))
+
+        
+        print("Going to save the examples to the file ...")
         with h5py.File(self.expFile, 'w') as exp_out:
             ExperienceBuffer(model_input, action_target, value_target).serialize(exp_out)
 
@@ -238,10 +272,11 @@ class ExperienceBuffer:
     def display_experience_buffer(self):
         print("Model Input : ")
         print(self.model_input)
-
+"""
 if __name__ == "__main__" :
 
     mctsSP = MCTSSelfPlay(7,5)
     input_shape = (7,5,5)
     nn = AGZ.init_random_model(input_shape)
     mctsSP.play(nn,'./data/experience_1.hdf5',num_games=2500,simulations=1600)
+"""    
