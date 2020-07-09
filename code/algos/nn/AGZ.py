@@ -50,11 +50,15 @@ from keras.layers import Conv2D, Dense, Flatten, Input
 from keras.models import Model
 import numpy as np
 import tensorflow as tf
-config = tf.ConfigProto()
-config.gpu_options.allow_growth = True
-sess = tf.Session(config=config)
+#config = tf.ConfigProto()
+#config = tf.compat.v1.ConfigProto()
+#config.gpu_options.allow_growth = True
+#sess = tf.Session(config=config)
 
 
+"""
+This is 4 layers ResNet network.
+"""
 class smallNN:
     def __init__(self):
         # self.board_input = Input(shape=TrojanGoPlane.shape(), name='board_input')
@@ -72,7 +76,8 @@ class smallNN:
             Conv2D(2, (1, 1),  # <2>
                    data_format='channels_first',  # <2>
                    activation='relu')(pb)  # <2>
-        policy_flat = Flatten()(policy_conv)  # <2>
+        policy_conv_bn = BatchNormalization()(policy_conv)
+        policy_flat = Flatten()(policy_conv_bn)  # <2>
         policy_output = \
             Dense(26,
                   activation='softmax')(policy_flat)  # <2>
@@ -81,7 +86,8 @@ class smallNN:
             Conv2D(1, (1, 1),  # <3>
                    data_format='channels_first',  # <3>
                    activation='relu')(pb)  # <3>
-        value_flat = Flatten()(value_conv)  # <3>
+        value_conv_bn = BatchNormalization()(value_conv)
+        value_flat = Flatten()(value_conv_bn)  # <3>
         value_hidden = Dense(256, activation='relu')(value_flat)  # <3>
         value_output = Dense(1, activation='tanh')(value_hidden)  # <3>
 
@@ -92,6 +98,50 @@ class smallNN:
         return model
 
 
+"""
+This is 6 layers ResNet network.
+"""
+class mediumNN:
+    def __init__(self):
+        # self.board_input = Input(shape=TrojanGoPlane.shape(), name='board_input')
+        self.board_input = Input(shape=(7, 5, 5), name='board_input')
+
+    def nn_model(self):
+        pb = self.board_input
+        for i in range(6):  # <1>
+            pb = Conv2D(64, (3, 3),  # <1>
+                        padding='same',  # <1>
+                        data_format='channels_first',  # <1>
+                        activation='relu')(pb)  # <1>
+
+        policy_conv = \
+            Conv2D(2, (1, 1),  # <2>
+                   data_format='channels_first',  # <2>
+                   activation='relu')(pb)  # <2>
+        policy_conv_bn = BatchNormalization()(policy_conv)
+        policy_flat = Flatten()(policy_conv_bn)  # <2>
+        policy_output = \
+            Dense(26,
+                  activation='softmax')(policy_flat)  # <2>
+
+        value_conv = \
+            Conv2D(1, (1, 1),  # <3>
+                   data_format='channels_first',  # <3>
+                   activation='relu')(pb)  # <3>
+        value_conv_bn = BatchNormalization()(value_conv)
+        value_flat = Flatten()(value_conv_bn)  # <3>
+        value_hidden = Dense(256, activation='relu')(value_flat)  # <3>
+        value_output = Dense(1, activation='tanh')(value_hidden)  # <3>
+
+        model = Model(
+            inputs=[self.board_input],
+            outputs=[policy_output, value_output])
+
+        return model
+
+"""
+This is 19 layers (num_resnet_block) ResNet network.
+"""
 class trojanGoZero:
     def __init__(self, num_resnet_block=19):
         # self.board_input = Input(shape=TrojanGoPlane.shape(), name='board_input')
