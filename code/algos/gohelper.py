@@ -52,6 +52,9 @@ class Point(namedtuple('Point', 'row col')):
             return self.row == other.row and self.col == other.col
         return False
 
+    def __hash__(self):
+        return hash(tuple(self))
+
 
 def is_point_an_eye(board, point, player):
     """
