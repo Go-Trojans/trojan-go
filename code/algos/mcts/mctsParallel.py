@@ -125,7 +125,7 @@ class MCTSPlayer :
         Return the child MCTS nodes of the root node/gameState for exploratory play, or the move with the most visits for competitive play.
         """
         moveStart = time.time()
-        executor = concurrent.futures.ThreadPoolExecutor(numProc)
+        executor = concurrent.futures.ProcessPoolExecutor(numProc)
         simEach = int(simulations/numProc)
         futures = [executor.submit(self.run_simulation, rootnode, visited,encoder,simEach)
                    for i in range(numProc)]
