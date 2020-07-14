@@ -1,5 +1,38 @@
 TrojanGo : Go Game Using AlphaZero
 
+
+Requirements:
+      1. Software : Keras with tensorflow backend, Tensorflow 2.0 and higher (tested on tensorflow 2.1.1), Python 3.6
+      
+                    To support multiprocessing with keras working in child processes, make sure child processes have start method as "spawn"
+                    Read section "Contexts and start methods" for more details. Link: "https://docs.python.org/3/library/multiprocessing.html"
+                    import multiprocessing
+                    multiprocessing.set_start_method('spawn', force=True)
+                    
+      2. Hardware : Needed for Distributed Neural Network Training (tf.distribute.Strategy for parallel deep neural netwrok training)
+                    Tested on AWS Machine Instance (AMI) p3.8xlarge instance type. 
+                    Specs can be found here: https://aws.amazon.com/ec2/instance-types/p3/
+                    In short, it has 4 GPUs (Tesla V100-SXM2)
+
+
+Pull the code from hithub:
+            git clone https://github.com/Go-Trojans/trojan-go.git
+            
+How to run:
+            $cd trojan-go/code 
+            $python3 selfplay_train_eval_sync.py
+            
+            Self-play training pipeline. 
+            TrojanGo's self play training pipeline consists of three main components, all executed asynchronously in parallel.
+                  - Neural network parameters θi are continually optimized from recent self play data; 
+                  - TrojanGo players αθi are continually evaluated; and 
+                  - the best performing player so far, αθ*, is used to generate new self play data.
+              
+                    
+                    
+
+
+
 Where to place your code:
 
 Driver code              : trojan-go/code/
