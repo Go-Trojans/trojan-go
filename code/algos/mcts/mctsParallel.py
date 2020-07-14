@@ -9,6 +9,8 @@ from operator import attrgetter
 import concurrent
 import copy
 import time
+from threading import Lock,Condition
+import queue
 
 class MCTSNode:
     """ A node in the game tree. Note wins is always from the viewpoint of playerJustMoved.
@@ -83,52 +85,92 @@ class MCTSPlayer :
 
         self.player = player
         self.nn = nn
+        self.nnQueue = queue.Queue(16)
+        self.evalQueue = queue.Queue(16)
 
-    def run_simulation(self,rootnode,visited,encoder,simulations,epsilon = 0.25,dcoeff = [0.03],c=4,vLoss=1,stoch=True):
+    def check_queue(self):
+        return self.nnQueue.qsize()==2
 
-        for i in range(simulations) :
-            currNode = rootnode
-            # if i>0 :
-            for child in currNode.childNodes:
-                # Dirichlet noise
-                child.p = (1 - epsilon) * child.p + epsilon * np.random.dirichlet(alpha=dcoeff)
-            # Select
-            while currNode in visited:  # node is fully expanded and non-terminal
-                currNode = currNode.SelectChild(c)
-                #currNode.visits += vLoss
-                #currNode.wins -= vLoss
+    def nn_evaluation(self,evalCV,nnCV,evalLock) :
 
-            # Expand
-            if currNode not in visited:  # if we can expand (i.e. state/node is non-terminal)
-                #currNode.visits += vLoss
-                #currNode.wins -= vLoss
-                visited.add(currNode)
-                hero = currNode.state.next_player
-                tensor = encoder.encode(currNode.state)
-                tensor = np.expand_dims(tensor, axis=0)
-                p, v = self.nn.predict(tensor)
-                currNode.expand(p.flatten())  # add children
-            # Backpropagate
-            while currNode:  # backpropagate from the expanded node and work back to the root node
-                currNode.update(v if hero == currNode.state.next_player else -v,
-                                vLoss)  # state is terminal. Update node with result from POV of node.playerJustMoved
-                currNode = currNode.parentNode
+
+        nnCV.acquire()
+        nnCV.wait_for(lambda: self.check_queue())
+        batch = []
+        for i in range(2) :
+            batch.append(self.nnQueue.get())
+        nnCV.release()
+        batch = np.vstack(batch)
+        pred = self.nn.predict(batch)
+        evalCV.acquire()
+        self.evalQueue.put(pred)
+        evalCV.release()
+        evalCV.notify_all()
+
+
+
+    def run_simulation(self,rootnode,visited,encoder,simulations,visLock,queueLock,evalCV,nnCV,evalLock,epsilon = 0.25,dcoeff = [0.03],c=4,vLoss=1,stoch=True):
+
+        currNode = rootnode
+        # if i>0 :
+        for child in currNode.childNodes:
+            # Dirichlet noise
+            child.p = (1 - epsilon) * child.p + epsilon * np.random.dirichlet(alpha=dcoeff)
+        # Select
+        while currNode in visited:  # node is fully expanded and non-terminal
+            currNode = currNode.SelectChild(c)
+            currNode.visits += vLoss
+            currNode.wins -= vLoss
+
+        # Expand
+        visLock.acquire()
+        if currNode not in visited:  # if we can expand (i.e. state/node is non-terminal)
+            currNode.visits += vLoss
+            currNode.wins -= vLoss
+            visited.add(currNode)
+            visLock.release()
+            hero = currNode.state.next_player
+            tensor = encoder.encode(currNode.state)
+            tensor = np.expand_dims(tensor, axis=0)
+            queueLock.acquire()
+            self.nnQueue.put(tensor)
+            queueLock.release()
+            evalCV.acquire()
+            evalCV.wait()
+            p,v = self.evalQueue.get()
+            evalCV.release()
+
+            #p, v = self.nn.predict(tensor)
+            currNode.expand(p.flatten())  # add children
+        else :
+            visLock.release()
+        # Backpropagate
+        while currNode:  # backpropagate from the expanded node and work back to the root node
+            currNode.update(v if hero == currNode.state.next_player else -v,
+                            vLoss)  # state is terminal. Update node with result from POV of node.playerJustMoved
+            currNode = currNode.parentNode
         if stoch:
             return rootnode.childNodes
         else:
             return max(rootnode.childNodes, key=attrgetter('visits')).move
 
-    def select_move(self,rootnode,visited,encoder,simulations,numProc=2,epsilon = 0.25,dcoeff = [0.03],c=4,vLoss=1,stoch=True):
+    def select_move(self,rootnode,visited,encoder,simulations,numProc=3,epsilon = 0.25,dcoeff = [0.03],c=4,vLoss=1,stoch=True):
         """
         Conduct a tree search for simulations iterations starting from gameState.
         Assumes 2 alternating players(player 1 starts), with game results in the range[-1, 1].
         Return the child MCTS nodes of the root node/gameState for exploratory play, or the move with the most visits for competitive play.
         """
         moveStart = time.time()
+        visLock = Lock()
+        queueLock = Lock()
+        evalLock = Lock()
+        evalCV = Condition(Lock())
+        nnCV = Condition(Lock())
         executor = concurrent.futures.ThreadPoolExecutor(numProc)
         simEach = int(simulations/numProc)
-        futures = [executor.submit(self.run_simulation, rootnode, visited,encoder,simEach)
-                   for i in range(numProc)]
+        futures = [executor.submit(self.run_simulation, rootnode, copy.deepcopy(visited),encoder,simEach,visLock,queueLock,evalCV,nnCV,evalLock)
+                   for i in range(numProc-1)]
+        futures.append(executor.submit(self.nn_evaluation,evalCV,nnCV))
         done,_ = concurrent.futures.wait(futures, return_when='ALL_COMPLETED')
         results = [future.result() for future in done]
         numNodes = len(results[0])
