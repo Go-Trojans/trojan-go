@@ -7,6 +7,9 @@ import numpy as np
 from math import sqrt
 from operator import attrgetter
 import concurrent
+from multiprocessing import Pool
+import multiprocessing
+multiprocessing.set_start_method('spawn',force=True)
 import copy
 import time
 
@@ -83,50 +86,37 @@ class MCTSPlayer :
         self.player = player
         self.nn = nn
 
-    def nn_evaluation(self,evalCV,nnCV,evalLock) :
+    def run_simulation(self,rootnode,visited,encoder,simulations,epsilon = 0.25,dcoeff = [0.03],c=4,vLoss=1,stoch=True):
+        import tensorflow as tf
+        import keras
 
+        for i in range(simulations) :
+            currNode = rootnode
+            # if i>0 :
+            for child in currNode.childNodes:
+                # Dirichlet noise
+                child.p = (1 - epsilon) * child.p + epsilon * np.random.dirichlet(alpha=dcoeff)
+            # Select
+            while currNode in visited:  # node is fully expanded and non-terminal
+                currNode = currNode.SelectChild(c)
+                currNode.visits += vLoss
+                currNode.wins -= vLoss
 
-        nnCV.acquire()
-        nnCV.wait_for(lambda: self.check_queue())
-        batch = []
-        for i in range(2) :
-            batch.append(self.nnQueue.get())
-        nnCV.release()
-        batch = np.vstack(batch)
-        pred = self.nn.predict(batch)
-        evalCV.acquire()
-        self.evalQueue.put(pred)
-        evalCV.release()
-        evalCV.notify_all()
-
-    def run_simulation(self,rootnode,visited,encoder,epsilon = 0.25,dcoeff = [0.03],c=4,vLoss=1,stoch=True):
-
-        currNode = rootnode
-        # if i>0 :
-        for child in currNode.childNodes:
-            # Dirichlet noise
-            child.p = (1 - epsilon) * child.p + epsilon * np.random.dirichlet(alpha=dcoeff)
-        # Select
-        while currNode in visited:  # node is fully expanded and non-terminal
-            currNode = currNode.SelectChild(c)
-            currNode.visits += vLoss
-            currNode.wins -= vLoss
-
-        # Expand
-        if currNode not in visited:  # if we can expand (i.e. state/node is non-terminal)
-            currNode.visits += vLoss
-            currNode.wins -= vLoss
-            visited.add(currNode)
-            hero = currNode.state.next_player
-            tensor = encoder.encode(currNode.state)
-            tensor = np.expand_dims(tensor, axis=0)
-            p, v = self.nn.predict(tensor)
-            currNode.expand(p.flatten())  # add children
-        # Backpropagate
-        while currNode:  # backpropagate from the expanded node and work back to the root node
-            currNode.update(v if hero == currNode.state.next_player else -v,
-                            vLoss)  # state is terminal. Update node with result from POV of node.playerJustMoved
-            currNode = currNode.parentNode
+            # Expand
+            if currNode not in visited:  # if we can expand (i.e. state/node is non-terminal)
+                currNode.visits += vLoss
+                currNode.wins -= vLoss
+                visited.add(currNode)
+                hero = currNode.state.next_player
+                tensor = encoder.encode(currNode.state)
+                tensor = np.expand_dims(tensor, axis=0)
+                p, v = self.nn.predict(tensor)
+                currNode.expand(p.flatten())  # add children
+            # Backpropagate
+            while currNode:  # backpropagate from the expanded node and work back to the root node
+                currNode.update(v if hero == currNode.state.next_player else -v,
+                                vLoss)  # state is terminal. Update node with result from POV of node.playerJustMoved
+                currNode = currNode.parentNode
         if stoch:
             return rootnode.childNodes
         else:
@@ -139,8 +129,9 @@ class MCTSPlayer :
         Return the child MCTS nodes of the root node/gameState for exploratory play, or the move with the most visits for competitive play.
         """
         executor = concurrent.futures.ProcessPoolExecutor(2)
-        futures = [executor.submit(self.run_simulation, rootnode, visited, encoder, simulations)
-                   for i in range(simulations)]
+        simEach = int(simulations/numProc)
+        futures = [executor.submit(self.run_simulation, rootnode, visited, encoder, simEach)
+                   for i in range(numProc)]
         done,_ = concurrent.futures.wait(futures, return_when='ALL_COMPLETED')
         results = [future.result() for future in done]
         numNodes = len(results[0])
