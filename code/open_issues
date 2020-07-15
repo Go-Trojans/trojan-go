@@ -1,0 +1,21 @@
+BLOCKER
+	1. Puranjay : commit the code for Tromp Troy winner function as well as winner function as per Chinese rule.
+	2. Raveena and Puranjay: Overall Tau functionality as we discussed and do some UT to see it is working as expected. 
+	   (Check the current code and then decide)
+	3. 
+
+
+IMP
+	1. Dirichlet Noise is used during self-play only or it is used during Actual Game play as well.
+	   (As of now it is getting used in self-play as well as actual game).
+	2. Using "TAU" during the Actual Game Play or during Evaluation. (As of now it doesn't have this support)
+	3. GTP (Haoming)
+	4. Commit the code for EarlyStopping
+	5. Commit the code for tf.distribute.Strategy while training the model.
+	6. As of now during MCTS and Evaluation, we are using CPU only for nn.prediction. Can we use GPU to do the same.
+
+Optimization
+	1. Self-play and MCTS parallelisation using virtual loss.
+	2. Trying to use TrojanGo Pipeline.
+	3.
+	
