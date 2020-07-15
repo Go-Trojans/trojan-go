@@ -50,19 +50,42 @@ from keras.layers import Conv2D, Dense, Flatten, Input
 from keras.models import Model
 import numpy as np
 import tensorflow as tf
-#config = tf.ConfigProto()
-#config = tf.compat.v1.ConfigProto()
-#config.gpu_options.allow_growth = True
-#sess = tf.Session(config=config)
+
+from algos.godomain import Move
+from algos.gohelper import Point, Player
+
+""" return True if tensorflow version is equal or higher than 2.0, else False """
+def tf_version_comp(tf_v):
+    tf_v = tf_v.split(".")
+    if int(tf_v[0]) == 2 and int(tf_v[1]) >=0:
+        return True
+    return False
+    
+"""
+We faced a problem when we have a GPU computer that shared with multiple users.
+Most users run their GPU process without the “allow_growth” option in their Tensorflow or Keras environments.
+It causes the memory of a graphics card will be fully allocated to that process.
+In reality, it is might need only the fraction of memory for operating.
+It prevents any new GPU process which consumes a GPU memory to be run on the same machine.
+"""        
+if tf_version_comp(tf.__version__):
+    config = tf.compat.v1.ConfigProto() 
+    config.gpu_options.allow_growth = True
+    session = tf.compat.v1.Session(config=config)
+else:
+    config = tf.ConfigProto() 
+    config.gpu_options.allow_growth = True
+    session = tf.Session(config=config)
 
 
 """
 This is 4 layers ResNet network.
 """
 class smallNN:
-    def __init__(self):
+    def __init__(self, model=None):
         # self.board_input = Input(shape=TrojanGoPlane.shape(), name='board_input')
         self.board_input = Input(shape=(7, 5, 5), name='board_input')
+        self.model = model
 
     def nn_model(self, input_shape):
         pb = self.board_input
@@ -97,6 +120,39 @@ class smallNN:
 
         return model
 
+    def select_move(self, encoder, gameState):
+        tensor = encoder.encode(gameState)
+        tensor = np.expand_dims(tensor,axis=0)
+        p,v = self.model.predict(tensor) # self.mdel should be fine I guess.
+
+        """ argmax is not necessarily the best move each time as
+            it would have played already and so it could be invalid move.
+            So, arrange the prediction(p) in decreasing order of
+            probability value and select the best move.
+        """
+        sorted_indexes = np.argsort(p.tolist()[0])[::-1]
+        for index in sorted_indexes:
+            rows = int(index / encoder.board_height)
+            cols = int(index % encoder.board_width)
+
+            # Move is pass , i.e. index = 25
+            if (rows == encoder.board_height and cols == 0):
+                move = Move.pass_turn()
+                #print(gameState.next_player, move.point)
+                return move
+            else:
+                move = Move.play(Point(row=rows, col=cols))
+                #print(gameState.next_player, move.point)
+                #check the move is valid or not
+                if gameState.is_valid_move(move):
+                    return move
+                
+        #code should not reach here
+        print("[ERROR] NN SELECT_MOVE RETURNING None")        
+        return None
+
+        
+        
 
 """
 This is 6 layers ResNet network.

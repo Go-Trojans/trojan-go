@@ -20,6 +20,10 @@ class HumanBot():
         print("Move played by human : ", r,c)
         point = Point(row=r, col=c)
         """
+        if human_move == "PASS":
+            move = Move.pass_turn()
+            return move
+
         point = point_from_alphaNumnericMove(human_move)
         move = Move.play(point)
         return move

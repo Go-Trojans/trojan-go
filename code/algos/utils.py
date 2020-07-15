@@ -1,5 +1,6 @@
 import numpy as np
 from algos import gohelper
+#import keras
 
 COLUMNS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 PLAYER_TO_CHAR = {
@@ -39,3 +40,90 @@ def alphaNumnericMove_from_point(point):
         COLUMNS[point.col],
         point.row
     )
+
+
+
+import tempfile
+import os
+
+import h5py
+import keras
+from keras.models import load_model, save_model
+
+""" file_json_h5 format (.json, .h5) """
+def save_model_to_disk(model, file_json_h5):
+    # serialize model to JSON
+    model_json = model.to_json()
+    with open(file_json_h5[0], "w") as json_file:
+        json_file.write(model_json)
+    # serialize weights to HDF5
+    model.save_weights(file_json_h5[1])
+    print("Saved model to disk")
+
+""" agent_filename is in (.json , .h5) format """
+def load_model_from_disk(agent_filename):
+    from keras.models import model_from_json
+
+    agent_json_filepath = agent_filename[0]
+    agent_h5_filepath = agent_filename[1]
+    
+    # load json and create model
+    json_file = open(agent_json_filepath, 'r')
+    loaded_model_json = json_file.read()
+    json_file.close()
+    loaded_model = model_from_json(loaded_model_json)
+    # load weights into new model
+    loaded_model.load_weights(agent_h5_filepath)
+    return loaded_model
+
+
+
+""" return True if tensorflow version is equal or higher than 2.0, else False """
+def tf_version_comp(tf_v):
+    tf_v = tf_v.split(".")
+    if int(tf_v[0]) == 2 and int(tf_v[1]) >=0:
+        return True
+    return False
+    
+
+
+""" AGZ.py or other nn files may also have some setting on gpu,
+     so check that too.
+"""
+def set_gpu_memory_target(frac):
+    """Configure Tensorflow to use a fraction of available GPU memory.
+
+    Use this for evaluating models in parallel. By default, Tensorflow
+    will try to map all available GPU memory in advance. You can
+    configure to use just a fraction so that multiple processes can run
+    in parallel. For example, if you want to use 2 works, set the
+    memory fraction to 0.5.
+
+    If you are using Python multiprocessing, you must call this function
+    from the *worker* process (not from the parent).
+
+    This function does nothing if Keras is using a backend other than
+    Tensorflow.
+    """
+    import keras
+    if keras.backend.backend() != 'tensorflow':
+        print("Return without doing anything")
+        return
+    # Do the import here, not at the top, in case Tensorflow is not
+    # installed at all.
+    import tensorflow as tf
+    #from keras.backend.tensorflow_backend import set_session
+    if tf_version_comp(tf.__version__):
+        config = tf.compat.v1.ConfigProto()
+        config.gpu_options.per_process_gpu_memory_fraction = frac
+        #set_session(tf.compat.v1.Session(config=config))
+        session = tf.compat.v1.Session(config=config)
+        #tf.compat.v1.keras.backend.set_session(session)
+
+    else:
+        config = tf.ConfigProto()
+        config.gpu_options.per_process_gpu_memory_fraction = frac
+        #set_session(tf.Session(config=config))
+        session = tf.Session(config=config)
+
+
