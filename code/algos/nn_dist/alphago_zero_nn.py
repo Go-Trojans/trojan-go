@@ -122,8 +122,10 @@ if __name__ == '__main__':
     value_target = np.random.rand(10000)
     print(value_target.shape)
 
+    callbacks = [tf.keras.callbacks.EarlyStopping(monitor='loss', min_delta=0, patience=2, restore_best_weights=True, mode='auto')]
+
     import time
     start = time.time()
-    model.fit(x=rand_input, y=[action_target, value_target], batch_size=64, epochs=1)
+    model.fit(x=rand_input, y=[action_target, value_target], batch_size=64, epochs=1, callbacks=callbacks)
     end = time.time()
     print(end-start)
