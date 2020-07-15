@@ -1,5 +1,5 @@
 BLOCKER
-	1. Puranjay : commit the code for Tromp Troy winner function as well as winner function as per Chinese rule.
+	1. Puranjay : commit the code for Tromp Troy winner function as well as winner function as per Chinese rule. [Closed]
 	2. Raveena and Puranjay: Overall Tau functionality as we discussed and do some UT to see it is working as expected. 
 	   (Check the current code and then decide)
 	3. 
@@ -18,4 +18,8 @@ Optimization
 	1. Self-play and MCTS parallelisation using virtual loss.
 	2. Trying to use TrojanGo Pipeline.
 	3.
+	
+
+Run
+	1. Puranjay to run on his server and update the result.
 	
