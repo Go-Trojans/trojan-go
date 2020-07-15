@@ -9,7 +9,8 @@ from operator import attrgetter
 import concurrent
 import copy
 import time
-
+from threading import Lock,Condition
+import queue
 
 class MCTSNode:
     """ A node in the game tree. Note wins is always from the viewpoint of playerJustMoved.
@@ -61,8 +62,10 @@ class MCTSNode:
             Update this node - one additional visit and v additional wins.
             v is given from the neural network and must be from the viewpoint of playerJustmoved.
         """
-        self.visits += -vLoss + 1
-        self.wins += vLoss + v
+        #self.visits += -vLoss + 1
+        #self.wins += vLoss + v
+        self.visits += 1
+        self.wins += v
         self.q = self.wins / self.visits
 
     def PUCT(self,c=4):
@@ -82,6 +85,11 @@ class MCTSPlayer :
 
         self.player = player
         self.nn = nn
+        self.nnQueue = queue.Queue(16)
+        self.evalQueue = queue.Queue(16)
+
+    def check_queue(self):
+        return self.nnQueue.qsize()==2
 
     def nn_evaluation(self,evalCV,nnCV,evalLock) :
 
@@ -99,7 +107,9 @@ class MCTSPlayer :
         evalCV.release()
         evalCV.notify_all()
 
-    def run_simulation(self,rootnode,visited,encoder,epsilon = 0.25,dcoeff = [0.03],c=4,vLoss=1,stoch=True):
+
+
+    def run_simulation(self,rootnode,visited,encoder,simulations,visLock,queueLock,evalCV,nnCV,evalLock,epsilon = 0.25,dcoeff = [0.03],c=4,vLoss=1,stoch=True):
 
         currNode = rootnode
         # if i>0 :
@@ -113,15 +123,27 @@ class MCTSPlayer :
             currNode.wins -= vLoss
 
         # Expand
+        visLock.acquire()
         if currNode not in visited:  # if we can expand (i.e. state/node is non-terminal)
             currNode.visits += vLoss
             currNode.wins -= vLoss
             visited.add(currNode)
+            visLock.release()
             hero = currNode.state.next_player
             tensor = encoder.encode(currNode.state)
             tensor = np.expand_dims(tensor, axis=0)
-            p, v = self.nn.predict(tensor)
+            queueLock.acquire()
+            self.nnQueue.put(tensor)
+            queueLock.release()
+            evalCV.acquire()
+            evalCV.wait()
+            p,v = self.evalQueue.get()
+            evalCV.release()
+
+            #p, v = self.nn.predict(tensor)
             currNode.expand(p.flatten())  # add children
+        else :
+            visLock.release()
         # Backpropagate
         while currNode:  # backpropagate from the expanded node and work back to the root node
             currNode.update(v if hero == currNode.state.next_player else -v,
@@ -138,19 +160,30 @@ class MCTSPlayer :
         Assumes 2 alternating players(player 1 starts), with game results in the range[-1, 1].
         Return the child MCTS nodes of the root node/gameState for exploratory play, or the move with the most visits for competitive play.
         """
-        executor = concurrent.futures.ProcessPoolExecutor(2)
-        futures = [executor.submit(self.run_simulation, rootnode, visited, encoder, simulations)
-                   for i in range(simulations)]
+        moveStart = time.time()
+        visLock = Lock()
+        queueLock = Lock()
+        evalLock = Lock()
+        evalCV = Condition(Lock())
+        nnCV = Condition(Lock())
+        executor = concurrent.futures.ThreadPoolExecutor(numProc)
+        simEach = int(simulations/numProc)
+        futures = [executor.submit(self.run_simulation, rootnode, copy.deepcopy(visited),encoder,simEach,visLock,queueLock,evalCV,nnCV,evalLock)
+                   for i in range(numProc-1)]
+        futures.append(executor.submit(self.nn_evaluation,evalCV,nnCV))
         done,_ = concurrent.futures.wait(futures, return_when='ALL_COMPLETED')
         results = [future.result() for future in done]
         numNodes = len(results[0])
         aggNodes = []
         for i in range(numNodes) :
             aggNode = copy.deepcopy(results[0][i])
-            aggNode.visits = sum([result[i].visits for result in results])
-            aggNode.wins = sum([result[i].wins for result in results])
-            aggNode.q = sum([result[i].q for result in results])
+            for r in range(1,len(results)) :
+                aggNode.visits += results[r][i].visits
+                aggNode.wins += results[r][i].wins
+                aggNode.q += results[r][i].q
             aggNodes.append(aggNode)
+        moveEnd = time.time()
+        print(moveEnd-moveStart)
         return aggNodes
 
 
@@ -209,6 +242,7 @@ class MCTSSelfPlay :
             rootnode = None
             while not game.is_over() :
                 moveNum += 1
+                print(moveNum)
                 if moveNum <= tempMoves :
                     tau = 1
                 else :

@@ -111,7 +111,6 @@ class MCTSPlayer:
         """
         # rootnode = MCTSNode(state = gameState)
         # visited = set()
-        moveStart = time.time()
         for i in range(simulations):
             currNode = rootnode
             if i > 0:
@@ -135,8 +134,6 @@ class MCTSPlayer:
                 currNode.update(
                     v if hero == currNode.state.next_player else -v)  # state is terminal. Update node with result from POV of node.playerJustMoved
                 currNode = currNode.parentNode
-        moveEnd = time.time()
-        print(moveEnd-moveStart)
         if stoch:
             return rootnode.childNodes
         else:
