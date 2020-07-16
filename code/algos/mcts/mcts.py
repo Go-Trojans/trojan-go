@@ -218,7 +218,7 @@ class MCTSSelfPlay :
     def play(self, agent1, agent2,
              expFile, num_games=2500,
              simulations=400,
-             c=4,vResign=0,tempMoves=10) :
+             c=4,vResign=0,tempMoves=4) :
         
         """
         :param num_game:
@@ -413,7 +413,7 @@ class MCTSSelfPlay :
         early_stopping_callback = tf.keras.callbacks.EarlyStopping(
             monitor='loss',
             mode='min',
-            patience=2,
+            patience=5,
             restore_best_weights=True
             )
 
