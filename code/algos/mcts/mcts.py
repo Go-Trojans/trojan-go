@@ -359,6 +359,7 @@ class MCTSSelfPlay :
     def train(self, exp_filename, output_file, learning_rate=0.01, batch_size=128, epochs=40):
         from keras.optimizers import SGD
         import tensorflow as tf
+        print("Num GPUs Available: ", len(tf.config.experimental.list_physical_devices('GPU')))
         
         with h5py.File(exp_filename, 'r') as exp_input:
             experience_buffer = load_experience(exp_input)
