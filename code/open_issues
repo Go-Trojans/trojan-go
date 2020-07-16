@@ -1,25 +1,37 @@
 BLOCKER
-	1. Puranjay : commit the code for Tromp Troy winner function as well as winner function as per Chinese rule. [Closed]
-	2. Raveena and Puranjay: Overall Tau functionality as we discussed and do some UT to see it is working as expected. 
-	   (Check the current code and then decide)
-	3. 
+	1.
+	
+	
+	[OLD]
+	Puranjay : commit the code for Tromp Troy winner function as well as winner function as per Chinese rule. [Closed]
+	Raveena and Puranjay: Overall Tau functionality as we discussed and do some UT to see it is working as expected. 
+	   (Check the current code and then decide) [Closed: TAU = 0.1 after fixed moves]
+ 
 
 
 IMP
-	1. Dirichlet Noise is used during self-play only or it is used during Actual Game play as well ? [How it is used in AlphaGo Zero]
-	   (As of now it is getting used in self-play as well as actual game). [Resolved]
-	2. Using "TAU" during the Actual Game Play or during Evaluation. (As of now it doesn't have this support) [Closed]
+
+	1. [Haoming] GTP [Saturday timeline. David]
+	2. As of now during MCTS and Evaluation, we are using CPU only for nn.prediction. Can we use GPU to do the same.
 	
-	3. GTP (Haoming) [Saturday timeline. David]
-	4. Commit the code for EarlyStopping [Needs to be Tested]
-	5. Commit the code for tf.distribute.Strategy while training the model. [Needs to be Tested]
-	6. As of now during MCTS and Evaluation, we are using CPU only for nn.prediction. Can we use GPU to do the same.
-	
-	   Raveena to verify !!!
+	   [Raveena] to verify !!!
 	   Check this if by default it is not working: https://www.tensorflow.org/guide/gpu#manual_device_placement
 	   
-	7. David to understand Gaussian Process Optimization for MCTS (decide on #simulations, when to set "TAU" 1 & 0, Dirichlet Coeff, Epsilon and other MCTS Hyper-Params).
+	3. [David] to understand Gaussian Process Optimization for MCTS (decide on #simulations, when to set "TAU" 1 & 0, Dirichlet Coeff, Epsilon and other MCTS Hyper-Params).
+	4. [Rupesh and David] If possible implement the checkpointing model; as of now code is commented in MCTSSelfplay.train() because of minor issue. 
 
+        [OLD]
+	1. Dirichlet Noise is used during self-play only or it is used during Actual Game play as well ? [How it is used in AlphaGo Zero]
+	   (As of now it is getting used in self-play as well as actual game). 
+	   Findings: Dirichlet Noise should be used during self-lay only. [Resolved]
+	2. Using "TAU" during the Actual Game Play or during Evaluation. (As of now it doesn't have this support) [Closed]
+
+
+TESTING
+	1. Commit the code for EarlyStopping [Needs to be Tested]
+	2. Commit the code for tf.distribute.Strategy while training the model. [Needs to be Tested]
+	
+	
 Optimization
 	1. Self-play and MCTS parallelisation using virtual loss.
 	2. Trying to use TrojanGo Pipeline.
