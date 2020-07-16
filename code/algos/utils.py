@@ -2,6 +2,60 @@ import numpy as np
 from algos import gohelper
 #import keras
 
+
+
+
+def print_loop_info(iteration, learning_agent,
+                    refernece_agent, num_games_per_iter,
+                    simulations, workers, num_eval_games,
+                    exp_time, train_time, eval_time, loop_time):
+    s = f"""
+    {'-'*40}
+    # Operator Micro-benchmarks
+    # Iteration : {iteration}
+    # Learning Agent : {learning_agent}
+    # Reference Agent : {refernece_agent}
+    # Games Per Batch : {num_games_per_iter}
+    # Simulations per move : {simulations}
+    # Number of workers : {workers}
+    # Number of Games for Eval : {num_eval_games}
+    # Experience Time : {exp_time}
+    # Training time : {train_time}
+    # Evaluation time : {eval_time}
+    # Total Loop time : {loop_time}
+    
+    {'-'*40}
+    """
+    return s
+
+def system_info():
+    import platform,socket,re,uuid,json,psutil,logging,os
+    info={}
+    info['platform']=platform.system()
+    info['platform-release']=platform.release()
+    info['platform-version']=platform.version()
+    info['architecture']=platform.machine()
+    info['hostname']=socket.gethostname()
+    info['ip-address']=socket.gethostbyname(socket.gethostname())
+    info['mac-address']=':'.join(re.findall('..', '%012x' % uuid.getnode()))
+    info['processor']=platform.processor()
+    info['ram']=str(round(psutil.virtual_memory().total / (1024.0 **3)))+" GB"
+    info['Cores']=os.cpu_count()
+
+
+    print("*"*60)
+    print("System Info ...")
+    print(info)    
+    from tensorflow.python.client import device_lib
+    local_device_protos = device_lib.list_local_devices()
+    print(local_device_protos)
+    del device_lib
+    print("\n\n")
+    print("*"*60) 
+
+
+
+
 COLUMNS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 PLAYER_TO_CHAR = {
     None: ' . ',

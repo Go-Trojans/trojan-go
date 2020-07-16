@@ -18,7 +18,7 @@ from algos.mcts.mcts import MCTSSelfPlay, ExperienceBuffer, load_experience, com
 from algos.nn.AGZ import smallNN
 from algos.godomain import *
 from algos.gohelper import *
-from algos.utils import set_gpu_memory_target, load_model_from_disk, display_board
+from algos.utils import set_gpu_memory_target, load_model_from_disk, display_board, print_loop_info, system_info
 from algos.encoders.trojangoPlane import TrojanGoPlane
 from algos.mcts.mcts import MCTSPlayer, MCTSNode
 
@@ -310,28 +310,6 @@ def train_on_experience(learning_agent, output_file, experience_file,
     worker.start()
     worker.join()
 
-def print_loop_info(iteration, learning_agent,
-                    refernece_agent, num_games_per_iter,
-                    simulations, workers, num_eval_games,
-                    exp_time, train_time, eval_time, loop_time):
-    s = f"""
-    {'-'*40}
-    # Operator Micro-benchmarks
-    # Iteration : {iteration}
-    # Learning Agent : {learning_agent}
-    # Reference Agent : {refernece_agent}
-    # Games Per Batch : {num_games_per_iter}
-    # Simulations per move : {simulations}
-    # Number of workers : {workers}
-    # Number of Games for Eval : {num_eval_games}
-    # Experience Time : {exp_time}
-    # Training time : {train_time}
-    # Evaluation time : {eval_time}
-    # Total Loop time : {loop_time}
-    
-    {'-'*40}
-    """
-    return s
 
 def main():
     # code here
@@ -344,6 +322,7 @@ def main():
     parser.add_argument('--num-per-eval', type=int, default=400)
     
     args = parser.parse_args()
+    system_info()
 
     agents_path = './checkpoints/iteration_Savedmodel/'
     data_dir = './data/'
