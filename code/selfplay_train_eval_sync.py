@@ -370,6 +370,7 @@ def main():
                         until we get a new reference agent which wins with 55 % win margin. 
     """
     while True:
+        loop_start = time.time()
         print('Reference: %s' % (reference_agent_json,))
         ge_start = time.time()
         generate_experience(
@@ -422,6 +423,9 @@ def main():
             print("New reference is : ", next_filename)
         else:
             print('Keep learning\n')
+        loop_end = time.time()
+        print("Total time taken to complete a loop of generating exp, \
+              training and evaluation is :", loop_end - loop_start)
           
 
 

@@ -155,7 +155,9 @@ class MCTSPlayer :
                     this noise ensures that all moves may be tried, 
                     but the search may still overrule bad moves. 
                     """
-                    child.p = (1-epsilon)*child.p + epsilon*np.random.dirichlet(alpha = dcoeff)
+                    # stoch will be set during self-play only & False during Actual Game-play !!!
+                    if stoch:
+                        child.p = (1-epsilon)*child.p + epsilon*np.random.dirichlet(alpha = dcoeff)
                     
             # Select
             while currNode in visited: # node is fully expanded and non-terminal
