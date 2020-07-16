@@ -2,7 +2,7 @@ TrojanGo : Go Game Using AlphaZero
 
 
 Requirements:
-      1. Software : Keras with tensorflow backend, Tensorflow 2.0 and higher (tested on tensorflow 2.1.1), Python 3.6
+      1. Software : Keras (2.3.1) with tensorflow backend, Tensorflow 2.0 and higher (tested on tensorflow 2.1.1), Python 3.7 (tested on 3.7.7)
       
                     To support multiprocessing with keras working in child processes, make sure child processes have start method as "spawn"
                     Read section "Contexts and start methods" for more details. Link: "https://docs.python.org/3/library/multiprocessing.html"
