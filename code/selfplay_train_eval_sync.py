@@ -40,7 +40,7 @@ def get_temp_file():
 """ Here both the agents are nn model 
     which will help during move selection during MCTS simulation 
 """
-def simulate_game(black_player, white_player, board_size):
+def simulate_game(black_player, white_player, board_size, simulations):
     plane_size = 7
     encoder = TrojanGoPlane((board_size,board_size),plane_size)
     moves = []
@@ -76,7 +76,7 @@ def simulate_game(black_player, white_player, board_size):
         selected_actionNode = agents[game.next_player].select_move(
                                           rootnode, visited,
                                           encoder,
-                                          simulations=40, c=4, 
+                                          simulations=simulations, c=4, 
                                           stoch=False)
 
         # update new rootnode as selected_actionNode
@@ -93,7 +93,7 @@ def simulate_game(black_player, white_player, board_size):
 
 """ agent1_fname (learning_agent) & agent2_fname (reference_agent) are nn models/agents in (.json, .h5) format """
 def play_games(args):
-    agent1_fname, agent2_fname, num_games, board_size, gpu_frac = args
+    agent1_fname, agent2_fname, num_games, board_size, gpu_frac, simulations = args
 
     set_gpu_memory_target(gpu_frac)
 
@@ -113,7 +113,7 @@ def play_games(args):
         else:
             white_player, black_player = agent1, agent2
             print("Agent 1 playing as white and Agent 2 as black")
-        game = simulate_game(black_player, white_player, board_size)
+        game = simulate_game(black_player, white_player, board_size, simulations)
         if game.winner() == color1.value:
             print('Agent 1 wins')
             wins += 1
@@ -130,14 +130,14 @@ def play_games(args):
 
 """ learning_agent & reference_agent are nn models/agents in (.json, .h5) format """
 def evaluate(learning_agent, reference_agent,
-             num_games, num_workers, board_size):
+             num_games, num_workers, board_size, simulations):
     games_per_worker = num_games // num_workers
     gpu_frac = 0.95 / float(num_workers)
     pool = multiprocessing.Pool(num_workers)
     worker_args = [
         (
             learning_agent, reference_agent,
-            games_per_worker, board_size, gpu_frac,
+            games_per_worker, board_size, gpu_frac, simulations,
         )
         for _ in range(num_workers)
     ]
@@ -313,11 +313,13 @@ def train_on_experience(learning_agent, output_file, experience_file,
 def main():
     # code here
     parser = argparse.ArgumentParser()
-    parser.add_argument('--games-per-batch', '-g', type=int, default=100) #2500
-    parser.add_argument('--simulations', type=int, default=40) #400 for 5*5 board
+    parser.add_argument('--games-per-batch', '-g', type=int, default=2500)
+    parser.add_argument('--simulations', type=int, default=400) # for 5*5 board
     parser.add_argument('--board-size', '-b', type=int, default=5)
     parser.add_argument('--lr', type=float, default=0.02)
-
+    parser.add_argument('--num-workers', type=int, default=4)
+    parser.add_argument('--num-per-eval', type=int, default=400)
+    
     args = parser.parse_args()
 
     agents_path = './checkpoints/iteration_Savedmodel/'
@@ -368,8 +370,6 @@ def main():
                         until we get a new reference agent which wins with 55 % win margin. 
     """
     while True:
-    #count = 1
-    #for i in range(count):
         print('Reference: %s' % (reference_agent_json,))
         ge_start = time.time()
         generate_experience(
@@ -380,7 +380,7 @@ def main():
             args.games_per_batch,
             args.simulations,
             args.board_size,
-            num_workers=4)
+            num_workers=args.num_workers)
         ge_end = time.time()
         print("Time taken to finish generate experience with multiprocessing(4) is : ", ge_end - ge_start)
 
@@ -390,22 +390,24 @@ def main():
         total_games +=  args.games_per_batch
         print("Training ends !!!")
         
-        # 400 games , "TAU"=0 , 400 simulations per move
+        # Eval Params: 400 games , "TAU"=0 , 400 simulations per move
         print("Evaluating ... \nlearning agent {} & \nreference_agent {}".format(learning_agent, reference_agent))
-        num_games = 400
+        num_games_eval = args.num_per_eval
+        
         wins = evaluate(
             learning_agent, reference_agent,
-            num_games=num_games,
-            num_workers=4,
-            board_size=args.board_size)
+            num_games=num_games_eval,
+            num_workers=args.num_workers,
+            board_size=args.board_size,
+            simulations=args.simulations)
         
-        print('Won %d / 400 games (%.3f)' % (
-            wins, float(wins) / 400.0))
+        print('Won %d / %d games (%.3f)' % (
+            wins, num_games_eval, float(wins) / num_games_eval))
         
         shutil.copy(tmp_agent_json, working_agent_json)
         shutil.copy(tmp_agent_h5, working_agent_h5)
         learning_agent = working_agent
-        if wins >= int(np.multiply(num_games,0.55)):
+        if wins >= int(np.multiply(num_games_eval,0.55)):
             next_filename_json = os.path.join(
                 agents_path,
                 'agent_%08d.json' % (total_games,))
