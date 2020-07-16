@@ -6,13 +6,15 @@ BLOCKER
 
 
 IMP
-	1. Dirichlet Noise is used during self-play only or it is used during Actual Game play as well.
-	   (As of now it is getting used in self-play as well as actual game).
-	2. Using "TAU" during the Actual Game Play or during Evaluation. (As of now it doesn't have this support)
-	3. GTP (Haoming)
-	4. Commit the code for EarlyStopping
-	5. Commit the code for tf.distribute.Strategy while training the model.
+	1. Dirichlet Noise is used during self-play only or it is used during Actual Game play as well ? [How it is used in AlphaGo Zero]
+	   (As of now it is getting used in self-play as well as actual game). [Resolved]
+	2. Using "TAU" during the Actual Game Play or during Evaluation. (As of now it doesn't have this support) [Closed]
+	
+	3. GTP (Haoming) [Saturday timeline. David]
+	4. Commit the code for EarlyStopping [Needs to be Tested]
+	5. Commit the code for tf.distribute.Strategy while training the model. [Needs to be Tested]
 	6. As of now during MCTS and Evaluation, we are using CPU only for nn.prediction. Can we use GPU to do the same.
+	7. David to understand Gaussian Process Optimization for MCTS.
 
 Optimization
 	1. Self-play and MCTS parallelisation using virtual loss.
@@ -21,5 +23,7 @@ Optimization
 	
 
 Run
-	1. Puranjay to run on his server and update the result.
+	1. Puranjay to run on his server and update the result.[July 18th is the timeline as server is not available before then]
+	2. Rupesh to tey the code running on server and update the result.
+	3. Raveena to run oon her laptop and see the usage of GPU (mainly for model.predict)
 	
