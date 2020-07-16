@@ -310,6 +310,29 @@ def train_on_experience(learning_agent, output_file, experience_file,
     worker.start()
     worker.join()
 
+def print_loop_info(iteration, learning_agent,
+                    refernece_agent, num_games_per_iter,
+                    simulations, workers, num_eval_games,
+                    exp_time, train_time, eval_time, loop_time):
+    s = f"""
+    {'-'*40}
+    # Operator Micro-benchmarks
+    # Iteration : {iteration}
+    # Learning Agent : {learning_agent}
+    # Reference Agent : {refernece_agent}
+    # Games Per Batch : {num_games_per_iter}
+    # Simulations per move : {simulations}
+    # Number of workers : {workers}
+    # Number of Games for Eval : {num_eval_games}
+    # Experience Time : {exp_time}
+    # Training time : {train_time}
+    # Evaluation time : {eval_time}
+    # Total Loop time : {loop_time}
+    
+    {'-'*40}
+    """
+    return s
+
 def main():
     # code here
     parser = argparse.ArgumentParser()
@@ -369,6 +392,7 @@ def main():
                         will be used for self-play and training in next iteration,
                         until we get a new reference agent which wins with 55 % win margin. 
     """
+    iter_count = 1
     while True:
         loop_start = time.time()
         print('Reference: %s' % (reference_agent_json,))
@@ -383,25 +407,30 @@ def main():
             args.board_size,
             num_workers=args.num_workers)
         ge_end = time.time()
-        print("Time taken to finish generate experience with multiprocessing(4) is : ", ge_end - ge_start)
+        exp_time = ge_end - ge_start
+        print("Time taken to finish generate experience with multiprocessing(4) is : ", exp_time)
 
         print("Start training ...")
+        train_start = time.time()
         train_on_experience(
             learning_agent, tmp_agent, experience_file)
         total_games +=  args.games_per_batch
+        train_end = time.time()
+        train_time = train_end - train_start
         print("Training ends !!!")
         
         # Eval Params: 400 games , "TAU"=0 , 400 simulations per move
         print("Evaluating ... \nlearning agent {} & \nreference_agent {}".format(learning_agent, reference_agent))
         num_games_eval = args.num_per_eval
-        
+        eval_start = time.time()
         wins = evaluate(
             learning_agent, reference_agent,
             num_games=num_games_eval,
             num_workers=args.num_workers,
             board_size=args.board_size,
             simulations=args.simulations)
-        
+        eval_end = time.time()
+        eval_time = eval_end - eval_start
         print('Won %d / %d games (%.3f)' % (
             wins, num_games_eval, float(wins) / num_games_eval))
         
@@ -423,10 +452,22 @@ def main():
             print("New reference is : ", next_filename)
         else:
             print('Keep learning\n')
+            
+        
         loop_end = time.time()
+        loop_time = loop_end - loop_start
+
+         
+        info = print_loop_info(iter_count, learning_agent, reference_agent,
+                               args.games_per_batch, args.simulations,
+                               args.num_workers, args.num_per_eval,
+                               exp_time, train_time, eval_time, loop_time)
+        print(info)
+        iter_count = iter_count + 1
+        """
         print("Total time taken to complete a loop of generating exp, \
               training and evaluation is :", loop_end - loop_start)
-          
+        """  
 
 
 if __name__ == '__main__':
