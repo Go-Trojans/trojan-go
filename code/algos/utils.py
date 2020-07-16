@@ -1,9 +1,18 @@
 import numpy as np
 from algos import gohelper
 #import keras
+import pprint
 
 
-
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
 
 def print_loop_info(iteration, learning_agent,
                     refernece_agent, num_games_per_iter,
@@ -28,8 +37,20 @@ def print_loop_info(iteration, learning_agent,
     """
     return s
 
+
 def system_info():
+    from tensorflow.python.client import device_lib
+    pp = pprint.PrettyPrinter(indent=4)
     import platform,socket,re,uuid,json,psutil,logging,os
+
+    
+    local_device_protos = device_lib.list_local_devices()
+    print("*"*60)
+    print(f"{bcolors.OKGREEN}System Info ...{bcolors.ENDC}")
+    print(f"{bcolors.BOLD}GPU/CPU Info ...{bcolors.ENDC}")
+    print(f"{bcolors.OKBLUE}{local_device_protos}{bcolors.ENDC}")
+    del device_lib
+
     info={}
     info['platform']=platform.system()
     info['platform-release']=platform.release()
@@ -41,17 +62,12 @@ def system_info():
     info['processor']=platform.processor()
     info['ram']=str(round(psutil.virtual_memory().total / (1024.0 **3)))+" GB"
     info['Cores']=os.cpu_count()
+    print("\n")
+    for x, y in info.items():
+        print(f"{bcolors.OKBLUE}{x}:{y}{bcolors.ENDC}")
+    #print("")
+    print("*"*60)    
 
-
-    print("*"*60)
-    print("System Info ...")
-    print(info)    
-    from tensorflow.python.client import device_lib
-    local_device_protos = device_lib.list_local_devices()
-    print(local_device_protos)
-    del device_lib
-    print("\n\n")
-    print("*"*60) 
 
 
 

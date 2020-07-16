@@ -18,7 +18,7 @@ from algos.mcts.mcts import MCTSSelfPlay, ExperienceBuffer, load_experience, com
 from algos.nn.AGZ import smallNN
 from algos.godomain import *
 from algos.gohelper import *
-from algos.utils import set_gpu_memory_target, load_model_from_disk, display_board, print_loop_info, system_info
+from algos.utils import set_gpu_memory_target, load_model_from_disk, display_board, print_loop_info, system_info, bcolors
 from algos.encoders.trojangoPlane import TrojanGoPlane
 from algos.mcts.mcts import MCTSPlayer, MCTSNode
 
@@ -441,7 +441,8 @@ def main():
                                args.games_per_batch, args.simulations,
                                args.num_workers, args.num_per_eval,
                                exp_time, train_time, eval_time, loop_time)
-        print(info)
+        print(f"{bcolors.OKBLUE}{info}{bcolors.ENDC}")
+        #print(info)
         iter_count = iter_count + 1
         """
         print("Total time taken to complete a loop of generating exp, \
