@@ -14,6 +14,10 @@ IMP
 	4. Commit the code for EarlyStopping [Needs to be Tested]
 	5. Commit the code for tf.distribute.Strategy while training the model. [Needs to be Tested]
 	6. As of now during MCTS and Evaluation, we are using CPU only for nn.prediction. Can we use GPU to do the same.
+	
+	   Raveena to verify !!!
+	   Check this if by default it is not working: https://www.tensorflow.org/guide/gpu#manual_device_placement
+	   
 	7. David to understand Gaussian Process Optimization for MCTS (decide on #simulations, when to set "TAU" 1 & 0, Dirichlet Coeff, Epsilon and other MCTS Hyper-Params).
 
 Optimization
