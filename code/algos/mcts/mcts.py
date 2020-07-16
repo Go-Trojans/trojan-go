@@ -144,7 +144,7 @@ class MCTSPlayer :
         # visited = set()
         for i in range(simulations):
             currNode = rootnode
-            if i>0 :
+            if stoch and i>0 :
                 for child in currNode.childNodes:
                     # Dirichlet noise (do we need during acutal game play?)
 
@@ -294,8 +294,6 @@ class MCTSSelfPlay :
                     """    
                     searchProb[i] = child.visits**(1/tau)
                     tempNodes.append(child.visits**(1/tau))
-                    if childV.item() < 0 :
-                        x = 2
                     childVals.append(childV.item())
                 probSum = sum(tempNodes)
                 tempNodes = np.divide(tempNodes,probSum)
