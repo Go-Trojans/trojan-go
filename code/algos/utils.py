@@ -43,7 +43,8 @@ def system_info():
     pp = pprint.PrettyPrinter(indent=4)
     import platform,socket,re,uuid,json,psutil,logging,os
 
-    
+    # The below line may create tensorflow memory usage issue;
+    # can be resolved using allow_growth (check AGZ.py)
     local_device_protos = device_lib.list_local_devices()
     print("*"*60)
     print(f"{bcolors.OKGREEN}System Info ...{bcolors.ENDC}")
