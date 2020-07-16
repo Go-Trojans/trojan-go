@@ -371,11 +371,16 @@ class MCTSSelfPlay :
         model_input = experience_buffer.model_input
         action_target = experience_buffer.action_target
         value_target = experience_buffer.value_target
-        self.model.compile(
-                    SGD(lr=learning_rate),
-                    loss=['categorical_crossentropy', 'mse'])
 
-        
+        # parallel training code
+        strategy = tf.distribute.MirroredStrategy()
+
+        # logging line for number of training devices available
+        # print ('Number of devices: {}'.format(strategy.num_replicas_in_sync))
+        with strategy.scope():
+            self.model.compile(
+                        SGD(lr=learning_rate),
+                        loss=['categorical_crossentropy', 'mse'])
 
         """ logic code for checkpointing.
              This is to understand how many epochs is best for training
@@ -398,13 +403,25 @@ class MCTSSelfPlay :
         # Save the weights using the `checkpoint_path` format
         self.model.save_weights(checkpoint_path.format(epoch=0))
         """
+        """
+        @param monitor - the quantity monitored to determine where to stop
+        @param mode - whether we want max or min of monitored quantity
+        @param patience - how many extra epochs do we try after finding a new best before stopping
+        @param restore_best_weights - Whether to restore the best weights found during training or stick with the current weights
+        """
+        early_stopping_callback = tf.keras.callbacks.EarlyStopping(
+            monitor='loss',
+            mode='min',
+            patience=2,
+            restore_best_weights=True
+            )
 
         # Train the model with the callback
         self.model.fit(
                     model_input, [action_target, value_target],
                     epochs=epochs,
-                    batch_size=batch_size)
-                    #callbacks=[cp_callback])  # Pass callback to training
+                    batch_size=batch_size,
+                    callbacks=[early_stopping_callback])  # Pass callback to training
         """
         # This may generate warnings related to saving the state of the optimizer.
         # These warnings (and similar warnings throughout this notebook)
