@@ -2,7 +2,7 @@ TrojanGo : Go Game Using AlphaZero
 
 
 Requirements:
-      1. Software : Keras with tensorflow backend, Tensorflow 2.0 and higher (tested on tensorflow 2.1.1), Python 3.6
+      1. Software : Keras (2.3.1) with tensorflow backend, Tensorflow 2.0 and higher (tested on tensorflow 2.1.1), Python 3.7 (tested on 3.7.7)
       
                     To support multiprocessing with keras working in child processes, make sure child processes have start method as "spawn"
                     Read section "Contexts and start methods" for more details. Link: "https://docs.python.org/3/library/multiprocessing.html"
@@ -13,6 +13,15 @@ Requirements:
                     Tested on AWS Machine Instance (AMI) p3.8xlarge instance type. 
                     Specs can be found here: https://aws.amazon.com/ec2/instance-types/p3/
                     In short, it has 4 GPUs (Tesla V100-SXM2)
+                    
+     3. OS:         Tested on macOS (version 10.14.5 (18F132)) 
+                    Should run on the any UNIX based OS
+           
+     4. Libraries:  In case of any module error, install it.
+                    Some of the Libraries are ...
+                        core libraries:    keras (2.3.1), tensorflow(2.1.1), numpy, h5py, multiprocessing, shutil, 
+                        utility libraries: inspect, platform, socket, json, importlib, pytest, 
+                  
 
 
 Pull the code from hithub:
