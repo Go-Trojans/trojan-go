@@ -320,6 +320,9 @@ def main():
     parser.add_argument('--lr', type=float, default=0.02)
     parser.add_argument('--num-workers', type=int, default=4)
     parser.add_argument('--num-per-eval', type=int, default=400)
+    parser.add_argument('--production', dest='production', action='store_true')
+    parser.add_argument('--no-production', dest='production', action='store_false')
+    parser.set_defaults(production=True)
     
     args = parser.parse_args()
     system_info()
@@ -372,7 +375,8 @@ def main():
                         until we get a new reference agent which wins with 55 % win margin. 
     """
     iter_count = 1
-    while True:
+    prod = True
+    while prod:
         loop_start = time.time()
         print('Reference: %s' % (reference_agent_json,))
         ge_start = time.time()
@@ -444,6 +448,8 @@ def main():
         print(f"{bcolors.OKBLUE}{info}{bcolors.ENDC}")
         #print(info)
         iter_count = iter_count + 1
+        if not args.production:
+            prod = False
         """
         print("Total time taken to complete a loop of generating exp, \
               training and evaluation is :", loop_end - loop_start)
