@@ -54,10 +54,14 @@ class MCTSNode:
         if len(legal_moves)>1 :
             for move,p in moveProb :
                  if move in legal_moves :
-                    childState = self.state.apply_move(move)
-                    child = MCTSNode(state=childState,move=move,parent=self,p=p)
-                    self.childNodes.append(child)
-
+                     # if we don't pass; all the moves are legal
+                     if move.is_play:
+                         next_board = copy.deepcopy(self.state.board)
+                         next_board.place_stone(self.state.next_player, move.point)
+                     else:
+                         next_board = self.state.board
+                     # self.state.moves should not matter as such so keeping it same as parent.
+                     childState = GameState(next_board, self.state.next_player.opp, self.state, move, self.state.moves)
 
     def update(self, v,vLoss):
         """
@@ -87,8 +91,7 @@ class MCTSPlayer :
         self.nn = nn
 
     def run_simulation(self,rootnode,visited,encoder,simulations,epsilon = 0.25,dcoeff = [0.03],c=4,vLoss=1,stoch=True):
-        import tensorflow as tf
-        import keras
+
 
         for i in range(simulations) :
             currNode = rootnode
@@ -128,12 +131,20 @@ class MCTSPlayer :
         Assumes 2 alternating players(player 1 starts), with game results in the range[-1, 1].
         Return the child MCTS nodes of the root node/gameState for exploratory play, or the move with the most visits for competitive play.
         """
-        executor = concurrent.futures.ProcessPoolExecutor(2)
+        """executor = concurrent.futures.ProcessPoolExecutor(2)
         simEach = int(simulations/numProc)
         futures = [executor.submit(self.run_simulation, rootnode, visited, encoder, simEach)
                    for i in range(numProc)]
         done,_ = concurrent.futures.wait(futures, return_when='ALL_COMPLETED')
-        results = [future.result() for future in done]
+        results = [future.result() for future in done]"""
+        results = []
+        def collect_result(result):
+            results.append(result)
+
+        pool = multiprocessing.Pool(numProc)
+        simEach = int(simulations / numProc)
+        results = [pool.apply_async(self.run_simulation,(rootnode, visited, encoder, simEach))]
+        results = [res.get() for res in results]
         numNodes = len(results[0])
         aggNodes = []
         for i in range(numNodes) :
@@ -203,7 +214,7 @@ class MCTSSelfPlay :
                 if moveNum <= tempMoves :
                     tau = 1
                 else :
-                    tau = float('inf')
+                    tau = 0.1
                 if not rootnode:
                     rootnode  = MCTSNode(state = game)
 

@@ -45,15 +45,20 @@
 
 
 #import keras
-from keras.layers import Activation, BatchNormalization,MaxPooling2D
-from keras.layers import Conv2D, Dense, Flatten, Input
-from keras.models import Model
+#from keras.layers import Activation, BatchNormalization,MaxPooling2D
+#from keras.layers import Conv2D, Dense, Flatten, Input
+#from keras.models import Model
 import numpy as np
 
 #config = tf.ConfigProto()
 #config = tf.compat.v1.ConfigProto()
 #config.gpu_options.allow_growth = True
 #sess = tf.Session(config=config)
+import tensorflow as tf
+import keras
+from keras.layers import Activation, BatchNormalization, MaxPooling2D
+from keras.layers import Conv2D, Dense, Flatten, Input
+from keras.models import Model
 
 """
 This is 4 layers ResNet network.
