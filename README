@@ -26,9 +26,50 @@ Requirements:
 
 Pull the code from hithub:
             git clone https://github.com/Go-Trojans/trojan-go.git
+ 
+
+How to run the code in virtual environment:
+      1. create a directory :                  mkdir TROJANGO;cd TROJANGO
+      2. Clone the git project :               git clone https://github.com/Go-Trojans/trojan-go.git 
+                                                                 (please let me know if you face any Authentication error)
+      3. Setup the virtual environment (https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/)
+         I am listing down the commands for Linux/Mac Users ...
+         3.1 Updating pip :                     python3 -m pip install --user --upgrade pip
+         3.2 Installing virtual env :           python3 -m pip install --user virtualenv
+         3.3 Creating a virtual environment :   python3 -m venv env
+         3.4 Activating a virtual environment:  source env/bin/activate
+         
+         You can confirm you’re in the virtual environment by checking the location of your Python interpreter, it should point to the env directory.
+         which python3
+         .../env/bin/python3
+         
+     4. $cd trojan-go/
+        $Install the dependency libraries:      pip install -r requirements.txt
+        NOTE: In case while running if you face any library issue, please install it using pip or any other tool. (e.g., platform, inspect, etc)
+        
+     5. $cd code
+        """ To Test if the project is running properly or not """
+            $python3 selfplay_train_eval_sync.py -g 8 --simulations 10 --num-per-eval 8 --no-production
             
-How to run:
-            $cd trojan-go/code 
+            """ To run the project for actual training. Below one will be time taking as it is using 2500 games with 400 simulations per move """
+            $python3 selfplay_train_eval_sync.py
+            
+     6. Verify
+        VERIFY AND TAKE SNAPSHOTS OF EVERYTHING !!!
+        
+        6.1 Please copy the console output (mostly it will come in blue color).
+        6.2 Please check CPU and GPU usage. (as we are using tf.distribute.Strategy for parallel nn training)
+        6.3 Please verify for any GPU memory shortage. (because of tensorflow GPU memory allocation techniques)
+        6.4 Please verfiy CPU and GPU is not seating Idle while code is running. (as we are using tf.distribute.Strategy for parallel nn training and python multiprocessing)
+        
+     7. To stop the code (in case you are actually training the model), use CTRL-C
+                          
+
+How to run without virtual environment:
+            $cd trojan-go/; pip install -r requirements.txt
+             NOTE: In case while running if you face any library issue, please install it using pip or any other tool. (e.g., platform, inspect, etc)
+            
+            $cd ../trojan-go/code 
             """ To Test if the project is running properly or not """
             $python3 selfplay_train_eval_sync.py -g 8 --simulations 10 --num-per-eval 8 --no-production
             
@@ -44,6 +85,24 @@ How to run:
                     
                     
 
+Quick workaround if you are facing this error while running the project ...
+
+ ISSUE:
+     File "/Users/pujakumari/Downloads/new/env/lib/python3.7/site-packages/keras/backend/tensorflow_backend.py", line 506, in _get_available_gpus
+    _LOCAL_DEVICES = tf.config.experimental_list_devices()
+    AttributeError: module 'tensorflow_core._api.v2.config' has no attribute 'experimental_list_devices'
+    
+ FIX: https://stackoverflow.com/questions/60581677/attributeerror-module-tensorflow-core-api-v2-config-has-no-attribute-expe
+      I found source of problem in
+      ...\anaconda3\envs\tf_env\Lib\site-packages\keras\backend\tensorflow_backend.py
+      
+      In line 506 I changed line
+      _LOCAL_DEVICES = tf.config.experimental_list_devices()
+      
+      to
+
+      devices = tf.config.list_logical_devices()
+      _LOCAL_DEVICES = [x.name for x in devices]
 
 
 Where to place your code:
