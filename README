@@ -32,8 +32,10 @@ How to run the code in virtual environment:
       1. create a directory :                  mkdir TROJANGO;cd TROJANGO
       2. Clone the git project :               git clone https://github.com/Go-Trojans/trojan-go.git 
                                                                  (please let me know if you face any Authentication error)
+                                                                 
       3. Setup the virtual environment (https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/)
-         I am listing down the commands for Linux/Mac Users ...
+      
+         I am listing down the commands for Linux/Mac Users. Windows users can use the above link.
          3.1 Updating pip :                     python3 -m pip install --user --upgrade pip
          3.2 Installing virtual env :           python3 -m pip install --user virtualenv
          3.3 Creating a virtual environment :   python3 -m venv env
@@ -45,7 +47,8 @@ How to run the code in virtual environment:
          
      4. $cd trojan-go/
         $Install the dependency libraries:      pip install -r requirements.txt
-        NOTE: In case while running if you face any library issue, please install it using pip or any other tool. (e.g., platform, inspect, etc)
+        
+        NOTE: In case if you face any library issue while running the project, please install it using pip or any other tool. (e.g., platform, inspect, etc)
         
      5. $cd code
         """ To Test if the project is running properly or not """
