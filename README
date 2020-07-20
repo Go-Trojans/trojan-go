@@ -52,7 +52,7 @@ How to run the code in virtual environment:
         
      5. $cd code
         """ To Test if the project is running properly or not """
-            $python3 selfplay_train_eval_sync.py -g 8 --simulations 10 --num-per-eval 8 --no-production
+            $python3 selfplay_train_eval_sync.py --no-production
             
             """ To run the project for actual training. Below one will be time taking as it is using 2500 games with 400 simulations per move """
             $python3 selfplay_train_eval_sync.py
@@ -81,7 +81,7 @@ How to run without virtual environment:
             
             $cd ../trojan-go/code 
             """ To Test if the project is running properly or not """
-            $python3 selfplay_train_eval_sync.py -g 8 --simulations 10 --num-per-eval 8 --no-production
+            $python3 selfplay_train_eval_sync.py --no-production
             
             """ To run the project for actual training. Below one will be time taking as it is using 2500 games with 400 simulations per move """
             $python3 selfplay_train_eval_sync.py
