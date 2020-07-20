@@ -62,7 +62,7 @@ How to run the code in virtual environment:
      6. Verify
         VERIFY AND TAKE SNAPSHOTS OF EVERYTHING !!!
         
-        6.0 Sample flow output is mentioned in console_verification.pdf and log_verification.pdf
+        6.0 Sample output flow is mentioned inside here ./console_verification.pdf and ./log_verification.pdf
             6.0.1 Make sure your console output is matching with console_verification.pdf (basically the blue colored output) 
                   If you want to save the console output to a file (run it before starting the main script):
                       $script console.log
