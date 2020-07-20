@@ -99,7 +99,7 @@ How to run without virtual environment:
                   - TrojanGo players αθi are continually evaluated; and 
                   - the best performing player so far, αθ*, is used to generate new self play data.
               
-                    
+            NOTE: Follow step 6 mentioned above to verify.        
                     
 
 Quick workaround if you are facing this error while running the project ...
