@@ -3,6 +3,7 @@ import datetime
 import time
 import inspect
 
+
 import multiprocessing
 multiprocessing.set_start_method('spawn', force=True)
 import shutil 
@@ -18,7 +19,7 @@ from algos.mcts.mcts import MCTSSelfPlay, ExperienceBuffer, load_experience, com
 from algos.nn.AGZ import smallNN
 from algos.godomain import *
 from algos.gohelper import *
-from algos.utils import set_gpu_memory_target, load_model_from_disk, display_board, print_loop_info, system_info, bcolors
+from algos.utils import set_gpu_memory_target, load_model_from_disk, display_board, print_loop_info, system_info, bcolors, LOG_FORMAT
 from algos.encoders.trojangoPlane import TrojanGoPlane
 from algos.mcts.mcts import MCTSPlayer, MCTSNode
 
@@ -28,6 +29,12 @@ from algos.mcts.mcts import MCTSPlayer, MCTSNode
 
 #global graph
 #graph = tf.compat.v1.get_default_graph()
+
+
+import logging
+LOG_FILENAME = './trojango.log'
+logging.basicConfig(filename=LOG_FILENAME,filemode='a', format=LOG_FORMAT, level=logging.DEBUG)
+logging = logging.getLogger(__name__)
 
 def get_temp_file():
     fd, fname = tempfile.mkstemp(prefix='algo-train')
@@ -203,7 +210,8 @@ def do_self_play(board_size, agent1_filename, agent2_filename,
     mctsSP = MCTSSelfPlay(7,5)
     input_shape = (7,5,5)
     #nn = AGZ.init_random_model(input_shape)
-    print("self-play game is triggered, Get A Cup Of Coffee And Relax !!!")
+    print(f"{bcolors.OKBLUE} [PID : {os.getpid()}] self-play game is triggered, Get A Cup Of Coffee And Relax !!!{bcolors.ENDC}")
+    logging.debug("[PID : {}] self-play game is triggered, Get A Cup Of Coffee And Relax !!!".format(os.getpid()))
     mctsSP.play(agent1, agent2,
                 experience_filename,
                 num_games=num_games, simulations=simulations)
@@ -263,7 +271,8 @@ def generate_experience(learning_agent, reference_agent, exp_file,
         combined_buffer = combine_experience([combined_buffer, next_buffer])
         print("Examples in combined buffer after file {} is {}".format(filename, combined_buffer.model_input.shape[0]))
         
-    print('Saving into %s...' % exp_file)
+    print(f'{bcolors.OKBLUE}Finally Saved experiences into {exp_file}. Please check the size to verify.{bcolors.ENDC}')
+    logging.debug("Finally Saved experiences into {}. Please check the size to verify.".format(exp_file))
     with h5py.File(exp_file, 'w') as experience_outf:
         combined_buffer.serialize(experience_outf)
 
@@ -325,6 +334,11 @@ def main():
     parser.set_defaults(production=True)
     
     args = parser.parse_args()
+
+
+
+    print(f"{bcolors.OKBLUE}Welcome to TROJAN-GO !!!{bcolors.ENDC}")
+    logging.debug("Welcome to TROJAN-GO !!!")
     system_info()
 
     agents_path = './checkpoints/iteration_Savedmodel/'
@@ -377,9 +391,11 @@ def main():
     """
     iter_count = 1
     prod = True
+
     while prod:
         loop_start = time.time()
-        print('Reference: %s' % (reference_agent_json,))
+        print(f"{bcolors.OKBLUE}[Data Generation starts] Reference: {reference_agent_json} {bcolors.ENDC}")
+        logging.debug("[Data Generation starts] Reference: {}".format(reference_agent_json))
         ge_start = time.time()
         generate_experience(
             learning_agent,
@@ -392,19 +408,24 @@ def main():
             num_workers=args.num_workers)
         ge_end = time.time()
         exp_time = ge_end - ge_start
-        print("Time taken to finish generate experience with multiprocessing(4) is : ", exp_time)
-
-        print("Start training ...")
+                      
+        print(f"{bcolors.OKBLUE}[Data Generation finish] Time taken to finish generate experience with multiprocessing({num_cpu}) is : {exp_time} {bcolors.ENDC}")
+        logging.debug("[Data Generation finish] Time taken to finish generate experience with multiprocessing({}) is : {}".format(num_cpu, exp_time))
+        print(f"{bcolors.OKBLUE}[Start Training ...] {bcolors.ENDC}")
+        logging.debug("[Start Training ...]")
+                      
         train_start = time.time()
         train_on_experience(
             learning_agent, tmp_agent, experience_file)
         total_games +=  args.games_per_batch
         train_end = time.time()
         train_time = train_end - train_start
-        print("Training ends !!!")
+        print(f"{bcolors.OKBLUE}[Training ends !!!] {bcolors.ENDC}")
+        logging.debug("[Training ends !!!]")            
         
         # Eval Params: 400 games , "TAU"=0 , 400 simulations per move
-        print("Evaluating ... \nlearning agent {} & \nreference_agent {}".format(learning_agent, reference_agent))
+        print(f"{bcolors.OKBLUE}[Evaluation starts] ... \nlearning agent {learning_agent} & \nreference_agent {reference_agent}{bcolors.ENDC}")
+        logging.debug("[Evaluation starts] ... \nlearning agent {} & \nreference_agent {}".format(learning_agent, reference_agent))            
         num_games_eval = args.num_per_eval
         eval_start = time.time()
         wins = evaluate(
@@ -433,9 +454,11 @@ def main():
             shutil.move(tmp_agent_h5, next_filename_h5)
             next_filename = (next_filename_json, next_filename_h5)
             reference_agent = next_filename
-            print("New reference is : ", next_filename)
+            print(f"{bcolors.OKBLUE}[Evaluation ends] New reference is : {next_filename} {bcolors.ENDC}")
+            logging.debug("[Evaluation ends] New reference is : {}".format(next_filename))        
         else:
-            print('Keep learning\n')
+            print(f'{bcolors.OKBLUE}[Evaluation ends] Keep learning\n{bcolors.ENDC}')
+            logging.debug("[Evaluation ends] Keep learning\n")
             
         
         loop_end = time.time()
@@ -447,6 +470,7 @@ def main():
                                args.num_workers, args.num_per_eval,
                                exp_time, train_time, eval_time, loop_time)
         print(f"{bcolors.OKBLUE}{info}{bcolors.ENDC}")
+        logging.debug("{}".format(info))
         #print(info)
         iter_count = iter_count + 1
         if not args.production:

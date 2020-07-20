@@ -10,7 +10,10 @@ import time
 #import tensorflow as tf
 import inspect
 import os
+import sys
 import copy
+import logging
+logging = logging.getLogger(__name__)
 
 from algos.utils import display_board, alphaNumnericMove_from_point, LOG_FORMAT, save_model_to_disk
 
@@ -170,7 +173,17 @@ class MCTSPlayer :
                 tensor = encoder.encode(currNode.state)
                 tensor = np.expand_dims(tensor,axis=0)
                 #print("tensor : ", tensor)
-                p,v = nn.predict(tensor)
+                try:
+                    p,v = nn.predict(tensor)
+                except OSError as err:
+                    print("OS error: {0}".format(err))
+                    logging.debug("OS error: {}".format(err))
+                    raise
+                except:
+                    print("Unexpected error:", sys.exc_info()[0])
+                    logging.debug("Unexpected error: {}".format(sys.exc_info()[0]))
+                    raise
+                    
                 #print("I am able to use neural network model; nn")
                 currNode.expand(p.flatten())# add children
             # Backpropagate
@@ -344,6 +357,7 @@ class MCTSSelfPlay :
 
         num_games_end = time.time()
         print("Total time taken to play {} game(s) is {}".format(num_games, num_games_end - num_games_start))
+        logging.debug("[PID : {}] Total time taken to play {} game(s) is {}".format(os.getpid(), num_games, num_games_end - num_games_start))
 
         """ Save the examples generated after playing 'num_games' self-play games to file """
         print("Going to save the examples here : ", self.expFile)

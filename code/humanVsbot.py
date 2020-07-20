@@ -5,13 +5,13 @@ from algos import godomain
 from algos.utils import display_board, alphaNumnericMove_from_point, LOG_FORMAT
 from algos.encoders.trojangoPlane import TrojanGoPlane
 import time
-import logging
+#import logging
 import math
-
+"""
 logging.basicConfig(format=LOG_FORMAT)
 logger = logging.getLogger('human_vs_bot')
 logger.setLevel(logging.INFO)
-
+"""
 def main(bot1, bot2, win_rec, encoder):
     board_size = 5
     game = godomain.GameState.new_game(board_size)

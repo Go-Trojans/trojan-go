@@ -2,7 +2,8 @@ import numpy as np
 from algos import gohelper
 #import keras
 import pprint
-
+import logging
+logging = logging.getLogger(__name__)
 
 class bcolors:
     HEADER = '\033[95m'
@@ -41,15 +42,20 @@ def print_loop_info(iteration, learning_agent,
 def system_info():
     from tensorflow.python.client import device_lib
     pp = pprint.PrettyPrinter(indent=4)
-    import platform,socket,re,uuid,json,psutil,logging,os
+    import platform,socket,re,uuid,json,psutil,os
 
     # The below line may create tensorflow memory usage issue;
     # can be resolved using allow_growth (check AGZ.py)
     local_device_protos = device_lib.list_local_devices()
     print("*"*60)
+    logging.debug("\n\n")
+    logging.debug("************************************************************")
     print(f"{bcolors.OKGREEN}System Info ...{bcolors.ENDC}")
+    logging.debug("System Info ...")
     print(f"{bcolors.BOLD}GPU/CPU Info ...{bcolors.ENDC}")
+    logging.debug("GPU/CPU Info ...")
     print(f"{bcolors.OKBLUE}{local_device_protos}{bcolors.ENDC}")
+    logging.debug("{}".format(local_device_protos))
     del device_lib
 
     info={}
@@ -64,10 +70,13 @@ def system_info():
     info['ram']=str(round(psutil.virtual_memory().total / (1024.0 **3)))+" GB"
     info['Cores']=os.cpu_count()
     print("\n")
+    logging.debug("\n")              
     for x, y in info.items():
         print(f"{bcolors.OKBLUE}{x}:{y}{bcolors.ENDC}")
+        logging.debug("{}:{}".format(x,y))          
     #print("")
-    print("*"*60)    
+    print("*"*60)
+    logging.debug("************************************************************")              
 
 
 
