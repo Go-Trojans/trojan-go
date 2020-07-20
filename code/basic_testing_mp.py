@@ -1,3 +1,7 @@
+"""
+This program is creating 4 child processes and each child process is loading
+a saved model and try to predict a given input.
+"""
 from algos.utils import set_gpu_memory_target, load_model_from_disk
 
 import numpy as np
@@ -64,8 +68,6 @@ def predict_in_parallel():
         
 def main():
     predict_in_parallel()
-
-
 
 if __name__ == '__main__':
     main()

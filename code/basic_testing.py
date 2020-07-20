@@ -1,3 +1,6 @@
+"""
+This program is loading a saved model and try to predict a given input.
+"""
 from algos.utils import set_gpu_memory_target, load_model_from_disk
 
 import numpy as np
