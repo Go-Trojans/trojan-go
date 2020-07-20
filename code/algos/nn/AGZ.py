@@ -89,11 +89,13 @@ class smallNN:
 
     def nn_model(self, input_shape):
         pb = self.board_input
-        for i in range(4):  # <1>
+        for i in range(6):  # <1>
             pb = Conv2D(64, (3, 3),  # <1>
                         padding='same',  # <1>
-                        data_format='channels_first',  # <1>
-                        activation='relu')(pb)  # <1>
+                        data_format='channels_first')(pb)
+                        #activation='relu')(pb)
+            pb = BatchNormalization()(pb)
+            pb = Activation("relu")(pb)    
 
         policy_conv = \
             Conv2D(2, (1, 1),  # <2>
