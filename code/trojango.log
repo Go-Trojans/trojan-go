@@ -1,0 +1,210 @@
+2020-07-20 14:19:56,557 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG 
+
+
+2020-07-20 14:19:56,557 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG ************************************************************
+2020-07-20 14:19:56,558 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG System Info ...
+2020-07-20 14:19:56,558 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG GPU/CPU Info ...
+2020-07-20 14:19:56,558 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG [name: "/device:CPU:0"
+device_type: "CPU"
+memory_limit: 268435456
+locality {
+}
+incarnation: 13611103948450845463
+, name: "/device:XLA_CPU:0"
+device_type: "XLA_CPU"
+memory_limit: 17179869184
+locality {
+}
+incarnation: 5319909634998661876
+physical_device_desc: "device: XLA_CPU device"
+]
+2020-07-20 14:19:56,571 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG 
+
+2020-07-20 14:19:56,571 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG platform:Darwin
+2020-07-20 14:19:56,571 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG platform-release:18.6.0
+2020-07-20 14:19:56,571 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG platform-version:Darwin Kernel Version 18.6.0: Thu Apr 25 23:16:27 PDT 2019; root:xnu-4903.261.4~2/RELEASE_X86_64
+2020-07-20 14:19:56,571 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG architecture:x86_64
+2020-07-20 14:19:56,571 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG hostname:Pujas-Air.Dlink
+2020-07-20 14:19:56,572 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG ip-address:192.168.0.5
+2020-07-20 14:19:56,572 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG mac-address:30:35:ad:d6:86:0c
+2020-07-20 14:19:56,572 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG processor:i386
+2020-07-20 14:19:56,572 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG ram:8 GB
+2020-07-20 14:19:56,572 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG Cores:4
+2020-07-20 14:19:56,572 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG ************************************************************
+2020-07-20 14:19:56,572 -- [selfplay_train_eval_sync.py]:DEBUG Welcome to TROJAN-GO !!!
+2020-07-20 14:19:56,572 -- [selfplay_train_eval_sync.py]:DEBUG [Data Generation starts] Reference: ./checkpoints/iteration_Savedmodel/initial.json
+2020-07-20 14:20:03,941 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/selfplay_train_eval_sync.py]:DEBUG [PID : 8679] self-play game is triggered, Get A Cup Of Coffee And Relax !!!
+2020-07-20 14:20:04,124 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/selfplay_train_eval_sync.py]:DEBUG [PID : 8678] self-play game is triggered, Get A Cup Of Coffee And Relax !!!
+2020-07-20 14:20:04,157 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/selfplay_train_eval_sync.py]:DEBUG [PID : 8676] self-play game is triggered, Get A Cup Of Coffee And Relax !!!
+2020-07-20 14:20:04,300 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/selfplay_train_eval_sync.py]:DEBUG [PID : 8677] self-play game is triggered, Get A Cup Of Coffee And Relax !!!
+2020-07-20 14:20:14,670 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/mcts/mcts.py]:DEBUG [PID : 8676] Total time taken to play 1 game(s) is 10.512624979019165
+2020-07-20 14:20:15,490 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/mcts/mcts.py]:DEBUG [PID : 8678] Total time taken to play 1 game(s) is 11.366189002990723
+2020-07-20 14:20:15,716 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/mcts/mcts.py]:DEBUG [PID : 8677] Total time taken to play 1 game(s) is 11.41486930847168
+2020-07-20 14:20:16,352 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/mcts/mcts.py]:DEBUG [PID : 8679] Total time taken to play 1 game(s) is 12.409279108047485
+2020-07-20 14:20:16,713 -- [selfplay_train_eval_sync.py]:DEBUG Finally Saved experiences into ./data/exp_temp.hdf5
+2020-07-20 14:20:16,720 -- [selfplay_train_eval_sync.py]:DEBUG [Data Generation finish] Time taken to finish generate experience with multiprocessing(4) is : 20.148072004318237
+2020-07-20 14:20:16,721 -- [selfplay_train_eval_sync.py]:DEBUG Start Training ...
+2020-07-20 14:20:22,047 -- [/Library/Frameworks/Python.framework/Versions/3.7/lib/python3.7/site-packages/tensorflow_core/python/distribute/cross_device_ops.py]:WARNING There are non-GPU devices in `tf.distribute.Strategy`, not using nccl allreduce.
+2020-07-20 14:20:22,047 -- [/Library/Frameworks/Python.framework/Versions/3.7/lib/python3.7/site-packages/tensorflow_core/python/distribute/mirrored_strategy.py]:INFO Using MirroredStrategy with devices ('/job:localhost/replica:0/task:0/device:CPU:0',)
+2020-07-20 14:20:31,144 -- [selfplay_train_eval_sync.py]:DEBUG Training ends !!!
+2020-07-20 14:20:31,144 -- [selfplay_train_eval_sync.py]:DEBUG Evaluating ... 
+learning agent ('./checkpoints/iteration_Savedmodel/initial.json', './checkpoints/iteration_Savedmodel/initial.h5') & 
+reference_agent ('./checkpoints/iteration_Savedmodel/initial.json', './checkpoints/iteration_Savedmodel/initial.h5')
+2020-07-20 14:20:48,361 -- [selfplay_train_eval_sync.py]:DEBUG New reference is : ('./checkpoints/iteration_Savedmodel/agent_00000004.json', './checkpoints/iteration_Savedmodel/agent_00000004.h5')
+2020-07-20 14:20:48,363 -- [selfplay_train_eval_sync.py]:DEBUG 
+    ----------------------------------------
+    # Operator Micro-benchmarks
+    # Iteration : 1
+    # Learning Agent : ('./checkpoints/iteration_Savedmodel/agent_cur.json', './checkpoints/iteration_Savedmodel/agent_cur.h5')
+    # Reference Agent : ('./checkpoints/iteration_Savedmodel/agent_00000004.json', './checkpoints/iteration_Savedmodel/agent_00000004.h5')
+    # Games Per Batch : 4
+    # Simulations per move : 5
+    # Number of workers : 4
+    # Number of Games for Eval : 4
+    # Experience Time : 20.148072004318237
+    # Training time : 14.422698020935059
+    # Evaluation time : 17.207075119018555
+    # Total Loop time : 51.790640115737915
+    
+    ----------------------------------------
+    
+2020-07-20 14:25:06,279 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG 
+
+
+2020-07-20 14:25:06,283 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG ************************************************************
+2020-07-20 14:25:06,283 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG System Info ...
+2020-07-20 14:25:06,284 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG GPU/CPU Info ...
+2020-07-20 14:25:06,284 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG [name: "/device:CPU:0"
+device_type: "CPU"
+memory_limit: 268435456
+locality {
+}
+incarnation: 12354903766592791293
+, name: "/device:XLA_CPU:0"
+device_type: "XLA_CPU"
+memory_limit: 17179869184
+locality {
+}
+incarnation: 13559129438340219933
+physical_device_desc: "device: XLA_CPU device"
+]
+2020-07-20 14:25:06,297 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG 
+
+2020-07-20 14:25:06,297 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG platform:Darwin
+2020-07-20 14:25:06,297 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG platform-release:18.6.0
+2020-07-20 14:25:06,297 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG platform-version:Darwin Kernel Version 18.6.0: Thu Apr 25 23:16:27 PDT 2019; root:xnu-4903.261.4~2/RELEASE_X86_64
+2020-07-20 14:25:06,297 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG architecture:x86_64
+2020-07-20 14:25:06,297 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG hostname:Pujas-Air.Dlink
+2020-07-20 14:25:06,297 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG ip-address:192.168.0.5
+2020-07-20 14:25:06,298 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG mac-address:30:35:ad:d6:86:0c
+2020-07-20 14:25:06,298 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG processor:i386
+2020-07-20 14:25:06,298 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG ram:8 GB
+2020-07-20 14:25:06,298 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG Cores:4
+2020-07-20 14:25:06,298 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG ************************************************************
+2020-07-20 14:25:06,298 -- [selfplay_train_eval_sync.py]:DEBUG Welcome to TROJAN-GO !!!
+2020-07-20 14:25:06,298 -- [selfplay_train_eval_sync.py]:DEBUG [Data Generation starts] Reference: ./checkpoints/iteration_Savedmodel/initial.json
+2020-07-20 14:25:16,112 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/selfplay_train_eval_sync.py]:DEBUG [PID : 8763] self-play game is triggered, Get A Cup Of Coffee And Relax !!!
+2020-07-20 14:25:16,126 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/selfplay_train_eval_sync.py]:DEBUG [PID : 8760] self-play game is triggered, Get A Cup Of Coffee And Relax !!!
+2020-07-20 14:25:16,156 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/selfplay_train_eval_sync.py]:DEBUG [PID : 8761] self-play game is triggered, Get A Cup Of Coffee And Relax !!!
+2020-07-20 14:25:16,274 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/selfplay_train_eval_sync.py]:DEBUG [PID : 8762] self-play game is triggered, Get A Cup Of Coffee And Relax !!!
+2020-07-20 14:25:31,322 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/mcts/mcts.py]:DEBUG [PID : 8761] Total time taken to play 1 game(s) is 15.165024995803833
+2020-07-20 14:25:31,749 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/mcts/mcts.py]:DEBUG [PID : 8762] Total time taken to play 1 game(s) is 15.474087238311768
+2020-07-20 14:25:32,085 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/mcts/mcts.py]:DEBUG [PID : 8760] Total time taken to play 1 game(s) is 15.958171129226685
+2020-07-20 14:25:32,546 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/mcts/mcts.py]:DEBUG [PID : 8763] Total time taken to play 1 game(s) is 16.432776927947998
+2020-07-20 14:25:33,024 -- [selfplay_train_eval_sync.py]:DEBUG Finally Saved experiences into ./data/exp_temp.hdf5. Please check the size to verify.
+2020-07-20 14:25:33,030 -- [selfplay_train_eval_sync.py]:DEBUG [Data Generation finish] Time taken to finish generate experience with multiprocessing(4) is : 26.731593132019043
+2020-07-20 14:25:33,030 -- [selfplay_train_eval_sync.py]:DEBUG [Start Training ...]
+2020-07-20 14:25:41,509 -- [/Library/Frameworks/Python.framework/Versions/3.7/lib/python3.7/site-packages/tensorflow_core/python/distribute/cross_device_ops.py]:WARNING There are non-GPU devices in `tf.distribute.Strategy`, not using nccl allreduce.
+2020-07-20 14:25:41,509 -- [/Library/Frameworks/Python.framework/Versions/3.7/lib/python3.7/site-packages/tensorflow_core/python/distribute/mirrored_strategy.py]:INFO Using MirroredStrategy with devices ('/job:localhost/replica:0/task:0/device:CPU:0',)
+2020-07-20 14:25:48,775 -- [selfplay_train_eval_sync.py]:DEBUG [Training ends !!!]
+2020-07-20 14:25:48,775 -- [selfplay_train_eval_sync.py]:DEBUG [Evaluation starts] ... 
+learning agent ('./checkpoints/iteration_Savedmodel/initial.json', './checkpoints/iteration_Savedmodel/initial.h5') & 
+reference_agent ('./checkpoints/iteration_Savedmodel/initial.json', './checkpoints/iteration_Savedmodel/initial.h5')
+2020-07-20 14:26:07,127 -- [selfplay_train_eval_sync.py]:DEBUG [Evaluation ends] New reference is : ('./checkpoints/iteration_Savedmodel/agent_00000004.json', './checkpoints/iteration_Savedmodel/agent_00000004.h5')
+2020-07-20 14:26:07,128 -- [selfplay_train_eval_sync.py]:DEBUG 
+    ----------------------------------------
+    # Operator Micro-benchmarks
+    # Iteration : 1
+    # Learning Agent : ('./checkpoints/iteration_Savedmodel/agent_cur.json', './checkpoints/iteration_Savedmodel/agent_cur.h5')
+    # Reference Agent : ('./checkpoints/iteration_Savedmodel/agent_00000004.json', './checkpoints/iteration_Savedmodel/agent_00000004.h5')
+    # Games Per Batch : 4
+    # Simulations per move : 5
+    # Number of workers : 4
+    # Number of Games for Eval : 4
+    # Experience Time : 26.731593132019043
+    # Training time : 15.74364709854126
+    # Evaluation time : 18.34039807319641
+    # Total Loop time : 60.83001899719238
+    
+    ----------------------------------------
+    
+2020-07-20 14:57:29,512 -- [selfplay_train_eval_sync.py]:DEBUG Welcome to TROJAN-GO !!!
+2020-07-20 14:57:29,536 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG 
+
+
+2020-07-20 14:57:29,536 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG ************************************************************
+2020-07-20 14:57:29,536 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG System Info ...
+2020-07-20 14:57:29,536 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG GPU/CPU Info ...
+2020-07-20 14:57:29,537 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG [name: "/device:CPU:0"
+device_type: "CPU"
+memory_limit: 268435456
+locality {
+}
+incarnation: 15967978118234998048
+, name: "/device:XLA_CPU:0"
+device_type: "XLA_CPU"
+memory_limit: 17179869184
+locality {
+}
+incarnation: 8239924477268725173
+physical_device_desc: "device: XLA_CPU device"
+]
+2020-07-20 14:57:29,546 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG 
+
+2020-07-20 14:57:29,546 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG platform:Darwin
+2020-07-20 14:57:29,546 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG platform-release:18.6.0
+2020-07-20 14:57:29,546 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG platform-version:Darwin Kernel Version 18.6.0: Thu Apr 25 23:16:27 PDT 2019; root:xnu-4903.261.4~2/RELEASE_X86_64
+2020-07-20 14:57:29,547 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG architecture:x86_64
+2020-07-20 14:57:29,547 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG hostname:Pujas-Air.Dlink
+2020-07-20 14:57:29,547 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG ip-address:192.168.0.5
+2020-07-20 14:57:29,547 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG mac-address:30:35:ad:d6:86:0c
+2020-07-20 14:57:29,547 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG processor:i386
+2020-07-20 14:57:29,548 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG ram:8 GB
+2020-07-20 14:57:29,548 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG Cores:4
+2020-07-20 14:57:29,548 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/utils.py]:DEBUG ************************************************************
+2020-07-20 14:57:29,548 -- [selfplay_train_eval_sync.py]:DEBUG [Data Generation starts] Reference: ./checkpoints/iteration_Savedmodel/initial.json
+2020-07-20 14:57:39,910 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/selfplay_train_eval_sync.py]:DEBUG [PID : 9015] self-play game is triggered, Get A Cup Of Coffee And Relax !!!
+2020-07-20 14:57:39,930 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/selfplay_train_eval_sync.py]:DEBUG [PID : 9014] self-play game is triggered, Get A Cup Of Coffee And Relax !!!
+2020-07-20 14:57:39,940 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/selfplay_train_eval_sync.py]:DEBUG [PID : 9012] self-play game is triggered, Get A Cup Of Coffee And Relax !!!
+2020-07-20 14:57:39,957 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/selfplay_train_eval_sync.py]:DEBUG [PID : 9013] self-play game is triggered, Get A Cup Of Coffee And Relax !!!
+2020-07-20 14:57:49,004 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/mcts/mcts.py]:DEBUG [PID : 9015] Total time taken to play 1 game(s) is 9.092666149139404
+2020-07-20 14:57:52,022 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/mcts/mcts.py]:DEBUG [PID : 9012] Total time taken to play 1 game(s) is 12.081313610076904
+2020-07-20 14:57:53,556 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/mcts/mcts.py]:DEBUG [PID : 9013] Total time taken to play 1 game(s) is 13.598623991012573
+2020-07-20 14:57:53,618 -- [/Users/pujakumari/Downloads/TROJAN-20JULY/trojan-go/code/algos/mcts/mcts.py]:DEBUG [PID : 9014] Total time taken to play 1 game(s) is 13.687681674957275
+2020-07-20 14:57:54,016 -- [selfplay_train_eval_sync.py]:DEBUG Finally Saved experiences into ./data/exp_temp.hdf5. Please check the size to verify.
+2020-07-20 14:57:54,022 -- [selfplay_train_eval_sync.py]:DEBUG [Data Generation finish] Time taken to finish generate experience with multiprocessing(4) is : 24.473855018615723
+2020-07-20 14:57:54,022 -- [selfplay_train_eval_sync.py]:DEBUG [Start Training ...]
+2020-07-20 14:58:01,043 -- [/Library/Frameworks/Python.framework/Versions/3.7/lib/python3.7/site-packages/tensorflow_core/python/distribute/cross_device_ops.py]:WARNING There are non-GPU devices in `tf.distribute.Strategy`, not using nccl allreduce.
+2020-07-20 14:58:01,043 -- [/Library/Frameworks/Python.framework/Versions/3.7/lib/python3.7/site-packages/tensorflow_core/python/distribute/mirrored_strategy.py]:INFO Using MirroredStrategy with devices ('/job:localhost/replica:0/task:0/device:CPU:0',)
+2020-07-20 14:58:08,911 -- [selfplay_train_eval_sync.py]:DEBUG [Training ends !!!]
+2020-07-20 14:58:08,912 -- [selfplay_train_eval_sync.py]:DEBUG [Evaluation starts] ... 
+learning agent ('./checkpoints/iteration_Savedmodel/initial.json', './checkpoints/iteration_Savedmodel/initial.h5') & 
+reference_agent ('./checkpoints/iteration_Savedmodel/initial.json', './checkpoints/iteration_Savedmodel/initial.h5')
+2020-07-20 14:58:25,139 -- [selfplay_train_eval_sync.py]:DEBUG [Evaluation ends] New reference is : ('./checkpoints/iteration_Savedmodel/agent_00000004.json', './checkpoints/iteration_Savedmodel/agent_00000004.h5')
+2020-07-20 14:58:25,143 -- [selfplay_train_eval_sync.py]:DEBUG 
+    ----------------------------------------
+    # Operator Micro-benchmarks
+    # Iteration : 1
+    # Learning Agent : ('./checkpoints/iteration_Savedmodel/agent_cur.json', './checkpoints/iteration_Savedmodel/agent_cur.h5')
+    # Reference Agent : ('./checkpoints/iteration_Savedmodel/agent_00000004.json', './checkpoints/iteration_Savedmodel/agent_00000004.h5')
+    # Games Per Batch : 4
+    # Simulations per move : 5
+    # Number of workers : 4
+    # Number of Games for Eval : 4
+    # Experience Time : 24.473855018615723
+    # Training time : 14.888544082641602
+    # Evaluation time : 16.21452307701111
+    # Total Loop time : 55.5949170589447
+    
+    ----------------------------------------
+    
