@@ -51,7 +51,9 @@ How to run the code in virtual environment:
         NOTE: In case if you face any library issue while running the project, please install it using pip or any other tool. (e.g., platform, inspect, etc)
         
      5. $cd code
-        """ To Test if the project is running properly or not """
+        """ To Test if the project is running properly or not, without any error """
+            $python3  basic_testing.py      <<<< very easy program, using only model.predict                       ; you can debug too in case of error
+            $python3 basic_testing_mp.py    <<<< very easy program, using multiprocessing alon with model.predict  ; you can debug too in case of error
             $python3 selfplay_train_eval_sync.py --no-production
             
             """ To run the project for actual training. Below one will be time taking as it is using 2500 games with 400 simulations per move """
