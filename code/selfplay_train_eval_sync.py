@@ -349,7 +349,8 @@ def main():
     working_agent_h5 = os.path.join(agents_path, 'agent_cur.h5')
     working_agent = (working_agent_json, working_agent_h5)
     
-    
+    num_cpu = os.cpu_count()
+    args.num_workers = num_cpu
     total_games = 0
 
     """
