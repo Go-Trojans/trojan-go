@@ -60,6 +60,13 @@ How to run the code in virtual environment:
      6. Verify
         VERIFY AND TAKE SNAPSHOTS OF EVERYTHING !!!
         
+        6.0 Sample flow output is mentioned in console_verification.pdf and log_verification.pdf
+            6.0.1 Make sure your console output is matching with console_verification.pdf (basically the blue colored output) 
+             OR
+            6.0.2 Make sure your logfile output is matching with log_verification.pdf     (basically the highlighted colored output)
+                  logfile will be created in the same directory where you are running the code and it will be in append mode, so check with timestamps or near to the end of the file.
+                  logfile name = "trojango.log"
+        
         6.1 Please copy the console output (mostly it will come in blue color).
         6.2 Please check CPU and GPU usage. (as we are using tf.distribute.Strategy for parallel nn training)
         6.3 Please verify for any GPU memory shortage. (because of tensorflow GPU memory allocation techniques)
