@@ -196,6 +196,7 @@ def set_gpu_memory_target(frac):
     if tf_version_comp(tf.__version__):
         config = tf.compat.v1.ConfigProto()
         config.gpu_options.per_process_gpu_memory_fraction = frac
+        config.gpu_options.allow_growth = True
         #set_session(tf.compat.v1.Session(config=config))
         session = tf.compat.v1.Session(config=config)
         #tf.compat.v1.keras.backend.set_session(session)
@@ -203,6 +204,7 @@ def set_gpu_memory_target(frac):
     else:
         config = tf.ConfigProto()
         config.gpu_options.per_process_gpu_memory_fraction = frac
+        config.gpu_options.allow_growth = True
         #set_session(tf.Session(config=config))
         session = tf.Session(config=config)
 

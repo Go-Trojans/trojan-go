@@ -333,8 +333,7 @@ def main():
     parser.add_argument('--no-production', dest='production', action='store_false')
     parser.set_defaults(production=True)
     
-    args = parser.parse_args()
-
+    args = parser.parse_args()        
 
 
     print(f"{bcolors.OKBLUE}Welcome to TROJAN-GO !!!{bcolors.ENDC}")
@@ -364,7 +363,12 @@ def main():
     working_agent = (working_agent_json, working_agent_h5)
     
     num_cpu = os.cpu_count()
-    args.num_workers = num_cpu
+    if not args.production:
+        args.games_per_batch = num_cpu
+        args.num_workers = num_cpu
+        args.simulations = 10
+        args.num_per_eval = num_cpu
+        
     total_games = 0
 
     """
