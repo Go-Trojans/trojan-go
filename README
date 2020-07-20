@@ -80,7 +80,10 @@ How to run the code in virtual environment:
         6.4 Please verfiy CPU and GPU is not seating Idle while code is running. (as we are using tf.distribute.Strategy for parallel nn training and python multiprocessing)
         
      7. To stop the code (in case you are actually training the model), use CTRL-C
-                          
+     8. To Report an issue/error:
+          8.1 Kindly send either console log after copying it from your console or console.log file if you have used "script" command.
+          8.2 Kindly also share trojango.log
+          Attach these two files and mail to "rupeshku@usc.edu" with subject "TrojanGo Issue".
 
 How to run without virtual environment:
             $cd trojan-go/; pip install -r requirements.txt
@@ -99,7 +102,7 @@ How to run without virtual environment:
                   - TrojanGo players αθi are continually evaluated; and 
                   - the best performing player so far, αθ*, is used to generate new self play data.
               
-            NOTE: Follow step 6 mentioned above to verify.        
+            NOTE: Follow step 6 mentioned above to verify and step 8 to report an issue/error.        
                     
 
 Quick workaround if you are facing this error while running the project ...
