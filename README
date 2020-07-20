@@ -64,6 +64,11 @@ How to run the code in virtual environment:
         
         6.0 Sample flow output is mentioned in console_verification.pdf and log_verification.pdf
             6.0.1 Make sure your console output is matching with console_verification.pdf (basically the blue colored output) 
+                  If you want to save the console output to a file (run it before starting the main script):
+                      $script console.log
+                      $python3 selfplay_train_eval_sync.py --no-production
+                      $exit
+                      Now compare console.log with console_verification.pdf (which you can find the file in repo)
              OR
             6.0.2 Make sure your logfile output is matching with log_verification.pdf     (basically the highlighted colored output)
                   logfile will be created in the same directory where you are running the code and it will be in append mode, so check with timestamps or near to the end of the file.
