@@ -107,7 +107,6 @@ def play_games(args):
     random.seed(int(time.time()) + os.getpid())
     np.random.seed(int(time.time()) + os.getpid())
 
-    # TODO these need to be replaced to get returned model after training
     agent1 = load_model_from_disk(agent1_fname)
     agent2 = load_model_from_disk(agent2_fname)
 
