@@ -41,6 +41,7 @@ def print_loop_info(iteration, learning_agent,
 
 def system_info():
     from tensorflow.python.client import device_lib
+    from tensorflow import config
     pp = pprint.PrettyPrinter(indent=4)
     import platform,socket,re,uuid,json,psutil,os
 
@@ -69,6 +70,8 @@ def system_info():
     info['processor']=platform.processor()
     info['ram']=str(round(psutil.virtual_memory().total / (1024.0 **3)))+" GB"
     info['Cores']=os.cpu_count()
+    info['GPUs']=len(config.experimental.list_physical_devices('GPU'))
+    del config
     print("\n")
     logging.debug("\n")              
     for x, y in info.items():

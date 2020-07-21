@@ -392,6 +392,8 @@ class MCTSSelfPlay :
 
         # parallel training code
         strategy = tf.distribute.MirroredStrategy()
+        print('Number of devices: {}'.format(strategy.num_replicas_in_sync))
+        logging.debug('Number of devices: {}'.format(strategy.num_replicas_in_sync))
 
         # logging line for number of training devices available
         # print ('Number of devices: {}'.format(strategy.num_replicas_in_sync))

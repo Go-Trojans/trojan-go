@@ -88,6 +88,10 @@ class smallNN:
         self.model = model
 
     def nn_model(self, input_shape):
+        """
+        mirrored_strategy = tf.distribute.MirroredStrategy()
+        with mirrored_strategy.scope():
+        """
         pb = self.board_input
         for i in range(6):  # <1>
             pb = Conv2D(64, (3, 3),  # <1>
