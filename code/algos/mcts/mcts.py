@@ -395,9 +395,12 @@ class MCTSSelfPlay :
 
         # logging line for number of training devices available
         # print ('Number of devices: {}'.format(strategy.num_replicas_in_sync))
-        nn_model = load_model_from_disk(self.model_file)
+
+        #TODO: Looks like an issue here. [David to Resolve]
+        #nn_model = load_model_from_disk(self.model_file)
         with strategy.scope():
-            self.model = nn_model
+            #self.model = nn_model
+            self.model = load_model_from_disk(self.model_file)
             self.model.compile(
                         SGD(lr=learning_rate),
                         loss=['categorical_crossentropy', 'mse'])
