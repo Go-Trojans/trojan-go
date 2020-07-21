@@ -206,6 +206,7 @@ class MCTSSelfPlay :
         
         self.board_size = board_size
         self.plane_size = plane_size
+
         self.model = model # not needed as such.
         self.encoder = TrojanGoPlane((board_size,board_size),plane_size)
 
@@ -375,6 +376,8 @@ class MCTSSelfPlay :
     def train(self, exp_filename, output_file, learning_rate=0.01, batch_size=128, epochs=100):
         from keras.optimizers import SGD
         import tensorflow as tf
+        from algos.utils import load_model_from_disk
+
         print("Num GPUs Available: ", len(tf.config.experimental.list_physical_devices('GPU')))
         
         with h5py.File(exp_filename, 'r') as exp_input:
@@ -393,6 +396,7 @@ class MCTSSelfPlay :
         # logging line for number of training devices available
         # print ('Number of devices: {}'.format(strategy.num_replicas_in_sync))
         with strategy.scope():
+            self.model = load_model_from_disk(self.model)
             self.model.compile(
                         SGD(lr=learning_rate),
                         loss=['categorical_crossentropy', 'mse'])

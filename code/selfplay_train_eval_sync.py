@@ -107,6 +107,7 @@ def play_games(args):
     random.seed(int(time.time()) + os.getpid())
     np.random.seed(int(time.time()) + os.getpid())
 
+    # TODO these need to be replaced to get returned model after training
     agent1 = load_model_from_disk(agent1_fname)
     agent2 = load_model_from_disk(agent2_fname)
 
@@ -284,7 +285,7 @@ def generate_experience(learning_agent, reference_agent, exp_file,
 """  learning_agent (.json, .h5) and output_file is for storing (.json, .h5) """ 
 def train_worker(learning_agent, output_file, experience_file,
                  lr, batch_size):
-    learning_model = load_model_from_disk(learning_agent)
+    # learning_model = load_model_from_disk(learning_agent)
     """
     with h5py.File(learning_agent, 'r') as learning_agentf:
         learning_agent = tf.keras.models.load_model(learning_agentf)
@@ -293,8 +294,9 @@ def train_worker(learning_agent, output_file, experience_file,
     with h5py.File(experience_file, 'r') as expf:
         exp_buffer = load_experience(expf)
     """    
-    MCTSSelfPlay(7,5,learning_model).train(experience_file, output_file, lr, batch_size)
+    # MCTSSelfPlay(7,5,learning_model).train(experience_file, output_file, lr, batch_size)
     
+    MCTSSelfPlay(7,5,learning_agent).train(experience_file, output_file, lr, batch_size)
     """
     with h5py.File(output_file, 'w') as updated_agent_outf:
         learning_agent.serialize(updated_agent_outf)
@@ -442,7 +444,7 @@ def main():
         eval_time = eval_end - eval_start
         print('Won %d / %d games (%.3f)' % (
             wins, num_games_eval, float(wins) / num_games_eval))
-        
+
         shutil.copy(tmp_agent_json, working_agent_json)
         shutil.copy(tmp_agent_h5, working_agent_h5)
         learning_agent = working_agent
