@@ -202,11 +202,12 @@ class MCTSPlayer :
 
 class MCTSSelfPlay :
 
-    def __init__(self, plane_size, board_size, model=None):
+    def __init__(self, plane_size, board_size, model_file=None, model=None):
         
         self.board_size = board_size
         self.plane_size = plane_size
-        self.model = model # not needed as such.
+        self.model_file = model_file # This is in format (.json, .h5)
+        self.model = model           # This is a Neural Network Model.
         self.encoder = TrojanGoPlane((board_size,board_size),plane_size)
 
 
@@ -287,7 +288,7 @@ class MCTSSelfPlay :
                 """ logic code to select a move using MCTS simulations """    
                 mctsNodes =  players[game.next_player].select_move(rootnode,visited ,self.encoder,simulations ,c=c)
                 tensor = self.encoder.encode(game)
-                nn = players[game.next_player].model
+                nn = players[game.next_player].model  # MCTSPlayer.model 
                 _, rootV = nn.predict(np.expand_dims(tensor, axis=0))
                 childVals = []
                 searchProb = np.zeros((self.board_size**2 + 1,),dtype='float')
@@ -371,10 +372,12 @@ class MCTSSelfPlay :
             NOTE: tf.distribute.Strategy() is not used as of now.
         """
         
-        """ output_file is in (.json, .h5) format """
+    """ output_file is in (.json, .h5) format where trained model will be saved """
     def train(self, exp_filename, output_file, learning_rate=0.01, batch_size=128, epochs=100):
         from keras.optimizers import SGD
         import tensorflow as tf
+        from algos.utils import load_model_from_disk
+        
         print("Num GPUs Available: ", len(tf.config.experimental.list_physical_devices('GPU')))
         
         with h5py.File(exp_filename, 'r') as exp_input:
@@ -392,7 +395,9 @@ class MCTSSelfPlay :
 
         # logging line for number of training devices available
         # print ('Number of devices: {}'.format(strategy.num_replicas_in_sync))
+        nn_model = load_model_from_disk(self.model_file)
         with strategy.scope():
+            self.model = nn_model
             self.model.compile(
                         SGD(lr=learning_rate),
                         loss=['categorical_crossentropy', 'mse'])
@@ -471,6 +476,8 @@ class MCTSSelfPlay :
         save_model_to_disk(self.model, output_file)
         print("trained model saved to disk : ", output_file)
         logging.debug("trained model saved to disk : {}".format(output_file))
+
+        
 """
 if __name__ == "__main__" :
 

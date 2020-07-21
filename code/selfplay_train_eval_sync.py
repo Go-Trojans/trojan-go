@@ -212,6 +212,7 @@ def do_self_play(board_size, agent1_filename, agent2_filename,
     #nn = AGZ.init_random_model(input_shape)
     print(f"{bcolors.OKBLUE} [PID : {os.getpid()}] self-play game is triggered, Get A Cup Of Coffee And Relax !!!{bcolors.ENDC}")
     logging.debug("[PID : {}] self-play game is triggered, Get A Cup Of Coffee And Relax !!!".format(os.getpid()))
+    # agent1 and agent2 are nn model
     mctsSP.play(agent1, agent2,
                 experience_filename,
                 num_games=num_games, simulations=simulations)
@@ -284,21 +285,8 @@ def generate_experience(learning_agent, reference_agent, exp_file,
 """  learning_agent (.json, .h5) and output_file is for storing (.json, .h5) """ 
 def train_worker(learning_agent, output_file, experience_file,
                  lr, batch_size):
-    learning_model = load_model_from_disk(learning_agent)
-    """
-    with h5py.File(learning_agent, 'r') as learning_agentf:
-        learning_agent = tf.keras.models.load_model(learning_agentf)
-    """    
-    """    
-    with h5py.File(experience_file, 'r') as expf:
-        exp_buffer = load_experience(expf)
-    """    
-    MCTSSelfPlay(7,5,learning_model).train(experience_file, output_file, lr, batch_size)
-    
-    """
-    with h5py.File(output_file, 'w') as updated_agent_outf:
-        learning_agent.serialize(updated_agent_outf)
-    """
+    MCTSSelfPlay(7,5,learning_agent).train(experience_file, output_file, lr, batch_size)
+
 
 """  learning_agent (.json, .h5) and output_file is for storing (.json, .h5) """ 
 def train_on_experience(learning_agent, output_file, experience_file,
