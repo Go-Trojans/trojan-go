@@ -470,6 +470,7 @@ class MCTSSelfPlay :
         """ Save the tained model in (.json, .h5) format """
         save_model_to_disk(self.model, output_file)
         print("trained model saved to disk : ", output_file)
+        logging.debug("trained model saved to disk : {}".format(output_file))
 """
 if __name__ == "__main__" :
 
