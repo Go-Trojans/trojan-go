@@ -1,0 +1,9 @@
+checkpoints/iteration_Savedmodel/
+data/
+
+*.ipynb
+*.log
+**/logs
+**/__pycache__
+.DS_Store
+.ipynb_checkpoints
