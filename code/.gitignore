@@ -6,4 +6,6 @@ data/
 **/logs
 **/__pycache__
 .DS_Store
+../.DS_Store
+trojango.log
 .ipynb_checkpoints
