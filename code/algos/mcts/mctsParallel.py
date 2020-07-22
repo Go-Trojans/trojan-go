@@ -9,9 +9,10 @@ from operator import attrgetter
 import concurrent
 from multiprocessing import Pool
 import multiprocessing
-multiprocessing.set_start_method('spawn',force=True)
+#multiprocessing.set_start_method('spawn',force=True)
 import copy
 import time
+from functools import partial
 
 
 class MCTSNode:
@@ -90,8 +91,11 @@ class MCTSPlayer :
         self.player = player
         self.nn = nn
 
-    def run_simulation(self,rootnode,visited,encoder,simulations,epsilon = 0.25,dcoeff = [0.03],c=4,vLoss=1,stoch=True):
+    def run_simulation(self,simulations,encoder,rootnode,epsilon = 0.25,dcoeff = [0.03],c=4,vLoss=1,stoch=True):
 
+        visited = set()
+        input_shape = (7, 5, 5)
+        nn = AGZ.init_random_model(input_shape)
 
         for i in range(simulations) :
             currNode = rootnode
@@ -113,7 +117,7 @@ class MCTSPlayer :
                 hero = currNode.state.next_player
                 tensor = encoder.encode(currNode.state)
                 tensor = np.expand_dims(tensor, axis=0)
-                p, v = self.nn.predict(tensor)
+                p, v = nn.predict(tensor)
                 currNode.expand(p.flatten())  # add children
             # Backpropagate
             while currNode:  # backpropagate from the expanded node and work back to the root node
@@ -137,14 +141,21 @@ class MCTSPlayer :
                    for i in range(numProc)]
         done,_ = concurrent.futures.wait(futures, return_when='ALL_COMPLETED')
         results = [future.result() for future in done]"""
-        results = []
+        """results = []
         def collect_result(result):
             results.append(result)
 
         pool = multiprocessing.Pool(numProc)
         simEach = int(simulations / numProc)
         results = [pool.apply_async(self.run_simulation,(rootnode, visited, encoder, simEach))]
-        results = [res.get() for res in results]
+        results = [res.get() for res in results]"""
+        cores = 2
+
+        root_agents = [copy.deepcopy(rootnode) for _ in range(cores)]
+        f = partial(self.run_simulation, int(simulations / cores), encoder)
+        with Pool(processes=cores) as pool:
+            results = [i for i in pool.imap_unordered(f, root_agents)]
+
         numNodes = len(results[0])
         aggNodes = []
         for i in range(numNodes) :

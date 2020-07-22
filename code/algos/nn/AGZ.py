@@ -55,11 +55,13 @@ import numpy as np
 #config.gpu_options.allow_growth = True
 #sess = tf.Session(config=config)
 import tensorflow as tf
-import keras
-from keras.layers import Activation, BatchNormalization, MaxPooling2D
-from keras.layers import Conv2D, Dense, Flatten, Input
-from keras.models import Model
+import tensorflow.keras
+from tensorflow.keras.layers import Activation, BatchNormalization, MaxPooling2D
+from tensorflow.keras.layers import Conv2D, Dense, Flatten, Input
+from tensorflow.keras.models import Model
+gpu_options = tf.compat.v1.GPUOptions(per_process_gpu_memory_fraction=0.333)
 
+sess = tf.compat.v1.Session(config=tf.compat.v1.ConfigProto(gpu_options=gpu_options))
 """
 This is 4 layers ResNet network.
 """
