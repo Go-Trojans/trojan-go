@@ -377,7 +377,8 @@ class MCTSSelfPlay :
         from keras.optimizers import SGD
         import tensorflow as tf
         from algos.utils import load_model_from_disk
-        
+
+        is_gpu = len(tf.config.experimental.list_physical_devices('GPU'))
         print("Num GPUs Available: ", len(tf.config.experimental.list_physical_devices('GPU')))
         
         with h5py.File(exp_filename, 'r') as exp_input:
@@ -398,11 +399,15 @@ class MCTSSelfPlay :
         # logging line for number of training devices available
         # print ('Number of devices: {}'.format(strategy.num_replicas_in_sync))
 
+        
         #TODO: Looks like an issue here. [David to Resolve]
-        #nn_model = load_model_from_disk(self.model_file)
+        nn_model = load_model_from_disk(self.model_file)
         with strategy.scope():
-            #self.model = nn_model
-            self.model = load_model_from_disk(self.model_file)
+            if is_gpu:
+                self.model = load_model_from_disk(self.model_file)
+            else:    
+                self.model = nn_model
+            
             self.model.compile(
                         SGD(lr=learning_rate),
                         loss=['categorical_crossentropy', 'mse'])
