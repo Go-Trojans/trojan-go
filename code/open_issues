@@ -1,20 +1,18 @@
 BLOCKER
-	1.
-	
-	
-	[OLD]
-	Puranjay : commit the code for Tromp Troy winner function as well as winner function as per Chinese rule. [Closed]
-	Raveena and Puranjay: Overall Tau functionality as we discussed and do some UT to see it is working as expected. 
-	   (Check the current code and then decide) [Closed: TAU = 0.1 after fixed moves]
+	No Blocking issues currently.
  
+
+Most Important Problem Statements ...
+	1.  MCTS params optimization (David)
+	2.  MCTS self-play optimization/parallelization (Puranjay and Raveena) 
 
 
 IMP
 
-	1. [Haoming] GTP [Saturday timeline. David]
+	1. [Haoming] GTP [commit by 23 rd]
 	2. As of now during MCTS and Evaluation, we are using CPU only for nn.prediction. Can we use GPU to do the same.
 	
-	   [Raveena] to verify !!!
+	   [David] to verify !!!
 	   Check this if by default it is not working: https://www.tensorflow.org/guide/gpu#manual_device_placement
 	   
 	3. [David] to understand Gaussian Process Optimization for MCTS (decide on #simulations, when to set "TAU" 1 & 0, Dirichlet Coeff, Epsilon and other MCTS Hyper-Params).
