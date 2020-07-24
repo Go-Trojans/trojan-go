@@ -23,6 +23,7 @@ To do GNU vs Trojan, set GNU as host and start two subprocess for both Trojan an
 
 '''
 
+## TODO: Name changes and function combine
 
 class GTPSubProcess(object):
 
