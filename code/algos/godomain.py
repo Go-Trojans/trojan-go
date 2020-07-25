@@ -10,6 +10,7 @@ Gamestate class is using GoBoard class.
 """
 
 import copy
+import inspect
 import numpy as np
 from algos.gohelper import Player, Point
 
@@ -150,7 +151,7 @@ class GameState:
         if move.is_play:
             # If the move is Invalid then print invalid move and return
             if not self.board.is_on_grid(move.point) or not self.is_valid_move(move):
-                raise ValueError("Invalid move")
+                raise ValueError("Invalid move", move.point)
             next_board = copy.deepcopy(self.board)
             next_board.place_stone(self.next_player, move.point)
         else:
@@ -230,6 +231,7 @@ class GameState:
 
     # Return all legal moves
     def legal_moves(self) :
+        #print(inspect.currentframe().f_code.co_name, inspect.currentframe().f_back.f_code.co_name)
         leg_moves = []
         board = self.board
         for r in range(board.board_height) :
@@ -245,6 +247,7 @@ class GameState:
 
     def is_valid_move(self, move):
 
+        #print(inspect.currentframe().f_code.co_name, inspect.currentframe().f_back.f_code.co_name)
         if self.is_over():
             return False
 
@@ -264,11 +267,13 @@ class GameState:
         return True
 
     def is_over(self):
-        """
-        if self.moves>(self.board.board_width *self.board.board_height * 2):
+        
+        if self.moves > (self.board.board_width *self.board.board_height * 2):
+            #print(inspect.currentframe().f_code.co_name, inspect.currentframe().f_back.f_code.co_name)
+            print("Game is over as max moves reached : ", self.moves)
             return True
-        """
-        if not self.last_move or not self.previous_state:
+        
+        if not self.last_move or not self.previous_state or not self.previous_state.last_move:
             return False
    
         if self.last_move.is_resign:
@@ -295,6 +300,7 @@ class GameState:
                     if blank sites are completely surrounded by both then points for both increases by (group size)/2
             """
         if self.last_move.is_resign :
+            print("[DEBUG] last move was resign")
             return self.next_player
 
         board = self.board.grid

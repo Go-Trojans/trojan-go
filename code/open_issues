@@ -1,0 +1,49 @@
+BLOCKER
+	No Blocking issues currently.
+ 
+
+Most Important Problem Statements ...
+	1.  MCTS params optimization (David)
+	2.  MCTS self-play optimization/parallelization (Puranjay and Raveena) 
+
+
+IMP
+
+	1. [Haoming] GTP [commit by 23 rd]
+	2. As of now during MCTS and Evaluation, we are using CPU only for nn.prediction. Can we use GPU to do the same.
+	
+	   [David] to verify !!!
+	   Check this if by default it is not working: https://www.tensorflow.org/guide/gpu#manual_device_placement
+	   
+	3. [David] to understand Gaussian Process Optimization for MCTS (decide on #simulations, when to set "TAU" 1 & 0, Dirichlet Coeff, Epsilon and other MCTS Hyper-Params).
+	4. [Rupesh and David] If possible implement the checkpointing model; as of now code is commented in MCTSSelfplay.train() because of minor issue. 
+
+        [OLD]
+	1. Dirichlet Noise is used during self-play only or it is used during Actual Game play as well ? [How it is used in AlphaGo Zero]
+	   (As of now it is getting used in self-play as well as actual game). 
+	   Findings: Dirichlet Noise should be used during self-lay only. [Resolved]
+	2. Using "TAU" during the Actual Game Play or during Evaluation. (As of now it doesn't have this support) [Closed]
+
+
+TESTING
+	1. Commit the code for EarlyStopping [Needs to be Tested]
+	2. Commit the code for tf.distribute.Strategy while training the model. [Needs to be Tested]
+	3. GPU tensorflow memory issues, check these functions ...
+		- check for any tensorflow sessions
+		- utils.system_info()
+		- utils.set_gpu_memory_target() used from different child processes.
+		- during play, MCTSSelfplay.play(): nn.predict is using tensorflow model
+		- during training, MCTSSelfplay.train(), tf.distribute.Strategy()
+	
+	
+Optimization
+	1. Self-play and MCTS parallelisation using virtual loss.
+	2. Trying to use TrojanGo Pipeline.
+	3.
+	
+
+Run
+	1. Puranjay to run on his server and update the result.[July 18th is the timeline as server is not available before then]
+	2. Rupesh to tey the code running on server and update the result.
+	3. Raveena to run oon her laptop and see the usage of GPU (mainly for model.predict)
+	

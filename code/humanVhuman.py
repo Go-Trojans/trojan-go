@@ -25,6 +25,11 @@ def main(bot1, bot2, win_rec, encoder, chess_display=True):
             game.board.display_board()
         
         bot_move = bots[game.next_player].select_move(game)
+        if bot_move.is_pass:
+            game = game.apply_move(bot_move)
+            moves = moves + 1
+            continue
+
         if not game.board.is_on_grid(bot_move.point):
             print("Invalid move, Try Again ...")
             continue
