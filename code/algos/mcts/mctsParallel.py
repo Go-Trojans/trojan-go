@@ -9,10 +9,112 @@ from operator import attrgetter
 import concurrent
 from multiprocessing import Pool
 import multiprocessing
-#multiprocessing.set_start_method('spawn',force=True)
+multiprocessing.set_start_method('spawn',force=True)
 import copy
 import time
 from functools import partial
+import os
+
+
+""" return True if tensorflow version is equal or higher than 2.0, else False """
+def tf_version_comp(tf_v):
+    tf_v = tf_v.split(".")
+    if int(tf_v[0]) == 2 and int(tf_v[1]) >=0:
+        return True
+    return False
+    
+
+def set_gpu_memory_target(frac):
+    """Configure Tensorflow to use a fraction of available GPU memory.
+
+    Use this for evaluating models in parallel. By default, Tensorflow
+    will try to map all available GPU memory in advance. You can
+    configure to use just a fraction so that multiple processes can run
+    in parallel. For example, if you want to use 2 works, set the
+    memory fraction to 0.5.
+
+    If you are using Python multiprocessing, you must call this function
+    from the *worker* process (not from the parent).
+
+    This function does nothing if Keras is using a backend other than
+    Tensorflow.
+    """
+    import keras
+    if keras.backend.backend() != 'tensorflow':
+        print("Return without doing anything")
+        return
+    # Do the import here, not at the top, in case Tensorflow is not
+    # installed at all.
+    import tensorflow as tf
+    #from keras.backend.tensorflow_backend import set_session
+    if tf_version_comp(tf.__version__):
+        config = tf.compat.v1.ConfigProto()
+        config.gpu_options.per_process_gpu_memory_fraction = frac
+        config.gpu_options.allow_growth = True
+        #set_session(tf.compat.v1.Session(config=config))
+        session = tf.compat.v1.Session(config=config)
+        #tf.compat.v1.keras.backend.set_session(session)
+
+    else:
+        config = tf.ConfigProto()
+        config.gpu_options.per_process_gpu_memory_fraction = frac
+        config.gpu_options.allow_growth = True
+        #set_session(tf.Session(config=config))
+        session = tf.Session(config=config)
+
+
+
+
+def run_simulation(simulations,encoder,rootnode):
+    epsilon = 0.25
+    dcoeff = [0.03]
+    c=4
+    vLoss=1
+    stoch=True
+
+    import tensorflow as tf
+    import keras
+    set_gpu_memory_target(0.5)
+    print("PID: ", os.getpid())
+    
+    
+    visited = set()
+    input_shape = (7, 5, 5)
+    nn = AGZ.init_random_model(input_shape)
+
+    for i in range(simulations) :
+        currNode = rootnode
+        # if i>0 :
+        for child in currNode.childNodes:
+            # Dirichlet noise
+            child.p = (1 - epsilon) * child.p + epsilon * np.random.dirichlet(alpha=dcoeff)
+        # Select
+        while currNode in visited:  # node is fully expanded and non-terminal
+            currNode = currNode.SelectChild(c)
+            currNode.visits += vLoss
+            currNode.wins -= vLoss
+
+        # Expand
+        if currNode not in visited:  # if we can expand (i.e. state/node is non-terminal)
+            currNode.visits += vLoss
+            currNode.wins -= vLoss
+            visited.add(currNode)
+            hero = currNode.state.next_player
+            tensor = encoder.encode(currNode.state)
+            tensor = np.expand_dims(tensor, axis=0)
+            p, v = nn.predict(tensor)
+            currNode.expand(p.flatten())  # add children
+        # Backpropagate
+        while currNode:  # backpropagate from the expanded node and work back to the root node
+            currNode.update(v if hero == currNode.state.next_player else -v,
+                            vLoss)  # state is terminal. Update node with result from POV of node.playerJustMoved
+            currNode = currNode.parentNode
+    if stoch:
+        return rootnode.childNodes
+    else:
+        return max(rootnode.childNodes, key=attrgetter('visits')).move
+
+
 
 
 class MCTSNode:
@@ -84,15 +186,30 @@ class MCTSNode:
         return puct
 
 
+
+
+
+
 class MCTSPlayer :
 
     def __init__(self,player,nn):
 
         self.player = player
         self.nn = nn
+    """
+    def run_simulation(self,simulations,encoder,rootnode):
+        epsilon = 0.25
+        dcoeff = [0.03]
+        c=4
+        vLoss=1
+        stoch=True
 
-    def run_simulation(self,simulations,encoder,rootnode,epsilon = 0.25,dcoeff = [0.03],c=4,vLoss=1,stoch=True):
-
+        import tensorflow as tf
+        import keras
+        set_gpu_memory_target()
+        print("PID: ", os.getpid())
+        
+        
         visited = set()
         input_shape = (7, 5, 5)
         nn = AGZ.init_random_model(input_shape)
@@ -128,7 +245,8 @@ class MCTSPlayer :
             return rootnode.childNodes
         else:
             return max(rootnode.childNodes, key=attrgetter('visits')).move
-
+    """
+    
     def select_move(self,rootnode,visited,encoder,simulations,numProc=3,epsilon = 0.25,dcoeff = [0.03],c=4,vLoss=1,stoch=True):
         """
         Conduct a tree search for simulations iterations starting from gameState.
@@ -149,12 +267,35 @@ class MCTSPlayer :
         simEach = int(simulations / numProc)
         results = [pool.apply_async(self.run_simulation,(rootnode, visited, encoder, simEach))]
         results = [res.get() for res in results]"""
-        cores = 2
-
+        cores = 1
+        """
         root_agents = [copy.deepcopy(rootnode) for _ in range(cores)]
         f = partial(self.run_simulation, int(simulations / cores), encoder)
         with Pool(processes=cores) as pool:
             results = [i for i in pool.imap_unordered(f, root_agents)]
+        """
+        workers = []
+        x = int(simulations / cores)
+        
+        for i in range(cores):
+            worker = multiprocessing.Process(
+                target=run_simulation,
+                args=(
+                    x,
+                    encoder,
+                    copy.deepcopy(rootnode),
+                )
+            )
+            worker.start()
+            workers.append(worker)
+
+        # Wait for all workers to finish.
+        print('Waiting for workers...')
+        for worker in workers:
+            worker.join()
+
+            
+        """    
 
         numNodes = len(results[0])
         aggNodes = []
@@ -165,6 +306,7 @@ class MCTSPlayer :
             aggNode.q = sum([result[i].q for result in results])
             aggNodes.append(aggNode)
         return aggNodes
+        """
 
 
 
