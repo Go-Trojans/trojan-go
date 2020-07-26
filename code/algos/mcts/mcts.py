@@ -64,6 +64,21 @@ class MCTSNode:
         self.p = p  # Move probability given by the neural network
         self.v = v  # Value given by the neural network
 
+    def __members(self):
+        return (self.move,self.state,self.parentNode,self.wins,self.visits,self.q,self.p,self.v)
+
+    def __eq__(self, other) :
+
+        if isinstance(other,MCTSNode) :
+            comparison = self.move==other.move and self.state==other.state and \
+                            self.wins==other.wins and self.visits==other.visits and \
+                            self.q==other.q and self.p==other.p and self.v==other.v
+            return comparison
+        return False
+
+    def __hash__(self):
+        return id(self)
+
     def SelectChild(self, c=4):
         """
             Use PUCT to select a child.

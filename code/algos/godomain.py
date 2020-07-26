@@ -36,7 +36,7 @@ class GoBoard:
     # <4> The max moves allowed for a Go game,  Games terminate when both players pass or after 19 × 19 × 2 = 722 moves.
 
     def __members(self):
-        return (self.board_width,self.board_height,tuple(self.grid),self.komi,self.verbose,self.max_move)
+        return (self.board_width,self.board_height,self.grid,self.komi,self.verbose,self.max_move)
 
     def __eq__(self, other) :
         if isinstance(other, GoBoard) :
@@ -45,7 +45,7 @@ class GoBoard:
         return False
 
     def __hash__(self):
-        return hash(tuple(self))
+        return hash(self.__members)
 
     def copy_board(self) :
 
@@ -147,7 +147,7 @@ class GameState:
     # <5> moves          : Total moves played so far
 
     def __members(self) :
-        return (self.board,self.next_player,self.previous_state,self.last_move,self.moves)
+        return (self.board,self.next_player,self.last_move,self.moves)
 
     def __eq__(self,other) :
         if isinstance(other,GameState) :
@@ -157,7 +157,7 @@ class GameState:
         return False
 
     def __hash__(self):
-        return hash(tuple(self))
+        return hash(self.__members)
 
     def copy(self) :
 

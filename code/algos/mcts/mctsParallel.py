@@ -91,14 +91,14 @@ def run_simulation(simulations,encoder,rootnode,visited):
         # Select
         while currNode in visited:  # node is fully expanded and non-terminal
             currNode = currNode.SelectChild(c)
-            currNode.visits += vLoss
-            currNode.wins -= vLoss
+            #currNode.visits += vLoss
+            #currNode.wins -= vLoss
 
         # Expand
         if currNode not in visited:  # if we can expand (i.e. state/node is non-terminal)
             #currNode.visits += vLoss
             #currNode.wins -= vLoss
-            visited.add(currNode)
+            visited.append(currNode)
             hero = currNode.state.next_player
             tensor = encoder.encode(currNode.state)
             tensor = np.expand_dims(tensor, axis=0)
@@ -133,19 +133,19 @@ class MCTSNode:
         self.v = v # Value given by the neural network
 
     def __members(self):
-        return (self.move,self.state,self.parentNode,self.wins,self.visits,self.q,self.p,self.v)
+        return (self.move,self.state,self.childNodes,self.wins,self.visits,self.q,self.p,self.v)
 
     def __eq__(self, other) :
 
         if isinstance(other,MCTSNode) :
-            comparison = self.move==other.move and self.state==other.state and self.parentNode==other.parentNode and \
+            comparison = self.move==other.move and self.state==other.state and \
                             self.wins==other.wins and self.visits==other.visits and \
                             self.q==other.q and self.p==other.p and self.v==other.v
             return comparison
         return False
 
     def __hash__(self):
-        return id(self)
+        return hash(self.__members)
 
     def SelectChild(self,c=4):
         """
@@ -286,8 +286,9 @@ class MCTSPlayer :
         simEach = int(simulations / numProc)
         visiteds = [copy.deepcopy(visited) for i in range(numProc)]
         pool = multiprocessing.Pool(numProc)
-        results = [pool.apply_async(run_simulation,(simEach,encoder,rootnode,visited)) for vis in visiteds]
+        results = [pool.apply_async(run_simulation,(simEach,encoder,rootnode,vis)) for vis in visiteds]
         results = [res.get() for res in results]
+        pool.close()
         """
         cores = 1
         root_agents = [copy.deepcopy(rootnode) for _ in range(cores)]
@@ -329,8 +330,11 @@ class MCTSPlayer :
                     aggNode.wins += result[0][i].wins
                     aggNode.q += result[0][i].q
             aggNodes.append(aggNode)
+
         for result in results :
-            visited = visited.union(result[1])
+            for node in result[1] :
+                if node not in visited :
+                    visited.append(node)
         end = time.time()
         print('Time for move: ',str(end-start))
         return aggNodes,visited
@@ -389,7 +393,7 @@ class MCTSSelfPlay :
             game = GameState.new_game(self.board_size)
             moves = []
             moveNum = 0
-            visited = set()
+            visited = []
             rootnode = None
             while not game.is_over() :
                 moveNum += 1
@@ -483,4 +487,4 @@ if __name__ == "__main__" :
     nn = AGZ.init_random_model(input_shape)
     mctsSP = MCTSSelfPlay(7, 5, nn)
 
-    mctsSP.play('./data/experience_1.hdf5', num_games=2, simulations=50)
+    mctsSP.play('./data/experience_1.hdf5', num_games=2, simulations=1600)
