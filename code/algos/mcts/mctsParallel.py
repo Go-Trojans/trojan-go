@@ -65,7 +65,7 @@ def set_gpu_memory_target(frac):
 
 
 
-def run_simulation(simulations,encoder,rootnode):
+def run_simulation(simulations,encoder,rootnode,visited):
     epsilon = 0.25
     dcoeff = [0.03]
     c=4
@@ -78,7 +78,7 @@ def run_simulation(simulations,encoder,rootnode):
     print("PID: ", os.getpid())
     
     
-    visited = set()
+    #visited = set()
     input_shape = (7, 5, 5)
     nn = AGZ.init_random_model(input_shape)
 
@@ -96,8 +96,8 @@ def run_simulation(simulations,encoder,rootnode):
 
         # Expand
         if currNode not in visited:  # if we can expand (i.e. state/node is non-terminal)
-            currNode.visits += vLoss
-            currNode.wins -= vLoss
+            #currNode.visits += vLoss
+            #currNode.wins -= vLoss
             visited.add(currNode)
             hero = currNode.state.next_player
             tensor = encoder.encode(currNode.state)
@@ -110,9 +110,9 @@ def run_simulation(simulations,encoder,rootnode):
                             vLoss)  # state is terminal. Update node with result from POV of node.playerJustMoved
             currNode = currNode.parentNode
     if stoch:
-        return rootnode.childNodes
+        return rootnode.childNodes,visited
     else:
-        return max(rootnode.childNodes, key=attrgetter('visits')).move
+        return max(rootnode.childNodes, key=attrgetter('visits'))
 
 
 
@@ -132,6 +132,20 @@ class MCTSNode:
         self.p = p # Move probability given by the neural network
         self.v = v # Value given by the neural network
 
+    def __members(self):
+        return (self.move,self.state,self.parentNode,self.wins,self.visits,self.q,self.p,self.v)
+
+    def __eq__(self, other) :
+
+        if isinstance(other,MCTSNode) :
+            comparison = self.move==other.move and self.state==other.state and self.parentNode==other.parentNode and \
+                            self.wins==other.wins and self.visits==other.visits and \
+                            self.q==other.q and self.p==other.p and self.v==other.v
+            return comparison
+        return False
+
+    def __hash__(self):
+        return id(self)
 
     def SelectChild(self,c=4):
         """
@@ -165,14 +179,18 @@ class MCTSNode:
                          next_board = self.state.board
                      # self.state.moves should not matter as such so keeping it same as parent.
                      childState = GameState(next_board, self.state.next_player.opp, self.state, move, self.state.moves)
+                     child = MCTSNode(state=childState, move=move, parent=self, p=p)
+                     self.childNodes.append(child)
 
     def update(self, v,vLoss):
         """
             Update this node - one additional visit and v additional wins.
             v is given from the neural network and must be from the viewpoint of playerJustmoved.
         """
-        self.visits += -vLoss + 1
-        self.wins += vLoss + v
+        #self.visits += -vLoss + 1
+        #self.wins += vLoss + v
+        self.visits += 1
+        self.wins += v
         self.q = self.wins / self.visits
 
     def PUCT(self,c=4):
@@ -262,18 +280,21 @@ class MCTSPlayer :
         """results = []
         def collect_result(result):
             results.append(result)
-
-        pool = multiprocessing.Pool(numProc)
-        simEach = int(simulations / numProc)
-        results = [pool.apply_async(self.run_simulation,(rootnode, visited, encoder, simEach))]
-        results = [res.get() for res in results]"""
-        cores = 1
         """
+        start = time.time()
+        numProc = 2
+        simEach = int(simulations / numProc)
+        visiteds = [copy.deepcopy(visited) for i in range(numProc)]
+        pool = multiprocessing.Pool(numProc)
+        results = [pool.apply_async(run_simulation,(simEach,encoder,rootnode,visited)) for vis in visiteds]
+        results = [res.get() for res in results]
+        """
+        cores = 1
         root_agents = [copy.deepcopy(rootnode) for _ in range(cores)]
         f = partial(self.run_simulation, int(simulations / cores), encoder)
         with Pool(processes=cores) as pool:
             results = [i for i in pool.imap_unordered(f, root_agents)]
-        """
+        
         workers = []
         x = int(simulations / cores)
         
@@ -297,16 +318,24 @@ class MCTSPlayer :
             
         """    
 
-        numNodes = len(results[0])
+        numNodes = len(results[0][0])
         aggNodes = []
+
         for i in range(numNodes) :
-            aggNode = copy.deepcopy(results[0][i])
-            aggNode.visits = sum([result[i].visits for result in results])
-            aggNode.wins = sum([result[i].wins for result in results])
-            aggNode.q = sum([result[i].q for result in results])
+            aggNode = copy.deepcopy(results[0][0][i])
+            for j,result in enumerate(results) :
+                if j>0 :
+                    aggNode.visits += result[0][i].visits
+                    aggNode.wins += result[0][i].wins
+                    aggNode.q += result[0][i].q
             aggNodes.append(aggNode)
-        return aggNodes
-        """
+        for result in results :
+            visited = visited.union(result[1])
+        end = time.time()
+        print('Time for move: ',str(end-start))
+        return aggNodes,visited
+
+
 
 
 
@@ -338,7 +367,7 @@ class MCTSSelfPlay :
 
 
 
-    def play(self,expFile,num_games=2500,simulations=1600,c=4,vResign=0,tempMoves=10) :
+    def play(self,expFile,num_games=2500,simulations=1600,c=4,vResign=-.7,tempMoves=10) :
         """
         :param num_game:
         :return:
@@ -364,6 +393,7 @@ class MCTSSelfPlay :
             rootnode = None
             while not game.is_over() :
                 moveNum += 1
+                print('Move: '+str(moveNum))
                 if moveNum <= tempMoves :
                     tau = 1
                 else :
@@ -371,7 +401,8 @@ class MCTSSelfPlay :
                 if not rootnode:
                     rootnode  = MCTSNode(state = game)
 
-                mctsNodes =  players[game.next_player].select_move(rootnode,visited ,self.encoder,simulations,c=c)
+                mctsNodes,visited =  players[game.next_player].select_move(rootnode,visited ,self.encoder,simulations,c=c)
+                print('Visited size: '+str(len(visited)))
                 tensor = self.encoder.encode(game)
                 _, rootV = self.model.predict(np.expand_dims(tensor, axis=0))
                 childVals = []

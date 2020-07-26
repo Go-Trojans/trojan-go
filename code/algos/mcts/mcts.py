@@ -133,6 +133,7 @@ class MCTSPlayer:
                     simulations,
                     epsilon = 0.25, dcoeff = [0.03], c=4,
                     stoch=True):
+        start = time.time()
         nn = self.model
         #print(nn.summary())
         """
@@ -183,6 +184,8 @@ class MCTSPlayer:
                 currNode.update(
                     v if hero == currNode.state.next_player else -v)  # state is terminal. Update node with result from POV of node.playerJustMoved
                 currNode = currNode.parentNode
+        end = time.time()
+        print('Time for move: '+str(end-start))
         if stoch :
            return rootnode.childNodes
         else :
@@ -269,6 +272,7 @@ class MCTSSelfPlay :
                     rootnode  = MCTSNode(state = game)
                 """ logic code to select a move using MCTS simulations """    
                 mctsNodes =  players[game.next_player].select_move(rootnode,visited ,self.encoder,simulations ,c=c)
+                print('Visited size: '+str(len(visited)))
                 tensor = self.encoder.encode(game)
                 nn = players[game.next_player].model  # MCTSPlayer.model 
                 _, rootV = nn.predict(np.expand_dims(tensor, axis=0))
@@ -278,7 +282,7 @@ class MCTSSelfPlay :
                 for child in mctsNodes:
                     childTensor = self.encoder.encode(child.state)
                     childTensor = np.expand_dims(childTensor, axis=0)
-                    _, childV = self.model.predict(childTensor)
+                    _, childV = nn.predict(childTensor)
                     if child.move.is_play:
                         r, c = child.move.point
                         i = self.board_size * r + c
@@ -459,8 +463,7 @@ class MCTSSelfPlay :
         print("trained model saved to disk : ", output_file)
         logging.debug("trained model saved to disk : {}".format(output_file))
 
-        
-"""
+
 if __name__ == "__main__" :
 
     mctsSP = MCTSSelfPlay(7,5)
@@ -468,6 +471,5 @@ if __name__ == "__main__" :
     nn = AGZ.init_random_model(input_shape)
     mctsSP = MCTSSelfPlay(7, 5, nn)
 
-    mctsSP.play('./data/experience_1.hdf5', num_games=2, simulations=50)
+    mctsSP.play(nn,nn,'./data/experience_1.hdf5', num_games=2, simulations=50)
 
-"""

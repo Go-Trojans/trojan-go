@@ -35,11 +35,17 @@ class GoBoard:
     # <3> Keeping for debugging purpose, just a knob for enabling/disabling verbose logs.
     # <4> The max moves allowed for a Go game,  Games terminate when both players pass or after 19 × 19 × 2 = 722 moves.
 
+    def __members(self):
+        return (self.board_width,self.board_height,tuple(self.grid),self.komi,self.verbose,self.max_move)
+
     def __eq__(self, other) :
         if isinstance(other, GoBoard) :
             comparison = self.grid == other.grid
             return comparison.all()
         return False
+
+    def __hash__(self):
+        return hash(tuple(self))
 
     def copy_board(self) :
 
@@ -139,6 +145,19 @@ class GameState:
     # <3> previous_state : What was the previous GameState. Or can be referred as Parent.
     # <4> last_move      : Last move played (Move.point)
     # <5> moves          : Total moves played so far
+
+    def __members(self) :
+        return (self.board,self.next_player,self.previous_state,self.last_move,self.moves)
+
+    def __eq__(self,other) :
+        if isinstance(other,GameState) :
+            comparison = self.board==other.board and self.next_player==other.next_player and \
+                        self.last_move==other.last_move and self.moves==other.moves
+            return comparison
+        return False
+
+    def __hash__(self):
+        return hash(tuple(self))
 
     def copy(self) :
 
