@@ -146,6 +146,7 @@ class MCTSPlayer :
         # rootnode = MCTSNode(state = gameState)
         # visited = set()
         for i in range(simulations):
+            simulations_start = time.time()
             currNode = rootnode
             if stoch and i>0 :
                 for child in currNode.childNodes:
@@ -190,6 +191,11 @@ class MCTSPlayer :
             while currNode:# backpropagate from the expanded node and work back to the root node
                 currNode.update(v if hero == currNode.state.next_player else -v)# state is terminal. Update node with result from POV of node.playerJustMoved
                 currNode = currNode.parentNode
+
+        simulations_end = time.time()
+        time_taken = simulations_end - simulations_start
+        #STD : 0.1 msec per trials for 9*9 board
+        #print("Per move time taken with {} simulations is {}, [expecting max 40 msec or 0.04 sec]".format(simulations, time_taken))
         if stoch :
            return rootnode.childNodes
         else :
@@ -287,16 +293,27 @@ class MCTSSelfPlay :
                     rootnode  = MCTSNode(state = game)
                 """ logic code to select a move using MCTS simulations """    
                 mctsNodes =  players[game.next_player].select_move(rootnode,visited ,self.encoder,simulations ,c=c)
+                nn = players[game.next_player].model  # MCTSPlayer.model
+
                 tensor = self.encoder.encode(game)
-                nn = players[game.next_player].model  # MCTSPlayer.model 
+                
+                #This code piece is for Resigning a game (vResign)
+                """
                 _, rootV = nn.predict(np.expand_dims(tensor, axis=0))
                 childVals = []
+                """
+                
                 searchProb = np.zeros((self.board_size**2 + 1,),dtype='float')
                 tempNodes = []
                 for child in mctsNodes :
+                    
+                    #This code piece is for Resigning a game (vResign)
+                    """
                     childTensor = self.encoder.encode(child.state)
                     childTensor = np.expand_dims(childTensor, axis=0)
                     _,childV = nn.predict(childTensor)
+                    """
+                    
                     if child.move.is_play :
                         r,c = child.move.point
                         i = self.board_size*r + c
@@ -310,7 +327,7 @@ class MCTSSelfPlay :
                     """    
                     searchProb[i] = child.visits**(1/tau)
                     tempNodes.append(child.visits**(1/tau))
-                    childVals.append(childV.item())
+                    #childVals.append(childV.item()) #This code piece is for Resigning a game (vResign)
                 probSum = sum(tempNodes)
                 tempNodes = np.divide(tempNodes,probSum)
                 searchProb = np.divide(searchProb,probSum)
