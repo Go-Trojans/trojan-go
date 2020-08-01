@@ -4,14 +4,18 @@ Date   : July 30th 2020
 File   : goboard.cpp
 
 Description : Define Go Domain Rules.
-
 Gamestate class is using GoBoard class.
 */
 
 #include <iostream>
 using namespace std;
 
+// Include the STL library.
+#include <vector>
+#include <map>
+#include <set>
 #include <tuple>
+#include <utility>
 
 //import copy
 //import inspect
@@ -19,6 +23,52 @@ using namespace std;
 //from algos.gohelper import Player, Point
 #include "godomain.h"
 #include "gohelper.h"
+
+/*
+  operator overloading: Need to re-check
+  */
+bool Move::operator==(const Move &other) const
+{
+    if (is_play == other.is_play && is_pass == other.is_pass && is_resign == other.is_resign)
+    {
+        if (is_play == true)
+            return true;
+        else
+            return true;
+        else return false;
+    }
+}
+
+class Move
+{
+public:
+    Point *point = NULL;
+    bool is_play = true;
+    bool is_pass = false;
+    bool is_selected = false;
+
+    bool is_resign = false;
+
+    Move(Point *point, bool is_pass, bool is_resign)
+    {
+        point = point; // is a pointer
+        is_play = point == NULL ? true : false;
+        is_pass = is_pass;
+        is_resign = is_resign;
+    }
+
+    Move play(Point *point)
+    {
+        return Move(point, is_pass, is_resign);
+    }
+
+    Move pass_turn()
+    {
+        return Move(NULL, true, false);
+    }
+
+    Move resign(cls) : return Move(NULL, false, true);
+};
 
 /* Compare two GoBoards are same or not in terms of grid[][] 
    usage GoBoard board1, board2;
@@ -55,9 +105,10 @@ public:
         /*
          Initialize the grid with 0.
          */
-        for (int i = 0; i < w; i++)
-            for (int j = 0; j < h; j++)
-                *(grid + i * N + j) = 0;
+        memset(grid, 0, (w * h) * (sizeof *grid));
+        // for (int i = 0; i < w; i++)
+        //     for (int j = 0; j < h; j++)
+        //         *(grid + i * N + j) = 0;
     }
 
     /* Deconstructor
@@ -79,357 +130,330 @@ public:
     {
         GoBoard *new_board = new GoBoard(board.board_width, board.board_height, board.moves);
         return new_board;
+
+        // def copy_board(self) :
+        //    return copy.deepcopy(self)
     }
 
-    def copy_board(self) :
+    void remove_dead_stones(Player player, Move move)
+    {
 
-        return copy.deepcopy(self)
+        // """
 
-    def place_stone(self, player, point):  # <1>
-        """
-        Assuming that the valid point check has been applied prior to
-        calling this function. Just sets the coordinates on grid.
-        """
-        r, c = point
-#move = Move.play(Point(row = r, col = c))
-        
-        self.grid[r][c] = player.value
-        self.remove_dead_stones(player, np.array([r,c]))
+        //     :param
+        //            player: Current player
+        //            move: The latest move played
+        //     :return: board: A 2-Dimensional numpy array with the dead pieces removed (Not needed)
 
-    def remove_dead_stones(self, player, move):
-        """
+        //     Basic intuition:
+        //         find enemy groups neighbouring the latest move with no liberties and remove them from the board.
+        //     """
+        // board = self.grid # this is not board but just a grid.
+        int *board = grid;
+        // piece = player.value
+        int piece = player; // assuming player is either 0 or 1
 
-            :param 
-                   player: Current player
-                   move: The latest move played
-            :return: board: A 2-Dimensional numpy array with the dead pieces removed (Not needed)
+        // visited = set()
+        // m = board.shape[0]
+        // n = board.shape[1]
+        // piece = 3 - piece
 
-            Basic intuition:
-                find enemy groups neighbouring the latest move with no liberties and remove them from the board.
-            """
-        board = self.grid # this is not board but just a grid.
-        piece = player.value
-        
-        
-        visited = set()
-        m = board.shape[0]
-        n = board.shape[1]
-        piece = 3 - piece
-        
-        offset = np.array([[1, 0], [0, 1], [-1, 0], [0, -1]])
-        move_neighbours = offset + move
+        // offset = np.array([[1, 0], [0, 1], [-1, 0], [0, -1]])
+        // move_neighbours = offset + move
 
-        for move_neighbour in move_neighbours:
-            r, c = move_neighbour[0], move_neighbour[1]
-            point = Point(row=r, col=c)
-            if not self.is_on_grid(point):
-                continue
-            
-            if board[move_neighbour[0]][move_neighbour[1]] == piece:
-                if (move_neighbour[0], move_neighbour[1]) in visited:
-                    continue
-                liberty_found = False
-                remove_group = []
-                queue = set()
-                queue.add((move_neighbour[0], move_neighbour[1]))
-                while queue:
-                    node_x, node_y = queue.pop()
-                    if (node_x, node_y) in visited:
-                        continue
-                    visited.add((node_x, node_y))
-                    remove_group.append([node_x, node_y])
-                    neighbours = offset + np.array([node_x, node_y])
-                    for neighbour in neighbours:
-                        if (neighbour[0], neighbour[1]) in visited:
-                            continue
-                        if 0 <= neighbour[0] < m and 0 <= neighbour[1] < n:
-                            val = board[neighbour[0]][neighbour[1]]
-                            if val == 0:
-                                liberty_found = True
-                            if val == piece:
-                                queue.add((neighbour[0], neighbour[1]))
+        // for move_neighbour in move_neighbours:
+        //     r, c = move_neighbour[0], move_neighbour[1]
+        //     point = Point(row=r, col=c)
+        //     if not self.is_on_grid(point):
+        //         continue
 
-                if not liberty_found:
-                    while remove_group:
-                        del_node_x, del_node_y = remove_group.pop()
-                        board[del_node_x][del_node_y] = 0
+        //     if board[move_neighbour[0]][move_neighbour[1]] == piece:
+        //         if (move_neighbour[0], move_neighbour[1]) in visited:
+        //             continue
+        //         liberty_found = False
+        //         remove_group = []
+        //         queue = set()
+        //         queue.add((move_neighbour[0], move_neighbour[1]))
+        //         while queue:
+        //             node_x, node_y = queue.pop()
+        //             if (node_x, node_y) in visited:
+        //                 continue
+        //             visited.add((node_x, node_y))
+        //             remove_group.append([node_x, node_y])
+        //             neighbours = offset + np.array([node_x, node_y])
+        //             for neighbour in neighbours:
+        //                 if (neighbour[0], neighbour[1]) in visited:
+        //                     continue
+        //                 if 0 <= neighbour[0] < m and 0 <= neighbour[1] < n:
+        //                     val = board[neighbour[0]][neighbour[1]]
+        //                     if val == 0:
+        //                         liberty_found = True
+        //                     if val == piece:
+        //                         queue.add((neighbour[0], neighbour[1]))
 
-    def is_on_grid(self, point):
-        return 0 <= point.row < self.board_width and \
-               0 <= point.col < self.board_height
+        //         if not liberty_found:
+        //             while remove_group:
+        //                 del_node_x, del_node_y = remove_group.pop()
+        //                 board[del_node_x][del_node_y] = 0
+    }
 
-    def display_board(self):
-        print(self.grid)
+    void place_stone(Player player, Point point)
+    {
+        /* Player is a enum (0,1)
+           point is a set in python. Here assunimg as pair. pair <int, int> point;
+        */
+        int r, c;
+        r = point.first;
+        c = point.second;
+
+        move = Move.play(Point(r, c));
+        grid[r][c] = player;       // assuming player as enum of 0 or 1 as of now
+        move = np.array([ r, c ]); // TODO: need to see the DS of move and decide on this
+        remove_dead_stones(player, move);
+    }
+
+    void is_on_grid(Point point)
+    {
+        if ((0 <= point.row < self.board_width and) && (0 <= point.col < self.board_height))
+            return true;
+        else
+            return false;
+    }
+
+    void display_board()
+    {
+        for (int i = 0; i < board_width; i++)
+            for (int j = 0; j < board_height; j++)
+                cout << *(grid + i * N + j) << " ";
+        cout << endl;
+    }
 };
-
 /*
 GoState mentioned in the mail but using GameState as class name.
 */
 class GameState
 {
-    def __init__(self, board, next_player, previous, last_move,moves=0):
-        self.board = board                 # <1>
-        self.next_player = next_player     # <2> 
-        self.previous_state = previous     # <3>
-        self.last_move = last_move         # <4>
-        self.moves = moves                 # <5>
+public:
+    GameBoard *board = new GameBoard;
+    Player next_player;
+    GameState *previous_state = NULL;
+    Move last_move;
+    int moves = 0;
 
-# <1> board : What is the current board
-# <2> next_player : Who's going to make next move.
-# <3> previous_state : What was the previous GameState.Or can be referred as Parent.
-# <4> last_move : Last move played(Move.point)
-# <5> moves : Total moves played so far
+    GameState(GameBoard *board, Player next_player, GameState *previous, Move last_move, int moves)
+    {
+        board = board;             // this is the responsibility of the GoBoard user to allocate memory.
+        next_player = next_player; // enum assignment
+        previous_state = previous;
+        last_move = last_move;
+        moves = moves;
+    }
 
-    def copy(self) :
+    /* 
+      Copy constructor 
+      Return a copy of GameState (same as deepcopy in python) 
+      usage: GameState game1 = game2;
+    */
+    // TODO : it should be GameState *
+    GameState(const GameState &game)
+    {
+        GameState *new_game = new GameState(game.board, game.next_player, game.previous_state, game.last_move, game.moves);
+        return new_game;
 
-        return copy.deepcopy(self)
+        // def copy_board(self) :
+        //    return copy.deepcopy(self)
+    }
 
-    def apply_move(self, move):
-        """Return the new GameState after applying the move."""
+    GameState *apply_move(Move move, GameState *self)
+    {
+        Board *next_board = NULL;
+        //Return the new GameState after applying the move.
 
-#if we don't pass
-        if move.is_play:
-#If the move is Invalid then print invalid move and return
-            if not self.board.is_on_grid(move.point) or not self.is_valid_move(move):
-                raise ValueError("Invalid move", move.point)
-            next_board = copy.deepcopy(self.board)
-            next_board.place_stone(self.next_player, move.point)
-        else:
-            next_board = self.board
-        return GameState(next_board, self.next_player.opp, self, move,self.moves+1)
+        /* if we don't pass */
+        if (move.is_play)
+        {
+            if ((!board.is_on_grid(move.point)) || (!is_valid_move(move)))
+            {
+                cout << "Invalid move " << move.point << endl;
+                return NULL;
+            }
+            next_board = self->board; // this is a deepcopy as copy constructor should be called
+            next_board->place_stone(next_player, move.point);
+        }
+        else
+        {
+            next_board = board;
+        }
 
-    @classmethod
-    def new_game(cls, board_size):
-        if isinstance(board_size, int):
-            board_size = (board_size, board_size)
-        board = GoBoard(*board_size)
-        return GameState(board, Player.black, None, None)
+        return GameState(next_board, next_player.opp, self, move, moves + 1);
+    }
 
-    def detect_neighbor_ally(self,player,point):
+    // TODO : I guess it should return GameState *
+    GameState *new_game(int board_size)
+    {
+        GameState *game = new GameState;
+        int w = board_size;
+        int h = board_size;
+        GoBoard *board = new GoBoard(w, h, 0);
 
-        grid = self.board.grid
-        neighbors = point.neighbors()  # Detect neighbors
-        group_allies = []
+        return GameState(board, Player.black, NULL, NULL, 0);
+    }
 
-        for piece in neighbors:
-            if self.board.is_on_grid(piece) :
-                nR,nC = piece
-                if grid[nR][nC] == player.value:
-                    group_allies.append(piece)
-        return group_allies
+    // let us return a set or vector (python using list)
+    vector detect_neighbor_ally(Player player, Point point)
+    {
+        vector group_allies[];
 
-    def ally_dfs(self, player, point):
+        // grid = self.board.grid
+        // neighbors = point.neighbors()  # Detect neighbors
+        // group_allies = []
 
-        stack = [point]
-        ally_members = []
-        while stack:
-            piece = stack.pop()
-            ally_members.append(piece)
-            neighbor_allies = self.detect_neighbor_ally(player,point)
-            for ally in neighbor_allies:
-                if ally not in stack and ally not in ally_members:
-                    stack.append(ally)
-        return ally_members
+        // for piece in neighbors:
+        //     if self.board.is_on_grid(piece) :
+        //         nR,nC = piece
+        //         if grid[nR][nC] == player.value:
+        //             group_allies.append(piece)
+        // return group_allies
 
-    def is_suicide(self,player,move):
+        return group_allies;
+    }
 
-        if not move.is_play:
-            return False
+    vector ally_dfs(Player player, Point point)
+    {
+        vector ally_members[];
 
-        test_state = self.copy()
-        grid = test_state.board.grid
-        point = move.point
-        test_state.board.place_stone(player,point)
-        ally_members = test_state.ally_dfs(player,point)
-        for member in ally_members:
-            neighbors = member.neighbors()
-            for piece in neighbors:
-                if test_state.board.is_on_grid(piece) :
-                    nR,nC = piece
-#If there is empty space around a piece, it has liberty
-                    if grid[nR][nC] == 0 and move.point != piece:
-                        return False
-        return True
+        // stack = [point]
+        // ally_members = []
+        // while stack:
+        //     piece = stack.pop()
+        //     ally_members.append(piece)
+        //     neighbor_allies = self.detect_neighbor_ally(player,point)
+        //     for ally in neighbor_allies:
+        //         if ally not in stack and ally not in ally_members:
+        //             stack.append(ally)
+        // return ally_members
 
-    def violate_ko(self, player, move):
+        return ally_members;
+    }
 
-        if not move.is_play:
-            return False
+    bool is_suicide(Player player, Move move)
+    {
 
-        test_board = self.board.copy_board()
-        test_board.place_stone(player,move.point)
+        // if not move.is_play:
+        //     return False
 
-        prev_state = self
-        for i in range(8) :
-            prev_state = prev_state.previous_state
-            if not prev_state :
-                break
-            if test_board == prev_state.board :
-                return True
+        // test_state = self.copy()
+        // grid = test_state.board.grid
+        // point = move.point
+        // test_state.board.place_stone(player,point)
+        // ally_members = test_state.ally_dfs(player,point)
+        // for member in ally_members:
+        //     neighbors = member.neighbors()
+        //     for piece in neighbors:
+        //         if test_state.board.is_on_grid(piece) :
+        //             nR,nC = piece
+        //             if grid[nR][nC] == 0 and move.point != piece:
+        //                 return False
+        // return True
 
-        return False
+        return true;
+    }
 
-#Return all legal moves
-    def legal_moves(self) :
-#print(inspect.currentframe().f_code.co_name, inspect.currentframe().f_back.f_code.co_name)
-        leg_moves = []
-        board = self.board
-        for r in range(board.board_height) :
-            for c in range(board.board_width) :
-                move = Move(point=Point(row=r,col=c))
-                if self.is_valid_move(move) :
-                    leg_moves.append(move)
-                    
-        leg_moves.append(Move.pass_turn())
-        leg_moves.append(Move.resign())
-        
-        return leg_moves
+    bool violate_ko(Player player, Move move)
+    {
 
-    def is_valid_move(self, move):
+        // if not move.is_play:
+        //     return False
 
-#print(inspect.currentframe().f_code.co_name, inspect.currentframe().f_back.f_code.co_name)
-        if self.is_over():
-            return False
+        // test_board = self.board.copy_board()
+        // test_board.place_stone(player,move.point)
 
-        if move.is_pass or move.is_resign:
-            return True
+        // prev_state = self
+        // for i in range(8) :
+        //     prev_state = prev_state.previous_state
+        //     if not prev_state :
+        //         break
+        //     if test_board == prev_state.board :
+        //         return True
 
-        point = move.point
-        r,c = point
-        board = self.board
+        // return False
 
-#check if off grid or not empty position
-        if not board.is_on_grid(point) or board.grid[r][c] != 0 :
-            return False
-#check KO or suicide
-        if self.violate_ko(self.next_player,move) or self.is_suicide(self.next_player,move):
-            return False
-        return True
+        return false;
+    }
 
-    def is_over(self):
-        
-        if self.moves > (self.board.board_width *self.board.board_height * 2):
-#print(inspect.currentframe().f_code.co_name, inspect.currentframe().f_back.f_code.co_name)
-            print("Game is over as max moves reached : ", self.moves)
-            return True
-        
-        if not self.last_move or not self.previous_state or not self.previous_state.last_move:
-            return False
-   
-        if self.last_move.is_resign:
-            return True
-    
-        if self.last_move.is_pass and self.previous_state.last_move.is_pass:
-            return True
-        return False
-    
-    def winner(self):
-        """
+    vector legal_moves()
+    {
 
-            :param board: A 2-Dimensional numpy array
-            :return: 0: Draw
-                     1: Black wins
-                     2: White wins
+        vector leg_moves[];
 
-            Basic intuition:
-                if black piece is encountered increase points for black by 1
-                if white piece is encountered increase points for white by 1
-                if blank sites is encountered we
-    try to find the size of the cluster of blank sites
-                    if blank sites are completely surrounded by black then points for black increases by the group size
-                    if blank sites are completely surrounded by white then points for white increases by the group size
-                    if blank sites are completely surrounded by both then points for both increases by (group size)/2
-            """
-        if self.last_move.is_resign :
-            print("[DEBUG] last move was resign")
-            return self.next_player
+        // leg_moves = []
+        // board = self.board
+        // for r in range(board.board_height) :
+        //     for c in range(board.board_width) :
+        //         move = Move(point=Point(row=r,col=c))
+        //         if self.is_valid_move(move) :
+        //             leg_moves.append(move)
 
-        board = self.board.grid
-        visited = set()
-        m = board.shape[0]
-        n = board.shape[1]
-        if m == 19:
-            komi = 3.75
-        else:
-            komi = (m / 2) - 1
-#print(komi)
-        count_black = -komi
-        count_white = komi
-#print(count_white, count_black)
-        offset = np.array([[1, 0], [0, 1], [-1, 0], [0, -1]])
-        for i in range(m):
-            for j in range(n):
-                if (i, j) in visited:
-                    continue
-                elif board[i][j] == 1:
-                    count_black += 1
-#print("black_increase", i, j, count_black)
-                elif board[i][j] == 2:
-                    count_white += 1
-#print("white_increase", i, j, count_white)
-                elif board[i][j] == 0:
-                    queue = set()
-                    queue.add((i, j))
-                    black_neighbour = False
-                    white_neighbour = False
-                    group_count = 0
-                    while queue:
-                        node_x, node_y = queue.pop()
-                        if (node_x, node_y) in visited:
-                            continue
-                        visited.add((node_x, node_y))
-                        group_count += 1
-                        neighbours = offset + np.array([node_x, node_y])
-                        for neighbour in neighbours:
-                            if (neighbour[0], neighbour[1]) in visited:
-                                continue
-                            elif 0 <= neighbour[0] < m and 0 <= neighbour[1] < n:
-                                val = board[neighbour[0]][neighbour[1]]
-                                if val == 1:
-                                    black_neighbour = True
-                                elif val == 2:
-                                    white_neighbour = True
-                                elif val == 0:
-                                    queue.add((neighbour[0], neighbour[1]))
-                    if black_neighbour and white_neighbour:
-                        count_black+=(group_count/2)
-                        count_white+=(group_count/2)
-                        pass
-                    elif black_neighbour:
-                        count_black += group_count
-#print("black_group_inc", group_count, count_black)
-                    elif white_neighbour:
-                        count_white += group_count
-#print("white_group_inc", group_count, count_white)
-#print(count_white, count_black)
-        if count_white > count_black:
-            return 2
-        elif count_black > count_white:
-            return 1
-        else:
-            return 0
+        // leg_moves.append(Move.pass_turn())
+        // leg_moves.append(Move.resign())
+
+        // return leg_moves
+
+        return leg_moves;
+    }
+
+    bool is_valid_move(Move move)
+    {
+
+        // if self.is_over():
+        //     return False
+
+        // if move.is_pass or move.is_resign:
+        //     return True
+
+        // point = move.point
+        // r,c = point
+        // board = self.board
+
+        // #check if off grid or not empty position
+        // if not board.is_on_grid(point) or board.grid[r][c] != 0 :
+        //     return False
+        // #check KO or suicide
+        // if self.violate_ko(self.next_player,move) or self.is_suicide(self.next_player,move):
+        //     return False
+        // return True
+
+        return true;
+    }
+
+    bool is_over()
+    {
+        // if self.moves > (self.board.board_width *self.board.board_height * 2):
+        //     #print(inspect.currentframe().f_code.co_name, inspect.currentframe().f_back.f_code.co_name)
+        //     print("Game is over as max moves reached : ", self.moves)
+        //     return True
+
+        // if not self.last_move or not self.previous_state or not self.previous_state.last_move:
+        //     return False
+
+        // if self.last_move.is_resign:
+        //     return True
+
+        // if self.last_move.is_pass and self.previous_state.last_move.is_pass:
+        //     return True
+        // return False
+
+        return false;
+    }
+
+    int winner()
+    {
+
+        return 0;
+    }
 };
 
-class Move
-{
-    def __init__(self, point = None, is_pass = False, is_resign = False) : self.point = point self.is_play = (self.point is not None)
-                                                                                                                 self.is_pass = is_pass self.is_selected = False self.is_resign = is_resign
-
-                                                                                                                                                                                      def __eq__(self, other) :
-
-                                                                                                                                                                                                                if isinstance(other, Move) : if self.is_play
-                                                                                                                                                                                      == other.is_play
-                                                                                                                                                                                  and self.is_pass == other.is_pass and self.is_resign == other.is_resign : if self.is_play == True : return self.point == other.point else : return True else : return False return False
-
-                                                                                                                                                                                                                                                                                                                                                 @classmethod def play(cls, point) : return Move(point = point)
-
-                                                                                                                                                                                                                                                                                                                                                                                         @classmethod def pass_turn(cls) : return Move(is_pass = True)
-
-                                                                                                                                                                                                                                                                                                                                                                                                                               @classmethod def ply_selected(cls) : return Move(is_selected = True)
-
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                        @classmethod def resign(cls) : return Move(is_resign = True)
-};
-
+/*
 int main()
 {
     int BOARD_SIZE = 5
@@ -475,3 +499,4 @@ int main()
 
 return 0;
 }
+*/
