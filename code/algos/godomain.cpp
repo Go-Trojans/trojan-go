@@ -16,6 +16,9 @@ using namespace std;
 #include <set>
 #include <tuple>
 #include <utility>
+#include <algorithm>
+#include <list>
+#include <functional>
 
 //import copy
 //import inspect
@@ -135,7 +138,7 @@ public:
         //    return copy.deepcopy(self)
     }
 
-    void remove_dead_stones(Player player, Move move)
+    void remove_dead_stones(Player player, Point move) // check move here
     {
 
         // """
@@ -154,47 +157,115 @@ public:
         int piece = player; // assuming player is either 0 or 1
 
         // visited = set()
+        set<std::pair<int, int>> visited;
+
         // m = board.shape[0]
+        int m = 5;
         // n = board.shape[1]
+        int n = 5;
         // piece = 3 - piece
+        int piece = 3 - piece;
 
         // offset = np.array([[1, 0], [0, 1], [-1, 0], [0, -1]])
+        std::list<std::pair<int, int>> offsetV;
+        offsetV.push_back(make_pair(1, 0));
+        offsetV.push_back(make_pair(0, 1));
+        offsetV.push_back(make_pair(-1, 0));
+        offsetV.push_back(make_pair(0, -1));
+
         // move_neighbours = offset + move
+        list<std::pair<int, int>> move_neighbours;
+        for (auto &elm : offsetV)
+        {
+            move_neighbours.push_back(make_pair(elm.first + move.first, elm.second + move.second));
+        }
 
         // for move_neighbour in move_neighbours:
-        //     r, c = move_neighbour[0], move_neighbour[1]
-        //     point = Point(row=r, col=c)
-        //     if not self.is_on_grid(point):
-        //         continue
+        for (auto &move_neighbour : move_neighbours)
+        {
+            bool liberty_found = false;
+            //     r, c = move_neighbour[0], move_neighbour[1]
+            int r = move_neighbour.first;
+            int c = move_neighbour.second;
+            //     point = Point(row=r, col=c)
+            Point point = Point(r, c);
+            //     if not self.is_on_grid(point):
+            //         continue
+            if (!is_on_grid(point))
+                continue;
+            //     if board[move_neighbour[0]][move_neighbour[1]] == piece:
+            if (*board(m * r + c) == piece)
+            {
+                //         if (move_neighbour[0], move_neighbour[1]) in visited:
+                //             continue
 
-        //     if board[move_neighbour[0]][move_neighbour[1]] == piece:
-        //         if (move_neighbour[0], move_neighbour[1]) in visited:
-        //             continue
-        //         liberty_found = False
-        //         remove_group = []
-        //         queue = set()
-        //         queue.add((move_neighbour[0], move_neighbour[1]))
-        //         while queue:
-        //             node_x, node_y = queue.pop()
-        //             if (node_x, node_y) in visited:
-        //                 continue
-        //             visited.add((node_x, node_y))
-        //             remove_group.append([node_x, node_y])
-        //             neighbours = offset + np.array([node_x, node_y])
-        //             for neighbour in neighbours:
-        //                 if (neighbour[0], neighbour[1]) in visited:
-        //                     continue
-        //                 if 0 <= neighbour[0] < m and 0 <= neighbour[1] < n:
-        //                     val = board[neighbour[0]][neighbour[1]]
-        //                     if val == 0:
-        //                         liberty_found = True
-        //                     if val == piece:
-        //                         queue.add((neighbour[0], neighbour[1]))
+                list < std::pair<int, int>::iterator itr = find(visited.begin(), visited.end(), make_pair(r, c));
+                if (!itr.end())
+                    continue;
 
-        //         if not liberty_found:
-        //             while remove_group:
-        //                 del_node_x, del_node_y = remove_group.pop()
-        //                 board[del_node_x][del_node_y] = 0
+                //         liberty_found = False
+                bool liberty_found = false;
+                //         remove_group = []
+                list<std::pair<int, int>> remove_group;
+
+                //         queue = set()
+                set<std::pair<int, int>> queue;
+                //         queue.add((move_neighbour[0], move_neighbour[1]))
+                queue.insert(make_pair(r, c));
+                set<std::pair<int, int>>::iterator it = queue.begin();
+                //         while queue:
+                for (; it != queue.end(); it++)
+                {
+                    //             node_x, node_y = queue.pop()
+                    auto nodeIterator = queue.begin();
+                    int node_x = *nodeIterator.first;
+                    int node_y = *nodeIterator.second;
+                    queue.erase(nodeIterator)
+
+                        //             if (node_x, node_y) in visited:
+                        //                 continue
+                        list < std::pair<int, int>::iterator itr = find(visited.begin(), visited.end(), make_pair(node_x, node_y));
+                    if (!itr.end())
+                        continue;
+                    //             visited.add((node_x, node_y))
+                    visited.insert(make_pair(node_x, node_y));
+
+                    //             remove_group.append([node_x, node_y])
+                    remove_group.push_back(make_pair(node_x, node_y));
+                    //             neighbours = offset + np.array([node_x, node_y])
+                    list<std::pair<int, int>> neighbours;
+                    for (auto &elm : offsetV)
+                    {
+                        neighbours.push_back(make_pair(elm.first + node_x, elm.second + node_y));
+                    }
+                    for (auto &neighbour : neighbours)
+                    {
+                        list < std::pair<int, int>::iterator itr = find(neighbours.begin(), neighbours.end(), make_pair(neighbour.first, neighbour.second));
+
+                        if (!itr.end())
+                            continue;
+                        if (0 <= neighbour.first < m and 0 <= neighbour.second < n)
+                        {
+                            val = *board(m * neighbour.first + neighbour.second);
+                            if (val == 0)
+                                liberty_found = true;
+                            if (val == piece)
+                                queue.insert(make_pair(neighbour.first, neighbour.second));
+                        }
+                    }
+                }
+
+                if (!liberty_found)
+                {
+                    std::pair<int, int> del_node;
+                    for (auto &elm : remove_group)
+                    {
+                        del_node = remove_group.pop_front();
+                        *board(m * del_node.first + del_node.second) = 0;
+                    }
+                }
+            }
+        }
     }
 
     void place_stone(Player player, Point point)
@@ -299,13 +370,15 @@ public:
         return GameState(board, Player.black, NULL, NULL, 0);
     }
 
-    // let us return a set or vector (python using list)
-    vector detect_neighbor_ally(Player player, Point point)
+    // let us return a list of pairs (python using list)
+    std::list detect_neighbor_ally(GameState *Self, Player player, Point point)
     {
-        vector group_allies[];
+        list<std::pair<int, int>> group_allies;
 
         // grid = self.board.grid
+        int *grid = self->board->grid;
         // neighbors = point.neighbors()  # Detect neighbors
+
         // group_allies = []
 
         // for piece in neighbors:
@@ -318,9 +391,9 @@ public:
         return group_allies;
     }
 
-    vector ally_dfs(Player player, Point point)
+    std::list ally_dfs(Player player, Point point)
     {
-        vector ally_members[];
+        list<std::pair<int, int>> ally_members;
 
         // stack = [point]
         // ally_members = []
@@ -381,10 +454,10 @@ public:
         return false;
     }
 
-    vector legal_moves()
+    std::list legal_moves()
     {
 
-        vector leg_moves[];
+        list<std::pair<int, int>> leg_moves;
 
         // leg_moves = []
         // board = self.board
