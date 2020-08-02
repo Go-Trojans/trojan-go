@@ -15,17 +15,73 @@ using namespace std;
 #include <map>
 #include <set>
 #include <tuple>
+#include <list>
+
 #include <utility>
 #include <algorithm>
-#include <list>
 #include <functional>
 
-//import copy
-//import inspect
-//import numpy as np
-//from algos.gohelper import Player, Point
 #include "godomain.h"
 #include "gohelper.h"
+
+map<char, std::pair<int, int>> mapDirections()
+{
+    map<char, std::pair<int, int>> directions;
+    directions[{'W'}] = make_pair(-1, 0);
+    directions[{'E'}] = make_pair(1, 0);
+    directions[{'S'}] = make_pair(0, -1);
+    directions[{'N'}] = make_pair(0, 1);
+
+    //cout << directions[{'W'}].first << endl;
+
+    return directions;
+}
+map<int, char> mapAction()
+{
+    map<int, char> action;
+    action.insert(make_pair(1, 'W'));
+    action.insert(make_pair(2, 'E'));
+    action.insert(make_pair(3, 'S'));
+    action.insert(make_pair(4, 'N'));
+
+    return action;
+}
+
+class Point
+{
+    std::pair<int, int> point;
+
+public:
+    Point(int row, int col)
+    {
+        point.first = row;
+        point.second = col;
+    }
+
+    list<std::pair<int, int>> neighbours()
+    {
+        map<int, char> action = mapAction();
+
+        map<char, std::pair<int, int>> directions;
+        list<std::pair<int, int>> neigh;
+        int row, col;
+
+        directions = mapDirections();
+        size_t len = directions.size();
+        for (int i = 1; i <= len; i++)
+        {
+            neigh.push_back(make_pair(point.first + directions[action[i]].first, point.second + directions[action[i]].second));
+            //cout << point.first + directions[action[i]].first << " " << point.second + directions[action[i]].second << endl;
+        }
+
+        for (auto &elm : neigh)
+        {
+            cout << elm.first << " " << elm.second << endl;
+        }
+
+        return neigh;
+    }
+};
 
 /*
   operator overloading: Need to re-check
@@ -70,7 +126,10 @@ public:
         return Move(NULL, true, false);
     }
 
-    Move resign(cls) : return Move(NULL, false, true);
+    Move resign()
+    {
+        return Move(NULL, false, true);
+    }
 };
 
 /* Compare two GoBoards are same or not in terms of grid[][] 
@@ -326,7 +385,7 @@ public:
       usage: GameState game1 = game2;
     */
     // TODO : it should be GameState *
-    GameState(const GameState &game)
+    GameState *(const GameState &game)
     {
         GameState *new_game = new GameState(game.board, game.next_player, game.previous_state, game.last_move, game.moves);
         return new_game;
@@ -371,7 +430,7 @@ public:
     }
 
     // let us return a list of pairs (python using list)
-    std::list detect_neighbor_ally(GameState *Self, Player player, Point point)
+    list<std::pair<int, int>> detect_neighbor_ally(GameState *Self, Player player, Point point)
     {
         list<std::pair<int, int>> group_allies;
 
@@ -391,7 +450,7 @@ public:
         return group_allies;
     }
 
-    std::list ally_dfs(Player player, Point point)
+    list<std::pair<int, int>> ally_dfs(Player player, Point point)
     {
         list<std::pair<int, int>> ally_members;
 
@@ -454,7 +513,7 @@ public:
         return false;
     }
 
-    std::list legal_moves()
+    list<std::pair<int, int>> legal_moves()
     {
 
         list<std::pair<int, int>> leg_moves;
