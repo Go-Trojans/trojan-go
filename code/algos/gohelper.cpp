@@ -32,7 +32,7 @@ list<std::pair<int, int>> Point::neighbours()
     size_t len = directions.size();
     for (int i = 1; i <= len; i++)
     {
-        neigh.push_back(make_pair(point.first + directions[action[i]].first, point.second + directions[action[i]].second));
+        neigh.push_back(make_pair(coord.first + directions[action[i]].first, coord.second + directions[action[i]].second));
         //cout << point.first + directions[action[i]].first << " " << point.second + directions[action[i]].second << endl;
     }
 
@@ -42,6 +42,14 @@ list<std::pair<int, int>> Point::neighbours()
     }
 
     return neigh;
+}
+
+void test()
+{
+
+    cout << "I am test" << endl;
+    list<std::pair<int, int>> neigh;
+    neigh = Point(1, 1).neighbours();
 }
 
 #ifdef USAGE

@@ -41,7 +41,7 @@ int main()
 }
 #endif
 
-map<char, std::pair<int, int>> mapDirections()
+static map<char, std::pair<int, int>> mapDirections()
 {
     map<char, std::pair<int, int>> directions;
     directions[{'W'}] = make_pair(-1, 0);
@@ -53,7 +53,7 @@ map<char, std::pair<int, int>> mapDirections()
 
     return directions;
 }
-map<int, char> mapAction()
+static map<int, char> mapAction()
 {
     map<int, char> action;
     action.insert(make_pair(1, 'W'));
@@ -67,19 +67,33 @@ map<int, char> mapAction()
 class Point
 {
 public:
-    std::pair<int, int> point;
+    std::pair<int, int> coord;
+
+    Point()
+    {
+        coord.first = -1;
+        coord.second = -1;
+    }
 
     Point(int row, int col)
     {
-        point.first = row;
-        point.second = col;
+        coord.first = row;
+        coord.second = col;
     }
 
     list<std::pair<int, int>> neighbours();
-
     bool operator==(const Point &other) const
     {
-        return (point.first == other.point.first && point.second == other.point.second);
+        cout << "Point == operator is called" << endl;
+        return (coord.first == other.coord.first && coord.second == other.coord.second);
+    }
+
+    Point *operator=(const Point &other)
+    {
+        cout << "Point = operator is called" << endl;
+        coord.first = other.coord.first;
+        coord.second = other.coord.second;
+        return this;
     }
 };
 
@@ -87,8 +101,7 @@ public:
  Function prototypes.
  */
 #ifdef USAGE
-// Internall it uses find_connected(board, point, player). Define both functions in gohelper.cpp
-bool is_point_an_eye(GoBoard *board, Point point, Player player);
+Internall it uses find_connected(board, point, player).Define both functions in gohelper.cpp bool is_point_an_eye(GoBoard *board, Point point, Player player);
 #endif
 
 #endif
