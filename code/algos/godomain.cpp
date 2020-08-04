@@ -124,7 +124,7 @@ GoBoard::GoBoard(const GoBoard &board)
 }
 
 /*
-  Assignment operator for GoBoard 
+  Assignment operator for GoBoard (deepcopy)
   usage: *new_board = *board; // both are pointers so passing the base address of GoBoard class
 */
 GoBoard *GoBoard::operator=(const GoBoard &board)
@@ -138,10 +138,16 @@ GoBoard *GoBoard::operator=(const GoBoard &board)
     max_move = board.max_move;
 
     /*  
-    This is not needed as memory will be allocated during object creation (constructor will take care of it)
-    grid = new int[board_width * board_height]; // allocate the memory for grid for new board.
-    memset(grid, 0, (board_width * board_height) * (sizeof *grid));
+    DANGER !!!
+    This is needed if 'this' pointer is NULL/nullptras;
+         else memory would have allocated during object creation (constructor will take care of it)
     */
+    // if (this)
+    // {
+    //     cout << "Allocating memory for grid" << endl;
+    //     grid = new int[board_width * board_height]; // allocate the memory for grid for new board.
+    //     memset(grid, 0, (board_width * board_height) * (sizeof *grid));
+    // }
 
     int *other_board_grid = board.grid;
 
@@ -207,53 +213,79 @@ GameState::GameState(GoBoard *board, Player next_player, GameState *previous, Mo
 }
 
 /* 
-      Copy constructor 
-      Return a copy of GameState (same as deepcopy in python) 
-      usage: GameState game1 = game2;
+  Copy constructor 
+  usage: GameState game1 = game2;
+  OR     GameState game1 = *game2;
 */
-// GameState::GameState(const GameState &game)
-// {
-//     board = game.board; // copy constructor of GoBoard should be called
-//     next_player = game.next_player;
-//     previous_state = game.previous_state;
-//     last_move = game.last_move;
-//     moves = game.moves;
-// }
+
+GameState::GameState(const GameState &game)
+{
+
+    board = game.board; // copy constructor of GoBoard should be called
+    next_player = game.next_player;
+    previous_state = game.previous_state;
+    last_move = game.last_move;
+    moves = game.moves;
+}
+
+/* 
+    Assignment  Opeator  (deepcopy)
+    usage: GameState game1 = game2;
+*/
+GameState *GameState::operator=(const GameState &game)
+{
+    this->board = game.board; // Assignment operator of GoBoard should be called (this->board is alread malloc'ed)
+    this->next_player = game.next_player;
+    this->previous_state = game.previous_state;
+    this->last_move = game.last_move;
+    this->moves = game.moves;
+
+    return this;
+}
+
+GameState *GameState::new_game(int board_size)
+{
+    //int w = board_size;
+    //int h = board_size;
+    GoBoard *board = new GoBoard(); // alloc memory for board as well as board->grid
+
+    GameState *game = new GameState(board, Player(BLACK), NULL, Move(), 0);
+    return game;
+}
 
 /* apply_move() */
-// GameState *GameState::apply_move(Move move)
-// {
+GameState *GameState::apply_move(Move move)
+{
 
-//     //Return the new GameState after applying the move.
+    //Return the new GameState after applying the move.
 
-//     /* if we don't pass */
-//     if (move.is_play())
-//     {
-//         if ((!this->board.is_on_grid(move.point)) || (!is_valid_move(move)))
-//         {
-//             cout << "Invalid move " << move.point << endl;
-//             return NULL;
-//         }
-//         GoBoard next_board = this->board; // this is a deepcopy as copy constructor should be called
-//         next_board.place_stone(this->next_player, move.point);
-//     }
-//     else
-//     {
-//         next_board = board;
-//     }
+    /* if we don't pass */
 
-//     return GameState(next_board, next_player.opp, this, move, moves + 1);
-// }
+    cout << "In apply_move ... " << endl;
+    GoBoard *next_board = new GoBoard(); // board as well as grid is malloc'ed
 
-// GameState *GameState::new_game(int board_size)
-// {
-//     GameState *game = new GameState;
-//     int w = board_size;
-//     int h = board_size;
-//     GoBoard *board = new GoBoard(w, h, 0);
+    if (move.is_play)
+    {
+        cout << "In apply_move, is_play is true ... " << endl;
+        if (!(this->board->is_on_grid(move.point)) || (!is_valid_move(move)))
+        {
+            cout << "Invalid move " << move.point.coord.first << " " << move.point.coord.second << endl;
+            return NULL;
+        }
 
-//     return GameState(board, Player.black, NULL, NULL, 0);
-// }
+        *next_board = *(this->board); // this is a deepcopy as assignment operator should be called
+        cout << "New board allocation is done " << next_board << endl;
+        next_board->place_stone(this->next_player, move.point);
+    }
+    else
+    {
+        delete next_board->grid;  // free grid
+        delete next_board;        // free board
+        next_board = this->board; // this is a shallow copy as both board are pointing to same memory allocation
+    }
+
+    return new GameState(next_board, next_player.opp(), this, move, moves + 1);
+}
 
 //TBD
 list<std::pair<int, int>> GameState::detect_neighbor_ally(GameState *Self, Player player, Point point)
@@ -383,8 +415,15 @@ int main()
 
     // Test GameState
     cout << "Testing GameState now ..." << endl;
-    GameState *game = new GameState();
+    GameState gameD;
+    GameState *game = gameD.new_game(5);
+    cout << "Player is : " << game->next_player.color << endl;
+    Point p(4, 4);
+    game = game->apply_move(Move(p, false, false));
+    cout << "New Game State after move (4,4)" << endl;
+    game->board->display_board();
 
+    // ignore now this.
     game->board = board1;
     game->board->display_board();
 

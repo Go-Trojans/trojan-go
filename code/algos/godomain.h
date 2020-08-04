@@ -29,7 +29,7 @@ public:
     bool is_selected = false;
 
     bool is_resign = false;
-    Move();
+    Move();                                          // Default Construcor
     Move(Point point, bool is_pass, bool is_resign); // Parametrized Construcor
     bool operator==(const Move &other) const;        // comparsion operator overloading
 
@@ -80,8 +80,10 @@ public:
     int moves = 0;
 
     GameState();
-    GameState(GoBoard *board, Player next_player, GameState *previous, Move last_move, int moves); // Constructor
-    //GameState(const GameState &game);                                                              // Copy Constructor (usage: GameState *new_game = game)
+    GameState(GoBoard *board, Player next_player, GameState *previous,
+              Move last_move, int moves);        // Parametrized Constructor
+    GameState(const GameState &game);            // Copy Constructor (usage: GameState *new_game = game or GameState *new_game = *game)
+    GameState *operator=(const GameState &game); // Assignment Operator (usage:   *new_game = *game )
 
     GameState *apply_move(Move move);
     GameState *new_game(int board_size);
