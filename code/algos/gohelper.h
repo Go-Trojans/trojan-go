@@ -69,32 +69,11 @@ class Point
 public:
     std::pair<int, int> coord;
 
-    Point()
-    {
-        coord.first = -1;
-        coord.second = -1;
-    }
-
-    Point(int row, int col)
-    {
-        coord.first = row;
-        coord.second = col;
-    }
-
-    list<std::pair<int, int>> neighbours();
-    bool operator==(const Point &other) const
-    {
-        cout << "Point == operator is called" << endl;
-        return (coord.first == other.coord.first && coord.second == other.coord.second);
-    }
-
-    Point *operator=(const Point &other)
-    {
-        cout << "Point = operator is called" << endl;
-        coord.first = other.coord.first;
-        coord.second = other.coord.second;
-        return this;
-    }
+    Point();                                   // Default constructor
+    Point(int row, int col);                   // Parametrized constructor
+    list<std::pair<int, int>> neighbours();    // find this point neighbours.
+    bool operator==(const Point &other) const; // comparsion operator overloading
+    Point *operator=(const Point &other);      // assignment operator overloading
 };
 
 /*

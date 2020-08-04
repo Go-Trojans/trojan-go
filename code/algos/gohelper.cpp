@@ -20,6 +20,37 @@ Description : Define Go Domain Rules related helper functions and data-types.
 
 using namespace std;
 
+// Default constructor
+Point::Point()
+{
+    coord.first = -1;
+    coord.second = -1;
+}
+
+// Parametrized constructor
+Point::Point(int row, int col)
+{
+    coord.first = row;
+    coord.second = col;
+}
+
+//object comparsion (==) operator overloading
+bool Point::operator==(const Point &other) const
+{
+    cout << "Point == operator is called" << endl;
+    return (coord.first == other.coord.first && coord.second == other.coord.second);
+}
+
+//Assignment operator overloading
+Point *Point::operator=(const Point &other)
+{
+    cout << "Point = operator is called" << endl;
+    coord.first = other.coord.first;
+    coord.second = other.coord.second;
+    return this;
+}
+
+// Find the neighbours of the this point.
 list<std::pair<int, int>> Point::neighbours()
 {
     map<int, char> action = mapAction();
@@ -42,14 +73,6 @@ list<std::pair<int, int>> Point::neighbours()
     }
 
     return neigh;
-}
-
-void test()
-{
-
-    cout << "I am test" << endl;
-    list<std::pair<int, int>> neigh;
-    neigh = Point(1, 1).neighbours();
 }
 
 #ifdef USAGE
