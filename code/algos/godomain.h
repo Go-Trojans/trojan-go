@@ -29,7 +29,7 @@ public:
     bool is_selected = false;
 
     bool is_resign = false;
-
+    Move();
     Move(Point point, bool is_pass, bool is_resign); // Parametrized Construcor
     bool operator==(const Move &other) const;        // comparsion operator overloading
 
@@ -59,13 +59,40 @@ public:
     int max_move = 0;
     int *grid;
 
+    GoBoard();                                           // Default Construcor
     GoBoard(int w, int h, int m);                        // Parametrized Construcor
     ~GoBoard(void);                                      // Deconstrcutor
-    GoBoard(const GoBoard &board);                       // Copy Constructor
+    GoBoard(const GoBoard &board);                       // Copy Constructor (usage: GoBoard *new_board = *board // if board is a pointer else just pass 'board')
+    GoBoard *operator=(const GoBoard &board);            // Assignment operator overloading (usage: *new_board = *board)
     void remove_dead_stones(Player player, Point point); // TBD
     void place_stone(Player player, Point point);        // TBD
     bool is_on_grid(Point point);
     void display_board();
+};
+
+class GameState
+{
+public:
+    GoBoard *board = NULL;
+    Player next_player;
+    GameState *previous_state = NULL;
+    Move last_move;
+    int moves = 0;
+
+    GameState();
+    GameState(GoBoard *board, Player next_player, GameState *previous, Move last_move, int moves); // Constructor
+    //GameState(const GameState &game);                                                              // Copy Constructor (usage: GameState *new_game = game)
+
+    GameState *apply_move(Move move);
+    GameState *new_game(int board_size);
+    list<std::pair<int, int>> detect_neighbor_ally(GameState *Self, Player player, Point point);
+    list<std::pair<int, int>> ally_dfs(Player player, Point point);
+    bool is_suicide(Player player, Move move);
+    bool violate_ko(Player player, Move move);
+    list<std::pair<int, int>> legal_moves();
+    bool is_valid_move(Move move);
+    bool is_over();
+    int winner();
 };
 
 #endif

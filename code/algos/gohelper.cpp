@@ -41,7 +41,7 @@ bool Point::operator==(const Point &other) const
     return (coord.first == other.coord.first && coord.second == other.coord.second);
 }
 
-//Assignment operator overloading
+//Assignment(=) operator overloading
 Point *Point::operator=(const Point &other)
 {
     cout << "Point = operator is called" << endl;

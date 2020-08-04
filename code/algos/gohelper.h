@@ -22,6 +22,10 @@ class Player
 {
 public:
     int color;
+    Player()
+    {
+        this->color = -1;
+    }
     Player(int color)
     {
         this->color = color;
