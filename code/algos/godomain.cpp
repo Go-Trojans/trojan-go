@@ -161,12 +161,112 @@ GoBoard *GoBoard::operator=(const GoBoard &board)
 //TBD
 void GoBoard::remove_dead_stones(Player player, Point point)
 {
-    cout << "remove_dead_stones" << endl;
+    cout << "In remove_dead_stones" << endl;
+    bool liberty_found = false;
+    int node_x, node_y;
+    int val = -1; // used for finding the liberty
+    bool is_in = false;
+
+    int *board = this->grid; // this is not board but just a grid.
+    int piece = player.color;
+
+    set<std::pair<int, int>> visited; // later will change to set<Point> here as well as other places too.
+
+    int m = this->board_width;
+    int n = this->board_height;
+    piece = 3 - piece;
+    cout << "Line = " << __LINE__ << endl;
+    list<std::pair<int, int>> move_neighbours = point.neighbours();
+
+    for (auto &move_neighbour : move_neighbours)
+    {
+        cout << "Line = " << __LINE__ << endl;
+
+        int r = move_neighbour.first;
+        int c = move_neighbour.second;
+        Point point = Point(r, c);
+
+        if (!is_on_grid(point))
+        {
+            cout << "Point is not on grid : (" << point.coord.first << ", " << point.coord.second << ")" << endl;
+            continue;
+        }
+        cout << "Line = " << __LINE__ << endl;
+        if (*(board + m * r + c) == piece)
+        {
+            is_in = visited.find(make_pair(node_x, node_y)) != visited.end();
+            if (is_in)
+                continue;
+
+            liberty_found = false;
+            list<std::pair<int, int>> remove_group;
+            set<std::pair<int, int>> queue;
+            queue.insert(make_pair(r, c));
+            set<std::pair<int, int>>::iterator it = queue.begin();
+            for (; it != queue.end(); it++) // while(queue) as in python
+            {
+                //same as queue.pop in python
+                auto nodeIterator = queue.begin();
+                node_x = nodeIterator->first;
+                node_y = nodeIterator->second;
+                queue.erase(nodeIterator);
+
+                is_in = visited.find(make_pair(node_x, node_y)) != visited.end(); // check if the point is present in a set or not
+                if (is_in)
+                    continue;
+                visited.insert(make_pair(node_x, node_y));
+
+                remove_group.push_back(make_pair(node_x, node_y));
+
+                list<std::pair<int, int>> neighbours = Point(node_x, node_y).neighbours();
+                cout << "Line = " << __LINE__ << endl;
+                for (auto &neighbour : neighbours)
+                {
+                    is_in = visited.find(make_pair(neighbour.first, neighbour.second)) != visited.end();
+                    if (is_in)
+                        continue;
+                    if (0 <= neighbour.first < m and 0 <= neighbour.second < n)
+                    {
+                        val = *(board + m * neighbour.first + neighbour.second);
+                        if (val == 0)
+                            liberty_found = true;
+                        if (val == piece)
+                            queue.insert(make_pair(neighbour.first, neighbour.second));
+                    }
+                }
+            }
+            cout << "Line = " << __LINE__ << endl;
+
+            if (!liberty_found)
+            {
+                int size = remove_group.size();
+                std::pair<int, int> del_node;
+                while (size > 0)
+                {
+                    del_node = remove_group.front();
+                    remove_group.pop_front();
+                    *(board + m * del_node.first + del_node.second) = 0;
+                    size--;
+                }
+            }
+        }
+        cout << "Line = " << __LINE__ << endl;
+    }
 }
-//TBD
+
 void GoBoard::place_stone(Player player, Point point)
 {
-    cout << "place_stone" << endl;
+    cout << "In place_stone " << endl;
+    cout << "Player is : " << player.color << endl;
+    int r, c;
+    r = point.coord.first;
+    c = point.coord.second;
+
+    //Move move = Move().play(Point(r, c));
+    //cout << "Move : (" << move.point.coord.first << ", " << move.point.coord.second << ")" << endl;
+    *(grid + board_width * r + c) = player.color;
+    Point move_point = Point(r, c); // move_point will be used to find the neighbours of this point.
+    remove_dead_stones(player, move_point);
 }
 
 bool GoBoard::is_on_grid(Point point)
@@ -418,9 +518,12 @@ int main()
     GameState gameD;
     GameState *game = gameD.new_game(5);
     cout << "Player is : " << game->next_player.color << endl;
-    Point p(4, 4);
-    game = game->apply_move(Move(p, false, false));
+    Point pB(4, 4);
+    game = game->apply_move(Move(pB, false, false));
     cout << "New Game State after move (4,4)" << endl;
+    game->board->display_board();
+    Point pW(4, 3);
+    game = game->apply_move(Move(pW, false, false));
     game->board->display_board();
 
     // ignore now this.
