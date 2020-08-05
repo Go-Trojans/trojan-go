@@ -30,6 +30,7 @@ public:
 
     bool is_resign = false;
     Move();                                          // Default Construcor
+    Move(Point point);                               // Parametrized  (Only 1 param) Constructor
     Move(Point point, bool is_pass, bool is_resign); // Parametrized Construcor
     bool operator==(const Move &other) const;        // comparsion operator overloading
 
@@ -63,6 +64,7 @@ public:
     GoBoard(int w, int h, int m);                        // Parametrized Construcor
     ~GoBoard(void);                                      // Deconstrcutor
     GoBoard(const GoBoard &board);                       // Copy Constructor (usage: GoBoard *new_board = *board // if board is a pointer else just pass 'board')
+    bool operator==(const GoBoard &board);               // == operator overloading
     GoBoard *operator=(const GoBoard &board);            // Assignment operator overloading (usage: *new_board = *board)
     void remove_dead_stones(Player player, Point point); // TBD
     void place_stone(Player player, Point point);        // TBD
@@ -87,11 +89,11 @@ public:
 
     GameState *apply_move(Move move);
     GameState *new_game(int board_size);
-    list<std::pair<int, int>> detect_neighbor_ally(GameState *Self, Player player, Point point);
+    list<std::pair<int, int>> detect_neighbor_ally(Player player, Point point);
     list<std::pair<int, int>> ally_dfs(Player player, Point point);
     bool is_suicide(Player player, Move move);
     bool violate_ko(Player player, Move move);
-    list<std::pair<int, int>> legal_moves();
+    list<Move> legal_moves();
     bool is_valid_move(Move move);
     bool is_over();
     int winner();
