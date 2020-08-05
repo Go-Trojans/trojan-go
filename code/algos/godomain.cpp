@@ -158,10 +158,10 @@ GoBoard *GoBoard::operator=(const GoBoard &board)
     return this;
 }
 
-//TBD
-void GoBoard::remove_dead_stones(Player player, Point point)
+void GoBoard::remove_dead_stones(Player player, Point move)
 {
-    cout << "In remove_dead_stones" << endl;
+    //cout << "In remove_dead_stones" << endl;
+    //cout << "Move point is : (" << move.coord.first << ", " << move.coord.second << ")" << endl;
     bool liberty_found = false;
     int node_x, node_y;
     int val = -1; // used for finding the liberty
@@ -175,12 +175,12 @@ void GoBoard::remove_dead_stones(Player player, Point point)
     int m = this->board_width;
     int n = this->board_height;
     piece = 3 - piece;
-    cout << "Line = " << __LINE__ << endl;
-    list<std::pair<int, int>> move_neighbours = point.neighbours();
+    // cout << "Line = " << __LINE__ << endl;
+    list<std::pair<int, int>> move_neighbours = move.neighbours();
 
     for (auto &move_neighbour : move_neighbours)
     {
-        cout << "Line = " << __LINE__ << endl;
+        //cout << "Line = " << __LINE__ << endl;
 
         int r = move_neighbour.first;
         int c = move_neighbour.second;
@@ -191,7 +191,8 @@ void GoBoard::remove_dead_stones(Player player, Point point)
             cout << "Point is not on grid : (" << point.coord.first << ", " << point.coord.second << ")" << endl;
             continue;
         }
-        cout << "Line = " << __LINE__ << endl;
+
+        //cout << "Line = " << __LINE__ << endl;
         if (*(board + m * r + c) == piece)
         {
             is_in = visited.find(make_pair(node_x, node_y)) != visited.end();
@@ -202,9 +203,11 @@ void GoBoard::remove_dead_stones(Player player, Point point)
             list<std::pair<int, int>> remove_group;
             set<std::pair<int, int>> queue;
             queue.insert(make_pair(r, c));
-            set<std::pair<int, int>>::iterator it = queue.begin();
-            for (; it != queue.end(); it++) // while(queue) as in python
+
+            //set<std::pair<int, int>>::iterator it = queue.begin();
+            while (queue.size() > 0) // while(queue) as in python
             {
+                //cout << "Line = " << __LINE__ << " Size of set is : " << queue.size() << endl;
                 //same as queue.pop in python
                 auto nodeIterator = queue.begin();
                 node_x = nodeIterator->first;
@@ -219,13 +222,13 @@ void GoBoard::remove_dead_stones(Player player, Point point)
                 remove_group.push_back(make_pair(node_x, node_y));
 
                 list<std::pair<int, int>> neighbours = Point(node_x, node_y).neighbours();
-                cout << "Line = " << __LINE__ << endl;
+                //cout << "Line = " << __LINE__ << endl;
                 for (auto &neighbour : neighbours)
                 {
                     is_in = visited.find(make_pair(neighbour.first, neighbour.second)) != visited.end();
                     if (is_in)
                         continue;
-                    if (0 <= neighbour.first < m and 0 <= neighbour.second < n)
+                    if (neighbour.first >= 0 && neighbour.first < m && neighbour.second >= 0 && neighbour.second < n)
                     {
                         val = *(board + m * neighbour.first + neighbour.second);
                         if (val == 0)
@@ -234,8 +237,9 @@ void GoBoard::remove_dead_stones(Player player, Point point)
                             queue.insert(make_pair(neighbour.first, neighbour.second));
                     }
                 }
+                //cout << "Line = " << __LINE__ << endl;
             }
-            cout << "Line = " << __LINE__ << endl;
+            //cout << "Line = " << __LINE__ << endl;
 
             if (!liberty_found)
             {
@@ -250,7 +254,7 @@ void GoBoard::remove_dead_stones(Player player, Point point)
                 }
             }
         }
-        cout << "Line = " << __LINE__ << endl;
+        //cout << "Line = " << __LINE__ << endl;
     }
 }
 
@@ -271,7 +275,7 @@ void GoBoard::place_stone(Player player, Point point)
 
 bool GoBoard::is_on_grid(Point point)
 {
-    if ((0 <= point.coord.first < board_width) && (0 <= point.coord.second < board_height))
+    if (point.coord.first >= 0 && point.coord.first < board_width && point.coord.second >= 0 && point.coord.second < board_height)
         return true;
     else
         return false;
@@ -387,23 +391,89 @@ GameState *GameState::apply_move(Move move)
     return new GameState(next_board, next_player.opp(), this, move, moves + 1);
 }
 
-//TBD
-list<std::pair<int, int>> GameState::detect_neighbor_ally(GameState *Self, Player player, Point point)
+list<std::pair<int, int>> GameState::detect_neighbor_ally(Player player, Point point)
 {
+    int r, c;
+    int *grid = this->board->grid;
+    list<std::pair<int, int>> neighbors = point.neighbours();
     list<std::pair<int, int>> group_allies;
+
+    for (auto &piece : neighbors)
+    {
+        r = piece.first;
+        c = piece.second;
+        if (this->board->is_on_grid(Point(r, c)))
+        {
+            if (*(grid + this->board->board_width * r + c) == player.color)
+            {
+                group_allies.push_back(make_pair(r, c));
+            }
+        }
+    }
 
     return group_allies;
 }
-//TBD
+
 list<std::pair<int, int>> GameState::ally_dfs(Player player, Point point)
 {
+
+    std::pair<int, int> piece;
     list<std::pair<int, int>> ally_members;
+    list<std::pair<int, int>> stack;
+    list<std::pair<int, int>> neighbor_allies;
+
+    stack.push_back(make_pair(point.coord.first, point.coord.second));
+    while (stack.size() > 0)
+    {
+        piece = stack.pop_back(); // TODO : will check
+        ally_members.push_back(piece);
+        neighbor_allies = this->detect_neighbor_ally(player, point);
+        for (auto &ally : neighbor_allies)
+        { // TODO : find element in a list (may need to overload oerator ==)
+            if (!(stack.find(make_pair(ally.first, ally.second)) != stack.end()) &&
+                !(ally_members.find(make_pair(ally.first, ally.second)) != ally_members.end()))
+            {
+                stack.push_back(ally);
+            }
+        }
+    }
 
     return ally_members;
 }
-//TBD
+
 bool GameState::is_suicide(Player player, Move move)
 {
+    list<std::pair<int, int>> ally_members;
+    list<std::pair<int, int>> neighbors;
+    int r, c;
+
+    if (!move.is_play)
+    {
+        return false;
+    }
+
+    GameState *test_state = new GameState();
+    test_state = this; // deepcoy and should be calling Assignemnt opeartor overloading
+    int *grid = test_state->board->grid;
+    Point point = move.point; // Point Assignment operator will be called
+
+    test_state->board->place_stone(player, point);
+    ally_members = test_state->ally_dfs(player, point);
+    for (auto &member : ally_members)
+    {
+        neighbors = Point(member.first, member.second).neighbours();
+        for (auto &piece : neighbors)
+        {
+            r = piece.first;
+            c = piece.second;
+            if (test_state->board->is_on_grid(Point(r, c)))
+            {
+                //If there is empty space around a piece, it has liberty
+                if ((*(grid + this->board->board_width * r + c) == 0) && !(move.point == Point(r, c)))
+                    return false;
+            }
+        }
+    }
 
     return true;
 }
@@ -524,6 +594,13 @@ int main()
     game->board->display_board();
     Point pW(4, 3);
     game = game->apply_move(Move(pW, false, false));
+    game->board->display_board();
+    Point pB2(2, 2);
+    game = game->apply_move(Move(pB2, false, false));
+    game->board->display_board();
+    Point pW2(3, 4);
+    game = game->apply_move(Move(pW2, false, false));
+    cout << "This board should have removed black at 4,4 " << endl;
     game->board->display_board();
 
     // ignore now this.

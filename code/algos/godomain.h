@@ -87,7 +87,7 @@ public:
 
     GameState *apply_move(Move move);
     GameState *new_game(int board_size);
-    list<std::pair<int, int>> detect_neighbor_ally(GameState *Self, Player player, Point point);
+    list<std::pair<int, int>> detect_neighbor_ally(Player player, Point point);
     list<std::pair<int, int>> ally_dfs(Player player, Point point);
     bool is_suicide(Player player, Move move);
     bool violate_ko(Player player, Move move);
