@@ -176,7 +176,7 @@ bool GoBoard::operator==(const GoBoard &board)
     cout << "GoBoard == opearator called" << endl;
     bool res = true;
 
-    if (board_width = !board.board_width || board_height != board.board_height || moves != board.moves || max_move != board.max_move)
+    if (board_width != board.board_width || board_height != board.board_height || moves != board.moves || max_move != board.max_move)
         return false;
 
     int *other_board_grid = board.grid;
@@ -449,27 +449,45 @@ list<std::pair<int, int>> GameState::detect_neighbor_ally(Player player, Point p
     return group_allies;
 }
 
+bool findPairInList(std::pair<int, int> key, list<std::pair<int, int>> l)
+{
+    bool res = true;
+
+    auto it = std::find_if(l.begin(), l.end(), [&key](const std::pair<int, int> &element) {
+        return (element.first == key.first && element.second == key.second);
+    });
+    if (it == l.end())
+        res = false;
+
+    return res;
+}
+
 list<std::pair<int, int>> GameState::ally_dfs(Player player, Point point)
 {
 
     std::pair<int, int> piece;
+    std::pair<int, int> key;
     list<std::pair<int, int>> ally_members;
-    list<std::pair<int, int>> stackk;
+    list<std::pair<int, int>> stack;
     list<std::pair<int, int>> neighbor_allies;
+    bool present_stack = true;
+    bool present_ally_members = true;
 
-    stackk.push_back(make_pair(point.coord.first, point.coord.second));
-    while (stackk.size() > 0)
+    stack.push_back(make_pair(point.coord.first, point.coord.second));
+    while (stack.size() > 0)
     {
-        piece = stackk.pop_back(); // TODO : will check (error: no viable overloaded '=')
+        piece = stack.back();
+        stack.pop_back();
         ally_members.push_back(piece);
         neighbor_allies = this->detect_neighbor_ally(player, point);
         for (auto &ally : neighbor_allies)
-        { // TODO : find element in a list (may need to overload oerator ==)
-            if (!(stackk.find(make_pair(ally.first, ally.second)) != stackk.end()) &&
-                !(ally_members.find(make_pair(ally.first, ally.second)) != ally_members.end()))
-            {
-                stackk.push_back(ally);
-            }
+        {
+            key = make_pair(ally.first, ally.second);
+            present_stack = findPairInList(key, stack);
+            present_ally_members = findPairInList(key, ally_members);
+
+            if (!present_stack && !present_ally_members)
+                stack.push_back(ally);
         }
     }
 
@@ -624,7 +642,7 @@ bool GameState::is_over()
 //TBD
 int GameState::winner()
 {
-    int komi = 0;
+    float komi = 0;
     set<std::pair<int, int>> queue;
     bool white_neighbour = false;
     bool black_neighbour = false;
@@ -648,8 +666,8 @@ int GameState::winner()
     n = this->board->board_height;
     if (m == 19)
         komi = 3.75;
-    else:
-       komi = (m / 2) - 1;
+    else
+        komi = (m / 2) - 1;
     int count_black = -komi;
     int count_white = komi;
 
