@@ -624,76 +624,106 @@ bool GameState::is_over()
 //TBD
 int GameState::winner()
 {
-    // if self.last_move.is_resign :
-    //     print("[DEBUG] last move was resign")
-    //     return self.next_player
+    int komi = 0;
+    set<std::pair<int, int>> queue;
+    bool white_neighbour = false;
+    bool black_neighbour = false;
+    int group_count = 0;
+    int node_x = -1;
+    int node_y = -1;
+    list<std::pair<int, int>> neighbours;
+    int r = -1, c = -1;
+    int val = -1;
 
-    // board = self.board.grid
-    // visited = set()
-    // m = board.shape[0]
-    // n = board.shape[1]
-    // if m == 19:
-    //     komi = 3.75
-    // else:
-    //     komi = (m / 2) - 1
-    // #print(komi)
-    // count_black = -komi
-    // count_white = komi
-    // #print(count_white, count_black)
-    // offset = np.array([[1, 0], [0, 1], [-1, 0], [0, -1]])
-    // for i in range(m):
-    //     for j in range(n):
-    //         if (i, j) in visited:
-    //             continue
-    //         elif board[i][j] == 1:
-    //             count_black += 1
-    //             #print("black_increase", i, j, count_black)
-    //         elif board[i][j] == 2:
-    //             count_white += 1
-    //             #print("white_increase", i, j, count_white)
-    //         elif board[i][j] == 0:
-    //             queue = set()
-    //             queue.add((i, j))
-    //             black_neighbour = False
-    //             white_neighbour = False
-    //             group_count = 0
-    //             while queue:
-    //                 node_x, node_y = queue.pop()
-    //                 if (node_x, node_y) in visited:
-    //                     continue
-    //                 visited.add((node_x, node_y))
-    //                 group_count += 1
-    //                 neighbours = offset + np.array([node_x, node_y])
-    //                 for neighbour in neighbours:
-    //                     if (neighbour[0], neighbour[1]) in visited:
-    //                         continue
-    //                     elif 0 <= neighbour[0] < m and 0 <= neighbour[1] < n:
-    //                         val = board[neighbour[0]][neighbour[1]]
-    //                         if val == 1:
-    //                             black_neighbour = True
-    //                         elif val == 2:
-    //                             white_neighbour = True
-    //                         elif val == 0:
-    //                             queue.add((neighbour[0], neighbour[1]))
-    //             if black_neighbour and white_neighbour:
-    //                 count_black+=(group_count/2)
-    //                 count_white+=(group_count/2)
-    //                 pass
-    //             elif black_neighbour:
-    //                 count_black += group_count
-    //                 #print("black_group_inc", group_count, count_black)
-    //             elif white_neighbour:
-    //                 count_white += group_count
-    //                 #print("white_group_inc", group_count, count_white)
-    // # print(count_white, count_black)
-    // if count_white > count_black:
-    //     return 2
-    // elif count_black > count_white:
-    //     return 1
-    // else:
-    //     return 0
+    if (this->last_move.is_resign)
+    {
+        cout << "[DEBUG] last move was resign" << endl;
+        return this->next_player.color;
+    }
 
-    return 0;
+    int *board = this->board->grid; // make sure GameState, GoBoard and grid are malloc'ed
+    set<std::pair<int, int>> visited;
+    int m, n;
+    m = this->board->board_width;
+    n = this->board->board_height;
+    if (m == 19)
+        komi = 3.75;
+    else:
+       komi = (m / 2) - 1;
+    int count_black = -komi;
+    int count_white = komi;
+
+    for (int i = 0; i < m; i++)
+    {
+        for (int j = 0; j < n; j++)
+        {
+            if (visited.find(make_pair(i, j)) != visited.end())
+                continue;
+            else if (*(board + m * i + j) == 1)
+                count_black += 1;
+            else if (*(board + m * i + j) == 2)
+                count_white += 1;
+            else if (*(board + m * i + j) == 0)
+            {
+
+                queue.clear();
+                queue.insert(make_pair(i, j));
+                black_neighbour = false;
+                white_neighbour = false;
+                group_count = 0;
+                while (queue.size() > 0)
+                {
+                    auto nodeIterator = queue.begin();
+                    node_x = nodeIterator->first;
+                    node_y = nodeIterator->second;
+                    queue.erase(nodeIterator);
+
+                    if (visited.find(make_pair(node_x, node_y)) != visited.end())
+                        continue;
+                    visited.insert(make_pair(node_x, node_y));
+                    group_count += 1;
+                    neighbours = Point(node_x, node_y).neighbours();
+                    for (auto &neighbour : neighbours)
+                    {
+                        r = neighbour.first;
+                        c = neighbour.second;
+                        if (visited.find(make_pair(r, c)) != visited.end())
+                            continue;
+                        else if (r >= 0 && r < m && c >= 0 && c < n)
+                        {
+                            val = *(board + m * r + c);
+                            if (val == 1)
+                                black_neighbour = true;
+                            else if (val == 2)
+                                white_neighbour = true;
+                            else if (val == 0)
+                                queue.insert(make_pair(r, c));
+                        }
+                    }
+                } // while closing
+                if (black_neighbour && white_neighbour)
+                {
+                    count_black += (group_count / 2);
+                    count_white += (group_count / 2);
+                    //pass
+                }
+                else if (black_neighbour)
+                {
+                    count_black += group_count;
+                }
+                else if (white_neighbour)
+                {
+                    count_white += group_count;
+                }
+            }
+        }
+    }
+    if (count_white > count_black)
+        return 2;
+    else if (count_black > count_white)
+        return 1;
+    else
+        return 0;
 }
 
 int main()
