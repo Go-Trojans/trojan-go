@@ -359,6 +359,7 @@ def main():
     working_agent = (working_agent_json, working_agent_h5)
     
     num_cpu = os.cpu_count()
+    args.num_workers = num_cpu
     if not args.production:
         args.games_per_batch = num_cpu
         args.num_workers = num_cpu
