@@ -311,12 +311,12 @@ def train_on_experience(learning_agent, output_file, experience_file,
 def main():
     # code here
     parser = argparse.ArgumentParser()
-    parser.add_argument('--games-per-batch', '-g', type=int, default=2500)
-    parser.add_argument('--simulations', type=int, default=400) # for 5*5 board
+    parser.add_argument('--games-per-batch', '-g', type=int, default=1500)
+    parser.add_argument('--simulations', type=int, default=300) # for 5*5 board
     parser.add_argument('--board-size', '-b', type=int, default=5)
     parser.add_argument('--lr', type=float, default=0.02)
     parser.add_argument('--num-workers', type=int, default=4)
-    parser.add_argument('--num-per-eval', type=int, default=400)
+    parser.add_argument('--num-per-eval', type=int, default=300)
     parser.add_argument('--production', dest='production', action='store_true')
     parser.add_argument('--no-production', dest='production', action='store_false')
     parser.set_defaults(production=True)
