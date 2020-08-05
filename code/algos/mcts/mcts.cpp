@@ -8,53 +8,93 @@ using namespace std;
 #include <tuple>
 #include <utility>
 #include <list>
-
+#include <algorithm>
 #include "../godomain.h"
 #include "../gohelper.h"
 #include "H5Cpp.h"
+#include <math.h>
 using namespace H5;
 
 class MCTSNode
 {
 public:
-    Move *move = NULL;
-    GameState *state = NULL;
-    MCTSNode *parentNode = NULL;
-    list<float> childNodes;
-    int wins = 0;
-    int visits = 0;
-    float q = 0.0;
-    float p = 0.0;
-    float v = 0.0;
+    Move *move;
+    GameState *state;
+    MCTSNode *parentNode;
+    vector<MCTSNode> childNodes;
+    int wins;
+    int visits;
+    float q;
+    float p;
+    float v;
 
     MCTSNode(GameState *state,float p=0.0,float v=0.0,Move *move=NULL,MCTSNode *parentNode=NULL)
     {
-        move = move;
-        state = state;
-        parentNode = parentNode;
-        p = p;
-        v = v; 
-
+        this->move = move;
+        this->state = state;
+        this->parentNode = parentNode;
+        this->p = p;
+        this->v = v; 
+         
     }
 
     MCTSNode select(int c=4)
-    {
-
+    {   
+        vector<float> puctNodes;
+        for (vector<float>::const_iterator it = this->childNodes.begin(); it != this->childNodes.end(); ++it) {
+            puctNodes.push_back(it.puct(c));
+        }
+        int maxChild = distance(puctNodes.begin(), max_element(puctNodes.begin(), puctNodes.end()));
+        return this->childNodes[maxChild]
     }
 
-    void expand(float probs[])
+    void expand(vector<float> probs)
     {
-
+        int boardSize = this->state->board->board_width;
+        int numMoves = probs.size();
+        vector<Move> moves;
+        for (int idx = 0; idx < numMoves; idx++)
+        {
+            moves.push_back(Move(Point((int)(idx / boardSize), idx % boardSize)));
+        }
+        moves.push_back(Move.pass_turn());
+        vector<Move>::const_iterator temp_move = moves.begin();
+        vector<float>::const_iterator temp_prob = probs.begin();
+        vector<Move> legal_moves = this->state->legal_moves();
+        while (temp_move!=moves.end())
+        {
+            if (find(legal_moves.begin(), legal_moves.end(), temp_move) != legal_moves.end()) {
+                GoBoard next_board = *(this->state->board);
+                if (temp_move.is_play){
+                    next_board.place_stone(this->state->next_player, temp_move.point)
+                }
+                /*else {
+                    GoBoard next_board = this->state->board;
+                }*/
+                GameState childState = GameState(next_board, *(this->state->next_player->opp), *(this->state), temp_move, *(this->state->moves));
+                MCTSNode child = MCTSNode(&childState, temp_prob, 0.0, &temp_move, this);
+                this->childNodes.push_back(child);
+            }
+            temp_move++;
+            temp_prob++;
+        }
     }
 
     void update(float v)
     {
-
+        this->visits++;
+        this->wins++;
+        this->q = (this->wins / this->visits);
     }
 
     float puct(int c=4)
     {
-
+        int N = 0;
+        for (vector<float>::const_iterator child = this->childNodes.begin(); child != this->childNodes.end(); ++child) {
+            N += child.visits;
+        }
+        puc = this->q + ((c * this->p * sqrt(N)) / (1 + this->visits));
+        return puc;
     }
 
     
@@ -62,15 +102,15 @@ public:
 class MCTSPlayer
 {
 public:
-    Player *player = NULL;
+    Player *player;
 
     MCTSPlayer(Player *player)
     {
-        player = player;
+        this->player = player;
     }
 
     
-    list<MCTSNode> select_move(MCTSNode *rootnode,set<MCTSNode> visited,int simulations,float epsilon=0.25,float dcoeff=0.03,int c=4,bool stoch=True)
+    vector<MCTSNode> select_move(MCTSNode *rootnode,set<MCTSNode> visited,int simulations,float epsilon=0.25,float dcoeff=0.03,int c=4,bool stoch=True)
     {
 
     }
@@ -81,18 +121,18 @@ public:
 class MCTSSelfPlay
 {
 public:
-    int board_size = 5;
-    int plane_size = 7;
+    int board_size;
+    int plane_size;
     model_file
     network
     encoder
 
 MCTSSelfPlay(int board_size,int plane_size,model_file=NULL,network=None)
 {
-    board_size = board_size;
-    plane_size = plane_size;
-    model_file = model_file;
-    network = network;
+    this->board_size = board_size;
+    this->plane_size = plane_size;
+    this->model_file = model_file;
+    this->network = network;
     
 }
 
@@ -101,7 +141,7 @@ void play(Network agent1,Network agent2,File expFile,int num_games=2500,int simu
 
 }
 
-void save_moves(list<Move> moves,int winner)
+void save_moves(vector<Move> moves,int winner)
 {
 
 }
@@ -112,11 +152,11 @@ void save_moves(list<Move> moves,int winner)
 class ExperienceBuffer
 {
 public:
-    list<int[]> model_input = NULL;
-    list<float[]> action_target = NULL;
-    list<int[]> value_target = NULL;
+    vector<int[]> model_input = NULL;
+    vector<float[]> action_target = NULL;
+    vector<int[]> value_target = NULL;
 
-    ExperienceBuffer(list<int[]> model_input,list<float[]> action target, list<int[]> value_target)
+    ExperienceBuffer(vector<int[]> model_input, vector<float[]> action target, vector<int[]> value_target)
     {
         model_input = model_input;
         action_target = action_target;
