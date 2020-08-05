@@ -26,9 +26,18 @@ Description : Define Go Domain Rules related helper functions and data-types.
 
 Move::Move()
 {
+    // means move.point is none as in python
     this->point.coord.first = -1;
     this->point.coord.second = -1;
     this->is_play = false;
+}
+
+Move::Move(Point point)
+{
+    this->point = point;
+    this->is_play = (point.coord.first == -1 && point.coord.second == -1) ? false : true;
+    this->is_pass = false;
+    this->is_resign = false;
 }
 
 Move::Move(Point point, bool is_pass, bool is_resign)
@@ -156,6 +165,32 @@ GoBoard *GoBoard::operator=(const GoBoard &board)
             *(grid + i * N + j) = *(other_board_grid + i * N + j);
 
     return this;
+}
+
+/*
+  ==  operator for GoBoard 
+  usage: if (*new_board == *board); // both are pointers so passing the base address of GoBoard class
+*/
+bool GoBoard::operator==(const GoBoard &board)
+{
+    cout << "GoBoard == opearator called" << endl;
+    bool res = true;
+
+    if (board_width = !board.board_width || board_height != board.board_height || moves != board.moves || max_move != board.max_move)
+        return false;
+
+    int *other_board_grid = board.grid;
+
+    for (int i = 0; i < board_width; i++)
+    {
+        for (int j = 0; j < board_height; j++)
+        {
+            if (*(grid + i * N + j) != *(other_board_grid + i * N + j))
+                return false;
+        }
+    }
+
+    return res;
 }
 
 void GoBoard::remove_dead_stones(Player player, Point move)
@@ -419,21 +454,21 @@ list<std::pair<int, int>> GameState::ally_dfs(Player player, Point point)
 
     std::pair<int, int> piece;
     list<std::pair<int, int>> ally_members;
-    list<std::pair<int, int>> stack;
+    list<std::pair<int, int>> stackk;
     list<std::pair<int, int>> neighbor_allies;
 
-    stack.push_back(make_pair(point.coord.first, point.coord.second));
-    while (stack.size() > 0)
+    stackk.push_back(make_pair(point.coord.first, point.coord.second));
+    while (stackk.size() > 0)
     {
-        piece = stack.pop_back(); // TODO : will check
+        piece = stackk.pop_back(); // TODO : will check (error: no viable overloaded '=')
         ally_members.push_back(piece);
         neighbor_allies = this->detect_neighbor_ally(player, point);
         for (auto &ally : neighbor_allies)
         { // TODO : find element in a list (may need to overload oerator ==)
-            if (!(stack.find(make_pair(ally.first, ally.second)) != stack.end()) &&
+            if (!(stackk.find(make_pair(ally.first, ally.second)) != stackk.end()) &&
                 !(ally_members.find(make_pair(ally.first, ally.second)) != ally_members.end()))
             {
-                stack.push_back(ally);
+                stackk.push_back(ally);
             }
         }
     }
@@ -477,35 +512,186 @@ bool GameState::is_suicide(Player player, Move move)
 
     return true;
 }
-//TBD
+
 bool GameState::violate_ko(Player player, Move move)
 {
+    if (!move.is_play)
+        return false;
+
+    GoBoard *test_board = new GoBoard(); // MEMLEAK: who will  free the memory !!!
+    *test_board = *this->board;          // deepcopy of GoBoard()
+    test_board->place_stone(player, move.point);
+
+    GameState *prev_state = this;
+    for (int i = 0; i < 8; i++)
+    {
+        prev_state = prev_state->previous_state;
+        if (!prev_state)
+            break;
+        if (test_board == prev_state->board) // GoBoard == operator overloading should be called
+            return true;
+    }
 
     return false;
 }
-//TBD
-list<std::pair<int, int>> GameState::legal_moves()
-{
 
-    list<std::pair<int, int>> leg_moves;
+list<Move> GameState::legal_moves()
+{
+    list<Move> leg_moves;
+    Move move;
+    GoBoard *board = this->board; // just a pointer assignment.
+    if (!board)
+    {
+        cout << "GoBoard is null which is not expected" << endl;
+        return leg_moves; // not sure about this empty list
+    }
+    for (int r = 0; r < board->board_width; r++)
+    {
+        for (int c = 0; c < board->board_height; c++)
+        {
+            move = Move(Point(r, c));
+            if (this->is_valid_move(move))
+                leg_moves.push_back(move);
+        }
+    }
+    leg_moves.push_back(Move().pass_turn());
+    leg_moves.push_back(Move().resign());
 
     return leg_moves;
 }
-//TBD
+
 bool GameState::is_valid_move(Move move)
 {
+    if (this->is_over())
+        return false;
+
+    if (move.is_pass || move.is_resign)
+        return true;
+
+    Point point = move.point;
+    int r, c;
+    r = point.coord.first;
+    c = point.coord.second;
+    GoBoard *board = this->board;
+    if (!board)
+    {
+        cout << "GoBoard is nullptr which is not expected" << endl;
+        return false;
+    }
+
+    //check if off grid or not empty position
+    if ((!(board->is_on_grid(point))) || (*(board->grid + board->board_width * r + c)) != 0)
+        return false;
+
+    //check KO or suicide
+    if (this->violate_ko(this->next_player, move) || (this->is_suicide(this->next_player, move)))
+        return false;
 
     return true;
 }
-//TBD
+
+// move is none if move.point is (-1, -1)
+static bool is_move_none(Move move)
+{
+    if (move.point.coord.first == -1 && move.point.coord.second == -1)
+        return true;
+    return false;
+}
+
 bool GameState::is_over()
 {
+    if (this->moves > this->board->board_width * this->board->board_height * 2)
+    {
+        cout << "Game is over as max moves reached : " << this->moves << endl;
+        return true;
+    }
+
+    if ((is_move_none(this->last_move)) || !(this->previous_state) || (is_move_none(this->previous_state->last_move)))
+    {
+        cout << "Game is not over yet as last_move is none" << endl;
+        return false;
+    }
+
+    if (this->last_move.is_resign)
+        return true;
+
+    if (this->last_move.is_pass && this->previous_state->last_move.is_pass)
+        return true;
 
     return false;
 }
+
 //TBD
 int GameState::winner()
 {
+    // if self.last_move.is_resign :
+    //     print("[DEBUG] last move was resign")
+    //     return self.next_player
+
+    // board = self.board.grid
+    // visited = set()
+    // m = board.shape[0]
+    // n = board.shape[1]
+    // if m == 19:
+    //     komi = 3.75
+    // else:
+    //     komi = (m / 2) - 1
+    // #print(komi)
+    // count_black = -komi
+    // count_white = komi
+    // #print(count_white, count_black)
+    // offset = np.array([[1, 0], [0, 1], [-1, 0], [0, -1]])
+    // for i in range(m):
+    //     for j in range(n):
+    //         if (i, j) in visited:
+    //             continue
+    //         elif board[i][j] == 1:
+    //             count_black += 1
+    //             #print("black_increase", i, j, count_black)
+    //         elif board[i][j] == 2:
+    //             count_white += 1
+    //             #print("white_increase", i, j, count_white)
+    //         elif board[i][j] == 0:
+    //             queue = set()
+    //             queue.add((i, j))
+    //             black_neighbour = False
+    //             white_neighbour = False
+    //             group_count = 0
+    //             while queue:
+    //                 node_x, node_y = queue.pop()
+    //                 if (node_x, node_y) in visited:
+    //                     continue
+    //                 visited.add((node_x, node_y))
+    //                 group_count += 1
+    //                 neighbours = offset + np.array([node_x, node_y])
+    //                 for neighbour in neighbours:
+    //                     if (neighbour[0], neighbour[1]) in visited:
+    //                         continue
+    //                     elif 0 <= neighbour[0] < m and 0 <= neighbour[1] < n:
+    //                         val = board[neighbour[0]][neighbour[1]]
+    //                         if val == 1:
+    //                             black_neighbour = True
+    //                         elif val == 2:
+    //                             white_neighbour = True
+    //                         elif val == 0:
+    //                             queue.add((neighbour[0], neighbour[1]))
+    //             if black_neighbour and white_neighbour:
+    //                 count_black+=(group_count/2)
+    //                 count_white+=(group_count/2)
+    //                 pass
+    //             elif black_neighbour:
+    //                 count_black += group_count
+    //                 #print("black_group_inc", group_count, count_black)
+    //             elif white_neighbour:
+    //                 count_white += group_count
+    //                 #print("white_group_inc", group_count, count_white)
+    // # print(count_white, count_black)
+    // if count_white > count_black:
+    //     return 2
+    // elif count_black > count_white:
+    //     return 1
+    // else:
+    //     return 0
 
     return 0;
 }
