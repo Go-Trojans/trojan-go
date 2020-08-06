@@ -90,7 +90,7 @@ public:
     float puct(int c=4)
     {
         int N = 0;
-        for (vector<float>::const_iterator child = this->childNodes.begin(); child != this->childNodes.end(); ++child) {
+        for (vector<MCTSNode>::const_iterator child = this->childNodes.begin(); child != this->childNodes.end(); ++child) {
             N += child.visits;
         }
         puc = this->q + ((c * this->p * sqrt(N)) / (1 + this->visits));
@@ -103,16 +103,73 @@ class MCTSPlayer
 {
 public:
     Player *player;
+    //Model model;
 
-    MCTSPlayer(Player *player)
+    MCTSPlayer(Player *player/*,Model model*/)
     {
         this->player = player;
+        //this->model = model;
     }
 
     
-    vector<MCTSNode> select_move(MCTSNode *rootnode,set<MCTSNode> visited,int simulations,float epsilon=0.25,float dcoeff=0.03,int c=4,bool stoch=True)
+    vector<MCTSNode> select_move(MCTSNode *rootnode,set<MCTSNode> visited,
+        int simulations,float epsilon=0.25,float dcoeff=0.03,int c=4,bool stoch=True)
     {
-
+        //Model nn = this->model;
+        for (int i = 0; i < simulations; i++)
+        {
+            MCTSNode currNode = *rootnode;
+            if ((stoch == true) && (i > 0)) {
+                for (vector<MCTSNode>::const_iterator child = currNode.childNodes.begin(); child != currNode.childNodes.end(); ++child)
+                {
+                    if (stoch == true)
+                    {
+                        //child.p = (1 - epsilon) * child.p + epsilon * np.random.dirichlet(alpha = dcoeff)
+                    }
+                }
+            }
+            while (visited.find(currNode)!=visited.end())
+            {
+                currNode = currNode.select(c);
+            }
+            Player hero = currNode.state->next_player;
+            if (visited.find(currNode) == visited.end())
+            {
+                visited.insert(currNode);
+                Player hero = currNode.state->next_player;
+                //TO BE DONE
+            }
+            while (currNode!=NULL)
+            {
+                float val;
+                if (hero == currNode.state->next_player)
+                {
+                    val = v;
+                }
+                else
+                {
+                    val = -v;
+                }
+                currNode.update(val);
+                currNode = currNode.parentNode;
+            }
+            if (stoch == true)
+            {
+                return rootnode->childNodes;
+            }
+            else
+            {
+                MCTSNode maxNode = rootnode->childNodes[0];
+                for (vector<MCTSNode>::const_iterator i = rootnode->childNodes.begin(); i != rootnode->childNodes.end(); ++i)
+                {
+                    if (maxNode.visits<*(i.visits))
+                    {
+                        maxNode = *i;
+                    }
+                }
+                return maxNode;
+            }
+        }
     }
 
 
