@@ -472,6 +472,7 @@ vector<Point> GameState::detect_neighbor_ally(Player player, Point point)
     return group_allies;
 }
 
+//Tested and working.
 bool findPointInVector(Point key, vector<Point> l)
 {
     bool res = true;
