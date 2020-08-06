@@ -13,6 +13,7 @@ using namespace std;
 #include "../gohelper.h"
 #include "H5Cpp.h"
 #include <math.h>
+#include <map>
 using namespace H5;
 
 class MCTSNode
@@ -113,7 +114,7 @@ public:
 
     
     vector<MCTSNode> select_move(MCTSNode *rootnode,set<MCTSNode> visited,
-        int simulations,float epsilon=0.25,float dcoeff=0.03,int c=4,bool stoch=True)
+        int simulations,float epsilon=0.25,float dcoeff=0.03,int c=4,bool stoch=true)
     {
         //Model nn = this->model;
         for (int i = 0; i < simulations; i++)
@@ -159,12 +160,13 @@ public:
             }
             else
             {
-                MCTSNode maxNode = rootnode->childNodes[0];
+                vector<MCTSNode> maxNode;
+                maxNode.push_back(rootnode->childNodes[0]);
                 for (vector<MCTSNode>::const_iterator i = rootnode->childNodes.begin(); i != rootnode->childNodes.end(); ++i)
                 {
-                    if (maxNode.visits<*(i.visits))
+                    if (maxNode[0].visits<*(i.visits))
                     {
-                        maxNode = *i;
+                        maxNode[0] = *i;
                     }
                 }
                 return maxNode;
@@ -184,24 +186,90 @@ public:
     network
     encoder
 
-MCTSSelfPlay(int board_size,int plane_size,model_file=NULL,network=None)
-{
-    this->board_size = board_size;
-    this->plane_size = plane_size;
-    this->model_file = model_file;
-    this->network = network;
+    MCTSSelfPlay(int board_size,int plane_size,model_file=NULL,network=None)
+    {
+        this->board_size = board_size;
+        this->plane_size = plane_size;
+        this->model_file = model_file;
+        this->network = network;
     
-}
+    }
 
-void play(Network agent1,Network agent2,File expFile,int num_games=2500,int simulations=200,int c=4,float vResion=-0.7,tempMoves=4)
-{
+    void play(Network agent1,Network agent2,File expFile,int num_games=2500,
+        int simulations=200,int c=4,float vResion=-0.7,tempMoves=4)
+    {
+        float tau;
+        map<Player, MCTSNode> players = {
+            {Player.black,MCTSPlayer(Player.black, agent1)},
+            {Player.white,MCTSPlayer(Player.white, agent1)}
+        };
+        for (int i = 0; i < num_games; i++)
+        {
+            GameState game = GameState.new_game(this->board_size);
+            int moveNum = 0;
+            set<MCTSNode> visited;
+            rootnode = NULL;
+            while (game.is_over() == false)
+            {
+                moveNum += 1;
+                if (moveNum <= tempMoves)
+                {
+                    tau = 1.0;
+                }
+                else
+                {
+                    tau = 0.1;
+                }
+                if (rootnode == NULL) 
+                {
+                    rootnode = MCTSNode(game);
+                }
+                vector<MCTSNode> mctsNodes = players[game.next_player].select_move( &rootnode, visited,
+                    simulations,0.25, 0.03, c, true);
+                //nn = players[game.next_player].model
+                //tensor = self.encoder.encode(game)
+                vector<float> searchProb((int)(pow(this->board_size,2) + 1), 0.0);
+                vector<float> tempNodes;
+                int j;
+                for (vector<MCTSNode>::const_iterator child = mctsNodes.begin(); child != mctsNodes.end(); ++child)
+                {
+                    if (child.move.is_play == true)
+                    {
+                        pair<int, int> coord = child.move.point.coord;
+                        j = this->board_size * coord[0] + coord[1];
+                    }
+                    else
+                    {
+                        j = pow(this->board_size, 2);
+                    }
+                    searchProb[j] = pow(child.visits, (1 / tau));
+                    tempNodes.push_back(pow(child.visits, (1 / tau)));
+                }
+                float probSum = 0.0;
+                for (vector<float>::const_iterator k = tempNodes.begin(); k != tempNodes.end(); ++k)
+                {
+                    probSum += *k;
+                }
+                for (vector<float>::const_iterator k = tempNodes.begin(); k != tempNodes.end(); ++k)
+                {
+                    k = k/probSum;
+                }
+                for (vector<float>::const_iterator k = searchProb.begin(); k != searchProb.end(); ++k)
+                {
+                    k = k / probSum;
+                }
+                /*rootnode = np.random.choice(a = mctsNodes, p = tempNodes)*/
+                Move move = rootnode.move;
+                game = game.apply_move(move);
+            }
+            int winner = game.winner();
+        }
+    }
 
-}
-
-void save_moves(vector<Move> moves,int winner)
-{
-
-}
+    void save_moves(vector<Move> moves,int winner)
+    {
+        //TO BE DONE
+    }
 
 
 };
