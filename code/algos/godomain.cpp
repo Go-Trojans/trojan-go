@@ -193,6 +193,20 @@ bool GoBoard::operator==(const GoBoard &board)
     return res;
 }
 
+// Not Tested as of now, it is used at many places though.
+bool findPointInSet(Point key, set<Point> l)
+{
+    bool res = true;
+
+    auto it = std::find_if(l.begin(), l.end(), [&key](const Point &element) {
+        return (element.coord.first == key.coord.first && element.coord.second == key.coord.second);
+    });
+    if (it == l.end())
+        res = false;
+
+    return res;
+}
+
 void GoBoard::remove_dead_stones(Player player, Point move)
 {
     //cout << "In remove_dead_stones" << endl;
@@ -205,20 +219,21 @@ void GoBoard::remove_dead_stones(Player player, Point move)
     int *board = this->grid; // this is not board but just a grid.
     int piece = player.color;
 
-    set<std::pair<int, int>> visited; // later will change to set<Point> here as well as other places too.
+    set<Point> visited; // later will change to set<Point> here as well as other places too.
 
     int m = this->board_width;
     int n = this->board_height;
     piece = 3 - piece;
     // cout << "Line = " << __LINE__ << endl;
-    list<std::pair<int, int>> move_neighbours = move.neighbours();
+    vector<Point> move_neighbours = move.neighbours();
 
     for (auto &move_neighbour : move_neighbours)
     {
         //cout << "Line = " << __LINE__ << endl;
+        is_in = false;
 
-        int r = move_neighbour.first;
-        int c = move_neighbour.second;
+        int r = move_neighbour.coord.first;
+        int c = move_neighbour.coord.second;
         Point point = Point(r, c);
 
         if (!is_on_grid(point))
@@ -230,14 +245,18 @@ void GoBoard::remove_dead_stones(Player player, Point move)
         //cout << "Line = " << __LINE__ << endl;
         if (*(board + m * r + c) == piece)
         {
-            is_in = visited.find(make_pair(node_x, node_y)) != visited.end();
+
+            is_in = findPointInSet(Point(r, c), visited);
             if (is_in)
                 continue;
 
+            // if (visited.find(Point(r, c)) != visited.end()) // internally it should use Point == operator overloading
+            //     continue;
+
             liberty_found = false;
-            list<std::pair<int, int>> remove_group;
-            set<std::pair<int, int>> queue;
-            queue.insert(make_pair(r, c));
+            vector<Point> remove_group;
+            set<Point> queue;
+            queue.insert(Point(r, c));
 
             //set<std::pair<int, int>>::iterator it = queue.begin();
             while (queue.size() > 0) // while(queue) as in python
@@ -245,31 +264,33 @@ void GoBoard::remove_dead_stones(Player player, Point move)
                 //cout << "Line = " << __LINE__ << " Size of set is : " << queue.size() << endl;
                 //same as queue.pop in python
                 auto nodeIterator = queue.begin();
-                node_x = nodeIterator->first;
-                node_y = nodeIterator->second;
+                node_x = nodeIterator->coord.first;
+                node_y = nodeIterator->coord.second;
                 queue.erase(nodeIterator);
 
-                is_in = visited.find(make_pair(node_x, node_y)) != visited.end(); // check if the point is present in a set or not
+                //is_in = visited.find(Point(node_x, node_y)) != visited.end(); // check if the point is present in a set or not
+                is_in = findPointInSet(Point(node_x, node_x), visited);
                 if (is_in)
                     continue;
-                visited.insert(make_pair(node_x, node_y));
+                visited.insert(Point(node_x, node_y));
 
-                remove_group.push_back(make_pair(node_x, node_y));
+                remove_group.push_back(Point(node_x, node_y));
 
-                list<std::pair<int, int>> neighbours = Point(node_x, node_y).neighbours();
+                vector<Point> neighbours = Point(node_x, node_y).neighbours();
                 //cout << "Line = " << __LINE__ << endl;
                 for (auto &neighbour : neighbours)
                 {
-                    is_in = visited.find(make_pair(neighbour.first, neighbour.second)) != visited.end();
+                    //is_in = visited.find(neighbour) != visited.end();
+                    is_in = findPointInSet(neighbour, visited);
                     if (is_in)
                         continue;
-                    if (neighbour.first >= 0 && neighbour.first < m && neighbour.second >= 0 && neighbour.second < n)
+                    if (neighbour.coord.first >= 0 && neighbour.coord.first < m && neighbour.coord.second >= 0 && neighbour.coord.second < n)
                     {
-                        val = *(board + m * neighbour.first + neighbour.second);
+                        val = *(board + m * neighbour.coord.first + neighbour.coord.second);
                         if (val == 0)
                             liberty_found = true;
                         if (val == piece)
-                            queue.insert(make_pair(neighbour.first, neighbour.second));
+                            queue.insert(neighbour);
                     }
                 }
                 //cout << "Line = " << __LINE__ << endl;
@@ -279,12 +300,14 @@ void GoBoard::remove_dead_stones(Player player, Point move)
             if (!liberty_found)
             {
                 int size = remove_group.size();
-                std::pair<int, int> del_node;
+                Point del_node;
                 while (size > 0)
                 {
                     del_node = remove_group.front();
-                    remove_group.pop_front();
-                    *(board + m * del_node.first + del_node.second) = 0;
+                    auto it = remove_group.begin();
+                    remove_group.erase(it);
+                    //remove_group.pop_front();
+                    *(board + m * del_node.coord.first + del_node.coord.second) = 0;
                     size--;
                 }
             }
@@ -426,22 +449,22 @@ GameState *GameState::apply_move(Move move)
     return new GameState(next_board, next_player.opp(), this, move, moves + 1);
 }
 
-list<std::pair<int, int>> GameState::detect_neighbor_ally(Player player, Point point)
+vector<Point> GameState::detect_neighbor_ally(Player player, Point point)
 {
     int r, c;
     int *grid = this->board->grid;
-    list<std::pair<int, int>> neighbors = point.neighbours();
-    list<std::pair<int, int>> group_allies;
+    vector<Point> neighbors = point.neighbours();
+    vector<Point> group_allies;
 
     for (auto &piece : neighbors)
     {
-        r = piece.first;
-        c = piece.second;
+        r = piece.coord.first;
+        c = piece.coord.second;
         if (this->board->is_on_grid(Point(r, c)))
         {
             if (*(grid + this->board->board_width * r + c) == player.color)
             {
-                group_allies.push_back(make_pair(r, c));
+                group_allies.push_back(Point(r, c));
             }
         }
     }
@@ -449,12 +472,12 @@ list<std::pair<int, int>> GameState::detect_neighbor_ally(Player player, Point p
     return group_allies;
 }
 
-bool findPairInList(std::pair<int, int> key, list<std::pair<int, int>> l)
+bool findPointInVector(Point key, vector<Point> l)
 {
     bool res = true;
 
-    auto it = std::find_if(l.begin(), l.end(), [&key](const std::pair<int, int> &element) {
-        return (element.first == key.first && element.second == key.second);
+    auto it = std::find_if(l.begin(), l.end(), [&key](const Point &element) {
+        return (element.coord.first == key.coord.first && element.coord.second == key.coord.second);
     });
     if (it == l.end())
         res = false;
@@ -462,18 +485,18 @@ bool findPairInList(std::pair<int, int> key, list<std::pair<int, int>> l)
     return res;
 }
 
-list<std::pair<int, int>> GameState::ally_dfs(Player player, Point point)
+vector<Point> GameState::ally_dfs(Player player, Point point)
 {
 
-    std::pair<int, int> piece;
-    std::pair<int, int> key;
-    list<std::pair<int, int>> ally_members;
-    list<std::pair<int, int>> stack;
-    list<std::pair<int, int>> neighbor_allies;
+    Point piece;
+    Point key;
+    vector<Point> ally_members;
+    vector<Point> stack;
+    vector<Point> neighbor_allies;
     bool present_stack = true;
     bool present_ally_members = true;
 
-    stack.push_back(make_pair(point.coord.first, point.coord.second));
+    stack.push_back(Point(point.coord.first, point.coord.second));
     while (stack.size() > 0)
     {
         piece = stack.back();
@@ -482,9 +505,9 @@ list<std::pair<int, int>> GameState::ally_dfs(Player player, Point point)
         neighbor_allies = this->detect_neighbor_ally(player, point);
         for (auto &ally : neighbor_allies)
         {
-            key = make_pair(ally.first, ally.second);
-            present_stack = findPairInList(key, stack);
-            present_ally_members = findPairInList(key, ally_members);
+            key = ally;
+            present_stack = findPointInVector(key, stack);
+            present_ally_members = findPointInVector(key, ally_members);
 
             if (!present_stack && !present_ally_members)
                 stack.push_back(ally);
@@ -496,8 +519,8 @@ list<std::pair<int, int>> GameState::ally_dfs(Player player, Point point)
 
 bool GameState::is_suicide(Player player, Move move)
 {
-    list<std::pair<int, int>> ally_members;
-    list<std::pair<int, int>> neighbors;
+    vector<Point> ally_members;
+    vector<Point> neighbors;
     int r, c;
 
     if (!move.is_play)
@@ -514,11 +537,11 @@ bool GameState::is_suicide(Player player, Move move)
     ally_members = test_state->ally_dfs(player, point);
     for (auto &member : ally_members)
     {
-        neighbors = Point(member.first, member.second).neighbours();
+        neighbors = member.neighbours();
         for (auto &piece : neighbors)
         {
-            r = piece.first;
-            c = piece.second;
+            r = piece.coord.first;
+            c = piece.coord.second;
             if (test_state->board->is_on_grid(Point(r, c)))
             {
                 //If there is empty space around a piece, it has liberty
@@ -553,9 +576,9 @@ bool GameState::violate_ko(Player player, Move move)
     return false;
 }
 
-list<Move> GameState::legal_moves()
+vector<Move> GameState::legal_moves()
 {
-    list<Move> leg_moves;
+    vector<Move> leg_moves;
     Move move;
     GoBoard *board = this->board; // just a pointer assignment.
     if (!board)
@@ -643,13 +666,13 @@ bool GameState::is_over()
 int GameState::winner()
 {
     float komi = 0;
-    set<std::pair<int, int>> queue;
+    set<Point> queue;
     bool white_neighbour = false;
     bool black_neighbour = false;
     int group_count = 0;
     int node_x = -1;
     int node_y = -1;
-    list<std::pair<int, int>> neighbours;
+    vector<Point> neighbours;
     int r = -1, c = -1;
     int val = -1;
 
@@ -660,7 +683,7 @@ int GameState::winner()
     }
 
     int *board = this->board->grid; // make sure GameState, GoBoard and grid are malloc'ed
-    set<std::pair<int, int>> visited;
+    set<Point> visited;
     int m, n;
     m = this->board->board_width;
     n = this->board->board_height;
@@ -675,7 +698,8 @@ int GameState::winner()
     {
         for (int j = 0; j < n; j++)
         {
-            if (visited.find(make_pair(i, j)) != visited.end())
+            //if (visited.find(Point(i, j)) != visited.end())
+            if (findPointInSet(Point(i, j), visited))
                 continue;
             else if (*(board + m * i + j) == 1)
                 count_black += 1;
@@ -685,27 +709,28 @@ int GameState::winner()
             {
 
                 queue.clear();
-                queue.insert(make_pair(i, j));
+                queue.insert(Point(i, j));
                 black_neighbour = false;
                 white_neighbour = false;
                 group_count = 0;
                 while (queue.size() > 0)
                 {
                     auto nodeIterator = queue.begin();
-                    node_x = nodeIterator->first;
-                    node_y = nodeIterator->second;
+                    node_x = nodeIterator->coord.first;
+                    node_y = nodeIterator->coord.second;
                     queue.erase(nodeIterator);
 
-                    if (visited.find(make_pair(node_x, node_y)) != visited.end())
+                    if (findPointInSet(Point(node_x, node_y), visited))
                         continue;
-                    visited.insert(make_pair(node_x, node_y));
+                    visited.insert(Point(node_x, node_y));
                     group_count += 1;
                     neighbours = Point(node_x, node_y).neighbours();
                     for (auto &neighbour : neighbours)
                     {
-                        r = neighbour.first;
-                        c = neighbour.second;
-                        if (visited.find(make_pair(r, c)) != visited.end())
+                        r = neighbour.coord.first;
+                        c = neighbour.coord.second;
+                        //if (visited.find(Point(r, c)) != visited.end())
+                        if (findPointInSet(Point(r, c), visited))
                             continue;
                         else if (r >= 0 && r < m && c >= 0 && c < n)
                         {
@@ -715,7 +740,7 @@ int GameState::winner()
                             else if (val == 2)
                                 white_neighbour = true;
                             else if (val == 0)
-                                queue.insert(make_pair(r, c));
+                                queue.insert(Point(r, c));
                         }
                     }
                 } // while closing
@@ -746,14 +771,14 @@ int GameState::winner()
 
 int main()
 {
-    list<std::pair<int, int>> neigh;
+    vector<Point> neigh;
 
     neigh = Point(1, 1).neighbours();
 
     cout << "Print the neighbours here ..." << endl;
     for (auto &elm : neigh)
     {
-        cout << elm.first << " " << elm.second << endl;
+        cout << elm.coord.first << " " << elm.coord.second << endl;
     }
 
     // Now Let's use Move
@@ -780,7 +805,7 @@ int main()
     cout << "Print the Move.Point.neighbours here ..." << endl;
     for (auto &elm : neigh)
     {
-        cout << elm.first << " " << elm.second << endl;
+        cout << elm.coord.first << " " << elm.coord.second << endl;
     }
 
     // Test GoBoard

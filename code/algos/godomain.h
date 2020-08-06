@@ -12,6 +12,7 @@ Description :  Define header files and function prototypes.
 #include <iostream>
 #include <map>
 #include <list>
+#include <vector>
 
 #include "gohelper.h"
 
@@ -89,11 +90,14 @@ public:
 
     GameState *apply_move(Move move);
     GameState *new_game(int board_size);
-    list<std::pair<int, int>> detect_neighbor_ally(Player player, Point point);
-    list<std::pair<int, int>> ally_dfs(Player player, Point point);
+
+    vector<Point> detect_neighbor_ally(Player player, Point point);
+    vector<Point> ally_dfs(Player player, Point point);
+    vector<Move> legal_moves();
+
     bool is_suicide(Player player, Move move);
     bool violate_ko(Player player, Move move);
-    list<Move> legal_moves();
+
     bool is_valid_move(Move move);
     bool is_over();
     int winner();

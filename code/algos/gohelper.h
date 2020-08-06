@@ -12,6 +12,7 @@ Description :  Define header files and function prototypes.
 #include <iostream>
 #include <map>
 #include <list>
+#include <vector>
 
 using namespace std;
 
@@ -36,22 +37,26 @@ public:
     }
 };
 
-#ifdef USAGE
-int main()
+class Point
 {
-    Player player(BLACK);
-    cout << player.opp() << endl;
-    return 0;
-}
-#endif
+public:
+    std::pair<int, int> coord;
 
-static map<char, std::pair<int, int>> mapDirections()
+    Point();                                   // Default constructor
+    Point(int row, int col);                   // Parametrized constructor
+    vector<Point> neighbours();                // find this point neighbours.
+    bool operator==(const Point &other) const; // comparsion operator overloading
+    bool operator<(const Point &other) const;  // overload < operator
+    Point *operator=(const Point &other);      // assignment operator overloading
+};
+
+static map<char, Point> mapDirections()
 {
-    map<char, std::pair<int, int>> directions;
-    directions[{'W'}] = make_pair(-1, 0);
-    directions[{'E'}] = make_pair(1, 0);
-    directions[{'S'}] = make_pair(0, -1);
-    directions[{'N'}] = make_pair(0, 1);
+    map<char, Point> directions;
+    directions[{'W'}] = Point(-1, 0);
+    directions[{'E'}] = Point(1, 0);
+    directions[{'S'}] = Point(0, -1);
+    directions[{'N'}] = Point(0, 1);
 
     //cout << directions[{'W'}].first << endl;
 
@@ -67,18 +72,6 @@ static map<int, char> mapAction()
 
     return action;
 }
-
-class Point
-{
-public:
-    std::pair<int, int> coord;
-
-    Point();                                   // Default constructor
-    Point(int row, int col);                   // Parametrized constructor
-    list<std::pair<int, int>> neighbours();    // find this point neighbours.
-    bool operator==(const Point &other) const; // comparsion operator overloading
-    Point *operator=(const Point &other);      // assignment operator overloading
-};
 
 /*
  Function prototypes.

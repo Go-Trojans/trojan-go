@@ -41,6 +41,13 @@ bool Point::operator==(const Point &other) const
     return (coord.first == other.coord.first && coord.second == other.coord.second);
 }
 
+//object comparsion (<) operator overloading
+bool Point::operator<(const Point &other) const
+{
+    cout << "Point < operator is called" << endl;
+    return (coord.first < other.coord.first);
+}
+
 //Assignment(=) operator overloading
 Point *Point::operator=(const Point &other)
 {
@@ -51,25 +58,25 @@ Point *Point::operator=(const Point &other)
 }
 
 // Find the neighbours of the this point.
-list<std::pair<int, int>> Point::neighbours()
+vector<Point> Point::neighbours()
 {
     map<int, char> action = mapAction();
-
-    map<char, std::pair<int, int>> directions;
-    list<std::pair<int, int>> neigh;
+    map<char, Point> directions;
+    vector<Point> neigh;
     int row, col;
 
     directions = mapDirections();
     size_t len = directions.size();
     for (int i = 1; i <= len; i++)
     {
-        neigh.push_back(make_pair(coord.first + directions[action[i]].first, coord.second + directions[action[i]].second));
+        neigh.push_back(Point(coord.first + directions[action[i]].coord.first, coord.second + directions[action[i]].coord.second));
+        //.first, coord.second + directions[action[i]].second));
         //cout << point.first + directions[action[i]].first << " " << point.second + directions[action[i]].second << endl;
     }
 
     for (auto &elm : neigh)
     {
-        cout << elm.first << " " << elm.second << endl;
+        cout << elm.coord.first << " " << elm.coord.second << endl;
     }
 
     return neigh;
@@ -79,14 +86,14 @@ list<std::pair<int, int>> Point::neighbours()
 int main()
 {
 
-    list<std::pair<int, int>> neigh;
+    vector<Point> neigh;
 
     neigh = Point(1, 1).neighbours();
 
     cout << "Print the neighbours here ..." << endl;
     for (auto &elm : neigh)
     {
-        cout << elm.first << " " << elm.second << endl;
+        cout << elm.coord.first << " " << elm.coord.second << endl;
     }
 
     Point p1(1, 1);
