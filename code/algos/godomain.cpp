@@ -193,7 +193,6 @@ bool GoBoard::operator==(const GoBoard &board)
     return res;
 }
 
-// Not Tested as of now, it is used at many places though.
 bool findPointInSet(Point key, set<Point> l)
 {
     bool res = true;
