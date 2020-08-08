@@ -160,7 +160,7 @@ void TrojanGoPlane::printTensor(int ***A)
     }
 }
 
-//#ifdef USAGE
+#ifdef USAGE
 int main()
 {
 
@@ -197,4 +197,4 @@ int main()
 
     return 0;
 }
-//#endif
+#endif
