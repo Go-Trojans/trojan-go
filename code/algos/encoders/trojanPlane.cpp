@@ -66,8 +66,8 @@ int ***TrojanGoPlane::encode(GameState *game_state)
 
     if (game_state->next_player.color == BLACK)
     {
-        for (int i = 0; i < 5; i++)
-            for (int j = 0; j < 5; j++)
+        for (int i = 0; i < Z; i++)
+            for (int j = 0; j < Y; j++)
                 board_tensor[curr_player][i][j] = 1;
     } // for WHITE same condition is not needed as first plane is already all with 0's
 
@@ -80,8 +80,8 @@ int ***TrojanGoPlane::encode(GameState *game_state)
                 board_plane = convert2to1and1to0(game_state);
             else
                 board_plane = convert2to0(game_state);
-            for (int i = 0; i < 5; i++)
-                for (int j = 0; j < 5; j++)
+            for (int i = 0; i < Z; i++)
+                for (int j = 0; j < Y; j++)
                     board_tensor[base_opp_history + iter_base_opp][i][j] = board_plane[5 * i + j];
             plane_history += 1;
             iter_base_opp += 1;
@@ -95,8 +95,8 @@ int ***TrojanGoPlane::encode(GameState *game_state)
                 board_plane = convert2to0(game_state);
             else
                 board_plane = convert2to1and1to0(game_state);
-            for (int i = 0; i < 5; i++)
-                for (int j = 0; j < 5; j++)
+            for (int i = 0; i < Z; i++)
+                for (int j = 0; j < Y; j++)
                     board_tensor[base_self_history + iter_base_self][i][j] = *(board_plane + 5 * i + j);
             plane_history += 1;
             iter_base_self += 1;
@@ -160,7 +160,7 @@ void TrojanGoPlane::printTensor(int ***A)
     }
 }
 
-#ifdef USAGE
+//#ifdef USAGE
 int main()
 {
 
@@ -197,4 +197,4 @@ int main()
 
     return 0;
 }
-#endif
+//#endif
