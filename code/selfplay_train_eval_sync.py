@@ -18,6 +18,7 @@ import numpy as np
 from skopt.space import Integer, Real
 from skopt.utils import use_named_args
 from skopt.plots import plot_objective
+from skopt.plots import plot_convergence
 from skopt import gp_minimize
 
 # from bayes_opt import BayesianOptimization
@@ -29,6 +30,7 @@ from algos.gohelper import *
 from algos.utils import set_gpu_memory_target, save_model_to_disk, load_model_from_disk, display_board, print_loop_info, system_info, bcolors, LOG_FORMAT
 from algos.encoders.trojangoPlane import TrojanGoPlane
 from algos.mcts.mcts import MCTSPlayer, MCTSNode
+from algos.bayes_agent import bayesAgent
 
 #import keras
 #import tensorflow as tf
@@ -43,6 +45,9 @@ LOG_FILENAME = './trojango.log'
 logging.basicConfig(filename=LOG_FILENAME,filemode='a', format=LOG_FORMAT, level=logging.DEBUG)
 logging = logging.getLogger(__name__)
 
+
+num_times_obj_func_called = 0
+
 def get_temp_file():
     fd, fname = tempfile.mkstemp(prefix='algo-train')
     os.close(fd)
@@ -54,7 +59,7 @@ def get_temp_file():
 """ Here both the agents are nn model 
     which will help during move selection during MCTS simulation 
 """
-def simulate_game(black_player, white_player, board_size, simulations, dcoeff=[0.03], c=4):
+def simulate_game(black_player, black_player_bayes, white_player, white_player_bayes, board_size, simulations, dcoeff=[0.03], c=4):
     plane_size = 7
     encoder = TrojanGoPlane((board_size,board_size),plane_size)
     moves = []
@@ -75,9 +80,10 @@ def simulate_game(black_player, white_player, board_size, simulations, dcoeff=[0
     #display_board(game.board)
     return game
     """
+ 
     agents = {
-        Player.black: MCTSPlayer(Player.black, black_player),
-        Player.white: MCTSPlayer(Player.white, white_player),
+        Player.black: MCTSPlayer(Player.black, black_player, black_player_bayes),
+        Player.white: MCTSPlayer(Player.white, white_player, white_player_bayes),
     }
 
     visited = set()
@@ -87,10 +93,13 @@ def simulate_game(black_player, white_player, board_size, simulations, dcoeff=[0
             rootnode  = MCTSNode(state = game)
         # Assuming selected_actionNode is a valid move 
         # Also, selected move is using Dirichlet Noise but not "TAU"
+        print("Player {} select move with simulations= {} dcoeff={} c={} ".format(game.next_player, agents[game.next_player].bayes_agent.simulations, agents[game.next_player].bayes_agent.dirichlet, agents[game.next_player].bayes_agent.c))
         selected_actionNode = agents[game.next_player].select_move(
                                           rootnode, visited,
                                           encoder,
-                                          simulations=simulations, dcoeff=[0.03], c=4, 
+                                          simulations=agents[game.next_player].bayes_agent.simulations,
+                                          dcoeff=agents[game.next_player].bayes_agent.dirichlet,
+                                          c=agents[game.next_player].bayes_agent.c, 
                                           stoch=False)
 
         # update new rootnode as selected_actionNode
@@ -108,32 +117,44 @@ def simulate_game(black_player, white_player, board_size, simulations, dcoeff=[0
 """ agent1_fname (learning_agent) & agent2_fname (reference_agent) are nn models/agents in (.json, .h5) format """
 def play_games(args):
     
+    print("I am in play_games")
+    
     if len(args) == 6:
         agent1_fname, agent2_fname, num_games, board_size, gpu_frac, simulations = args
         dcoeff = [0.03]
         c=4
     else:
         agent1_fname, agent2_fname, num_games, board_size, gpu_frac, simulations, dcoeff, c = args
+        print("I am in play_games else part , num_games: ", num_games)
 
     set_gpu_memory_target(gpu_frac)
 
     random.seed(int(time.time()) + os.getpid())
     np.random.seed(int(time.time()) + os.getpid())
 
-    agent1 = load_model_from_disk(agent1_fname)
-    agent2 = load_model_from_disk(agent2_fname)
-
+    agent1 = load_model_from_disk(agent1_fname) # learning agent; should be variable and is using x hyperParams
+    agent2 = load_model_from_disk(agent2_fname) #refernece agent; used x{0} or previous fixed hyperParams value.
+    
+    bayes_agent1 = bayesAgent(agent1, dcoeff, int(simulations), c) # this will keep on changing as per bayesian optimization
+    bayes_agent2 = bayesAgent(agent2, [0.03], 10, 4) # fixed hyperParams 
+    
     wins, losses = 0, 0
     color1 = Player.black
     for i in range(num_games):
         print('Simulating game %d/%d...' % (i + 1, num_games))
         if color1 == Player.black:
             black_player, white_player = agent1, agent2
+            black_player_bayes, white_player_bayes = bayes_agent1, bayes_agent2
             print("Agent 1 playing as black and Agent 2 as white")
         else:
             white_player, black_player = agent1, agent2
+            white_player_bayes, black_player_bayes = bayes_agent1, bayes_agent2
             print("Agent 1 playing as white and Agent 2 as black")
-        game = simulate_game(black_player, white_player, board_size, int(simulations), dcoeff, c)
+        
+        # black_player_bayes and white_player_bayes are bayesian Agents  (Model model, dir, simulations, c). Last 3 arguments are dummy now.   
+        game = simulate_game(black_player, black_player_bayes,
+                             white_player, white_player_bayes,
+                             board_size, int(simulations), dcoeff, c)
         if game.winner() == color1.value:
             print('Agent 1 wins')
             wins += 1
@@ -373,35 +394,12 @@ def main():
     
     num_cpu = os.cpu_count()
     if not args.production:
-        args.games_per_batch = num_cpu
+        args.games_per_batch = num_cpu * 10
         args.num_workers = num_cpu
         args.simulations = 10
         args.num_per_eval = num_cpu
         
     total_games = 0
-
-    """
-    #from keras.models import model_from_json
-    #json_filepath = '/Users/pujakumari/Desktop/TROJANGO/trojan-go/code/algos/nn/modelJH.json'
-    #h5_filepath = '/Users/pujakumari/Desktop/TROJANGO/trojan-go/code/algos/nn/modelJH.h5'
-    
-    # load json and create model
-    json_file = open(json_filepath, 'r')
-    loaded_model_json = json_file.read()
-    json_file.close()
-    loaded_modelJH = model_from_json(loaded_model_json)
-    # load weights into new model
-    loaded_modelJH.load_weights(h5_filepath)
-    agent1 = loaded_modelJH
-    agent2 = loaded_modelJH
-    """
-
-    """ reference_agent will be the final model.
-        learning_agent: In case learning_agent doesn't win with 55 % margin,
-                        same learning_agent (already trained on previous examples)
-                        will be used for self-play and training in next iteration,
-                        until we get a new reference agent which wins with 55 % win margin. 
-    """
     iter_count = 1
     prod = True
 
@@ -409,14 +407,17 @@ def main():
 
     """ learning_agent & reference_agent are nn models/agents in (.json, .h5) format """
     # define dimensions for Bayesian Opt.
-    dim_sims = Integer(name='simulations', low=10, high=11)
+    dim_sims = Integer(name='simulations', low=10, high=40)
     dim_dcoeff = Real(name='dcoeff', low=0.01, high=0.03)
-    dim_c = Integer(name='c', low=4, high=5)
+    dim_c = Integer(name='c', low=3, high=5)
     dimensions = [dim_sims, dim_dcoeff, dim_c]
     hp_game_count = 28
+    #num_times_obj_func_called = 0
     @use_named_args(dimensions)
     def obj_func(simulations, dcoeff, c):
-        games_per_worker = hp_game_count // args.games_per_batch
+        global num_times_obj_func_called
+        num_times_obj_func_called = num_times_obj_func_called + 1
+        games_per_worker = hp_game_count // args.num_per_eval
         gpu_frac = 0.95 / float(args.num_workers)
         pool = multiprocessing.Pool(args.num_workers)
         worker_args = [
@@ -429,17 +430,18 @@ def main():
         game_results = pool.map(play_games, worker_args)
 
         total_wins, total_losses = 0, 0
+        epsilon = 0.0001
         for wins, losses in game_results:
             total_wins += wins
             total_losses += losses
-        print('FINAL RESULTS:')
+        print(f"{bcolors.OKBLUE}FINAL RESULTS  num_times_obj_func_called:{num_times_obj_func_called}/10{bcolors.ENDC}")
         print('Parameters: %s, %s, %s' % (simulations, dcoeff, c))
         print('Learner: %d' % total_wins)
         print('Reference: %d' % total_losses)
-        print('Win rate: %f' % (total_wins/(total_wins + total_losses)))
+        print('Win rate: %f' % (total_wins/(total_wins + total_losses + epsilon)))
         pool.close()
         pool.join()
-        return total_losses / (total_wins + total_losses) # want to minimize loss rate 
+        return total_losses / (total_wins + total_losses + epsilon) # want to minimize loss rate 
 
     while prod:
         loop_start = time.time()
@@ -475,25 +477,32 @@ def main():
         # Eval Params: 400 games , "TAU"=0 , 400 simulations per move
         print(f"{bcolors.OKBLUE}[Evaluation starts] ... \nlearning agent {learning_agent} & \nreference_agent {reference_agent}{bcolors.ENDC}")
         logging.debug("[Evaluation starts] ... \nlearning agent {} & \nreference_agent {}".format(learning_agent, reference_agent))            
-        num_games_eval = args.num_per_eval
+        #num_games_eval = args.num_per_eval
+        num_games_eval = hp_game_count
 
 
         eval_start = time.time()
         print ("=" * 30)
-        print ("Start hyperparameter tuning")
+        print(f'{bcolors.OKBLUE}[Start hyperparameter tuning]\n{bcolors.ENDC}')
+   
 
         # pbounds = {'simulations': (10, 13), 'dcoeff': (0.01, 0.04), 'c':(4, 6)}
         # optimizer = BayesianOptimization(f=obj_func, pbounds=pbounds, random_state=1)
         # optimizer.maximize(init_points=2, n_iter=3)
         try:
-            results = gp_minimize(obj_func, dimensions=dimensions, acq_func='EI', x0=None, y0=None, noise=1e-8)
-            wins = hp_game_count-int(results.fun)*hp_game_count
+            results = gp_minimize(obj_func, dimensions=dimensions, n_calls=10, acq_func='EI', x0=None, y0=None, noise=1e-8)
+            print("obj_func is f(x) where x are hyperparams and it is returnung loss/total, results.fun = " ,results.fun)
+            # TODO : Don't we need to update the hyperparams so that it can be used in self-play of next iteration.
+            # Also Objective function should have x{0} to be used by refernce agent and x (EI Point) to be used by learning agent.
+            wins = hp_game_count-int(results.fun * hp_game_count)
             print('-' * 30)
             print("wins: %s" % wins)
             print("Finished hyperparameter tuning")
             # print ("Found max: %s" % optimizer.max)
-            print("Best params: %s, wins: %s" % (results.x, wins))
-            plot_objective(results)
+            print(f"{bcolors.OKBLUE}Best params: {results.x} wins: {wins} {bcolors.ENDC}")
+            plot_convergence(results, yscale='log').figure.savefig("convergence.png")
+            plot_objective(results).flatten()[0].figure.savefig("objective.png")
+            
             print ("=" * 30)
         except ValueError:
             print("Optimization Failed!!")
@@ -551,10 +560,6 @@ def main():
         iter_count = iter_count + 1
         if not args.production:
             prod = False
-        """
-        print("Total time taken to complete a loop of generating exp, \
-              training and evaluation is :", loop_end - loop_start)
-        """  
 
 
 if __name__ == '__main__':
