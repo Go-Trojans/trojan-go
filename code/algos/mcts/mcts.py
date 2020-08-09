@@ -2,6 +2,8 @@ from algos.godomain import *
 from algos.gohelper import *
 from algos.encoders import TrojanGoPlane
 from algos.nn import AGZ
+#from algos.bayes_agent import bayesAgent
+
 import h5py
 import numpy as np
 from math import sqrt
@@ -127,9 +129,10 @@ class MCTSNode:
 
 class MCTSPlayer :
 
-    def __init__(self, player, model):
+    def __init__(self, player, model, bayes_agent=None):
         self.player = player
         self.model = model
+        self.bayes_agent = bayes_agent
 
     def select_move(self,
                     rootnode, visited, encoder,
