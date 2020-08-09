@@ -17,8 +17,8 @@ logging = logging.getLogger(__name__)
 
 from algos.utils import display_board, alphaNumnericMove_from_point, LOG_FORMAT, save_model_to_disk
 
-
-
+# import tensorflow as tf
+# tf.debugging.set_log_device_placement(True)
 
 
 class ExperienceBuffer:
@@ -449,9 +449,9 @@ class MCTSSelfPlay :
         # Train the model with the callback
         self.model.fit(
                     model_input, [action_target, value_target],
-                    epochs=epochs,
-                    batch_size=batch_size,
-                    callbacks=[early_stopping_callback])  # Pass callback to training
+                    epochs=100,
+                    batch_size=batch_size) # ,
+                    # callbacks=[early_stopping_callback])  # Pass callback to training
         """
         # This may generate warnings related to saving the state of the optimizer.
         # These warnings (and similar warnings throughout this notebook)

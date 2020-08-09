@@ -15,6 +15,13 @@ from collections import namedtuple
 import h5py
 import numpy as np
 
+from skopt.space import Integer, Real
+from skopt.utils import use_named_args
+from skopt.plots import plot_objective
+from skopt import gp_minimize
+
+# from bayes_opt import BayesianOptimization
+
 from algos.mcts.mcts import MCTSSelfPlay, ExperienceBuffer, load_experience, combine_experience
 from algos.nn.AGZ import smallNN, init_random_model
 from algos.godomain import *
@@ -47,7 +54,7 @@ def get_temp_file():
 """ Here both the agents are nn model 
     which will help during move selection during MCTS simulation 
 """
-def simulate_game(black_player, white_player, board_size, simulations):
+def simulate_game(black_player, white_player, board_size, simulations, dcoeff=[0.03], c=4):
     plane_size = 7
     encoder = TrojanGoPlane((board_size,board_size),plane_size)
     moves = []
@@ -83,7 +90,7 @@ def simulate_game(black_player, white_player, board_size, simulations):
         selected_actionNode = agents[game.next_player].select_move(
                                           rootnode, visited,
                                           encoder,
-                                          simulations=simulations, c=4, 
+                                          simulations=simulations, dcoeff=[0.03], c=4, 
                                           stoch=False)
 
         # update new rootnode as selected_actionNode
@@ -100,7 +107,13 @@ def simulate_game(black_player, white_player, board_size, simulations):
 
 """ agent1_fname (learning_agent) & agent2_fname (reference_agent) are nn models/agents in (.json, .h5) format """
 def play_games(args):
-    agent1_fname, agent2_fname, num_games, board_size, gpu_frac, simulations = args
+    
+    if len(args) == 6:
+        agent1_fname, agent2_fname, num_games, board_size, gpu_frac, simulations = args
+        dcoeff = [0.03]
+        c=4
+    else:
+        agent1_fname, agent2_fname, num_games, board_size, gpu_frac, simulations, dcoeff, c = args
 
     set_gpu_memory_target(gpu_frac)
 
@@ -120,7 +133,7 @@ def play_games(args):
         else:
             white_player, black_player = agent1, agent2
             print("Agent 1 playing as white and Agent 2 as black")
-        game = simulate_game(black_player, white_player, board_size, simulations)
+        game = simulate_game(black_player, white_player, board_size, int(simulations), dcoeff, c)
         if game.winner() == color1.value:
             print('Agent 1 wins')
             wins += 1
@@ -319,10 +332,10 @@ def main():
     parser.add_argument('--num-per-eval', type=int, default=400)
     parser.add_argument('--production', dest='production', action='store_true')
     parser.add_argument('--no-production', dest='production', action='store_false')
+    parser.add_argument('--tuning', '-opt', action='store_true')
     parser.set_defaults(production=True)
     
     args = parser.parse_args()        
-
 
     print(f"{bcolors.OKBLUE}Welcome to TROJAN-GO !!!{bcolors.ENDC}")
     logging.debug("Welcome to TROJAN-GO !!!")
@@ -392,6 +405,42 @@ def main():
     iter_count = 1
     prod = True
 
+    failed_once = 0 
+
+    """ learning_agent & reference_agent are nn models/agents in (.json, .h5) format """
+    # define dimensions for Bayesian Opt.
+    dim_sims = Integer(name='simulations', low=10, high=11)
+    dim_dcoeff = Real(name='dcoeff', low=0.01, high=0.03)
+    dim_c = Integer(name='c', low=4, high=5)
+    dimensions = [dim_sims, dim_dcoeff, dim_c]
+    hp_game_count = 28
+    @use_named_args(dimensions)
+    def obj_func(simulations, dcoeff, c):
+        games_per_worker = hp_game_count // args.games_per_batch
+        gpu_frac = 0.95 / float(args.num_workers)
+        pool = multiprocessing.Pool(args.num_workers)
+        worker_args = [
+            (
+                learning_agent, reference_agent,
+                games_per_worker, args.board_size, gpu_frac, simulations, [dcoeff], c
+            )
+            for _ in range(args.num_workers)
+        ]
+        game_results = pool.map(play_games, worker_args)
+
+        total_wins, total_losses = 0, 0
+        for wins, losses in game_results:
+            total_wins += wins
+            total_losses += losses
+        print('FINAL RESULTS:')
+        print('Parameters: %s, %s, %s' % (simulations, dcoeff, c))
+        print('Learner: %d' % total_wins)
+        print('Reference: %d' % total_losses)
+        print('Win rate: %f' % (total_wins/(total_wins + total_losses)))
+        pool.close()
+        pool.join()
+        return total_losses / (total_wins + total_losses) # want to minimize loss rate 
+
     while prod:
         loop_start = time.time()
         print(f"{bcolors.OKBLUE}[Data Generation starts] Reference: {reference_agent_json} {bcolors.ENDC}")
@@ -427,17 +476,43 @@ def main():
         print(f"{bcolors.OKBLUE}[Evaluation starts] ... \nlearning agent {learning_agent} & \nreference_agent {reference_agent}{bcolors.ENDC}")
         logging.debug("[Evaluation starts] ... \nlearning agent {} & \nreference_agent {}".format(learning_agent, reference_agent))            
         num_games_eval = args.num_per_eval
+
+
         eval_start = time.time()
-        wins = evaluate(
-            learning_agent, reference_agent,
-            num_games=num_games_eval,
-            num_workers=args.num_workers,
-            board_size=args.board_size,
-            simulations=args.simulations)
+        print ("=" * 30)
+        print ("Start hyperparameter tuning")
+
+        # pbounds = {'simulations': (10, 13), 'dcoeff': (0.01, 0.04), 'c':(4, 6)}
+        # optimizer = BayesianOptimization(f=obj_func, pbounds=pbounds, random_state=1)
+        # optimizer.maximize(init_points=2, n_iter=3)
+        try:
+            results = gp_minimize(obj_func, dimensions=dimensions, acq_func='EI', x0=None, y0=None, noise=1e-8)
+            wins = hp_game_count-int(results.fun)*hp_game_count
+            print('-' * 30)
+            print("wins: %s" % wins)
+            print("Finished hyperparameter tuning")
+            # print ("Found max: %s" % optimizer.max)
+            print("Best params: %s, wins: %s" % (results.x, wins))
+            plot_objective(results)
+            print ("=" * 30)
+        except ValueError:
+            print("Optimization Failed!!")
+            if failed_once > 10:
+                raise ValueError
+            else:
+                failed_once += 1
+                wins = evaluate(
+                    learning_agent, reference_agent,
+                    num_games=num_games_eval,
+                    num_workers=args.num_workers,
+                    board_size=args.board_size,
+                    simulations=args.simulations)
         eval_end = time.time()
         eval_time = eval_end - eval_start
+
         print('Won %d / %d games (%.3f)' % (
             wins, num_games_eval, float(wins) / num_games_eval))
+
         
         shutil.copy(tmp_agent_json, working_agent_json)
         shutil.copy(tmp_agent_h5, working_agent_h5)
@@ -454,6 +529,7 @@ def main():
             shutil.move(tmp_agent_h5, next_filename_h5)
             next_filename = (next_filename_json, next_filename_h5)
             reference_agent = next_filename
+            print('-' * 30)
             print(f"{bcolors.OKBLUE}[Evaluation ends] New reference is : {next_filename} {bcolors.ENDC}")
             logging.debug("[Evaluation ends] New reference is : {}".format(next_filename))        
         else:
@@ -468,7 +544,7 @@ def main():
         info = print_loop_info(iter_count, learning_agent, reference_agent,
                                args.games_per_batch, args.simulations,
                                args.num_workers, args.num_per_eval,
-                               exp_time, train_time, eval_time, loop_time)
+                                      exp_time, train_time, eval_time, loop_time)
         print(f"{bcolors.OKBLUE}{info}{bcolors.ENDC}")
         logging.debug("{}".format(info))
         #print(info)
