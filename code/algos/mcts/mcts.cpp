@@ -11,7 +11,12 @@ using namespace std;
 #include <algorithm>
 #include "../godomain.h"
 #include "../gohelper.h"
+#include "code/algos/encoders/trojanPlane.h"
+#include "tensorflow/c/c_api.h"
 #include "H5Cpp.h"
+#include <stdlib.h> 
+#include <stdio.h>
+#include "keras_model.h"
 #include <math.h>
 #include <map>
 using namespace H5;
@@ -36,6 +41,9 @@ public:
         this->parentNode = parentNode;
         this->p = p;
         this->v = v; 
+        this->visits = 0;
+        this->wins = 0;
+        this->q = 0.0;
          
     }
 
@@ -49,7 +57,7 @@ public:
         return this->childNodes[maxChild]
     }
 
-    void expand(vector<float> probs)
+    void MCTSNode::expand(vector<float> probs)
     {
         int boardSize = this->state->board->board_width;
         int numMoves = probs.size();
@@ -72,7 +80,7 @@ public:
                 /*else {
                     GoBoard next_board = this->state->board;
                 }*/
-                GameState childState = GameState(next_board, *(this->state->next_player->opp), *(this->state), temp_move, *(this->state->moves));
+                GameState childState = new GameState(next_board, *(this->state->next_player->opp), *(this->state), temp_move, *(this->state->moves));
                 MCTSNode child = MCTSNode(&childState, temp_prob, 0.0, &temp_move, this);
                 this->childNodes.push_back(child);
             }
@@ -81,20 +89,20 @@ public:
         }
     }
 
-    void update(float v)
+    void MCTSNode::update(float v)
     {
         this->visits++;
         this->wins++;
         this->q = (this->wins / this->visits);
     }
 
-    float puct(int c=4)
+    float MCTSNode::puct(int c=4)
     {
         int N = 0;
         for (vector<MCTSNode>::const_iterator child = this->childNodes.begin(); child != this->childNodes.end(); ++child) {
             N += child.visits;
         }
-        puc = this->q + ((c * this->p * sqrt(N)) / (1 + this->visits));
+        float puc = this->q + ((c * this->p * sqrt(N)) / (1 + this->visits));
         return puc;
     }
 
@@ -182,22 +190,39 @@ class MCTSSelfPlay
 public:
     int board_size;
     int plane_size;
-    model_file
-    network
-    encoder
+    TrojanGoPlane *encoder;
+    string model_file;
 
-    MCTSSelfPlay(int board_size,int plane_size,model_file=NULL,network=None)
+
+    MCTSSelfPlay(int board_size,int plane_size,string model_file)
     {
         this->board_size = board_size;
         this->plane_size = plane_size;
         this->model_file = model_file;
-        this->network = network;
+        this->encoder = new TrojanGoPlane(board_size,plane_size);
     
     }
 
-    void play(Network agent1,Network agent2,File expFile,int num_games=2500,
+    void MCTSSelfPlay::play(Network agent1,Network agent2,File expFile,int num_games=2500,
         int simulations=200,int c=4,float vResion=-0.7,tempMoves=4)
     {
+        TF_Graph* Graph = TF_NewGraph();
+        TF_Status* Status = TF_NewStatus();
+        TF_Buffer* RunOpts = NULL;
+        TF_SessionOptions* SessionOpts = TF_NewSessionOptions();
+        const char* saved_model_dir = "../nn/smallNNSave";
+        const char* tags = "serve"; // default model serving tag; can change in future
+        int ntags = 1;
+        TF_Session* Session = TF_LoadSessionFromSavedModel(SessionOpts, RunOpts, saved_model_dir, &tags, ntags, Graph, NULL, Status);
+        int NumInputs = 1;
+        TF_Output* Input = malloc(sizeof(TF_Output) * NumInputs);
+        TF_Output t0 = {TF_GraphOperationByName(Graph, “<node0>”), <idx0>};
+        int NumOutputs = 2;
+        TF_Output* Output = malloc(sizeof(TF_Output) * NumOutputs);
+        TF_Output t1 = {TF_GraphOperationByName(Graph, “<node1>”), <idx1>};
+        TF_Output t2 = {TF_GraphOperationByName(Graph, “<node2>”), <idx2>};
+        Input[0] = t0;
+
         float tau;
         map<Player, MCTSNode> players = {
             {Player.black,MCTSPlayer(Player.black, agent1)},
@@ -205,11 +230,12 @@ public:
         };
         for (int i = 0; i < num_games; i++)
         {
-            GameState game = GameState.new_game(this->board_size);
+            GameState gameD;
+            GameState *game = gameD.new_game(this->board_size);
             int moveNum = 0;
             set<MCTSNode> visited;
-            rootnode = NULL;
-            while (game.is_over() == false)
+            MCTSNode *rootnode;
+            while (game->is_over() == false)
             {
                 moveNum += 1;
                 if (moveNum <= tempMoves)
@@ -222,18 +248,18 @@ public:
                 }
                 if (rootnode == NULL) 
                 {
-                    rootnode = MCTSNode(game);
+                    rootnode = new MCTSNode(game);
                 }
-                vector<MCTSNode> mctsNodes = players[game.next_player].select_move( &rootnode, visited,
+                vector<MCTSNode> mctsNodes = players[game->next_player].select_move( &rootnode, visited,
                     simulations,0.25, 0.03, c, true);
                 //nn = players[game.next_player].model
-                //tensor = self.encoder.encode(game)
+                int ***tensor = this->encoder->encode(game);
                 vector<float> searchProb((int)(pow(this->board_size,2) + 1), 0.0);
                 vector<float> tempNodes;
                 int j;
                 for (vector<MCTSNode>::const_iterator child = mctsNodes.begin(); child != mctsNodes.end(); ++child)
                 {
-                    if (child.move.is_play == true)
+                    if (child->move.is_play == true)
                     {
                         pair<int, int> coord = child.move.point.coord;
                         j = this->board_size * coord[0] + coord[1];
@@ -260,7 +286,7 @@ public:
                 }
                 /*rootnode = np.random.choice(a = mctsNodes, p = tempNodes)*/
                 Move move = rootnode.move;
-                game = game.apply_move(move);
+                GameState game = game.apply_move(move);
             }
             int winner = game.winner();
         }

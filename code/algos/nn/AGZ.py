@@ -290,6 +290,11 @@ def init_random_model(input_shape) :
     model = net.nn_model(input_shape)
     return model
 
+if __name__=='__main__' :
+    net = smallNN()
+    model = net.nn_model((7,5,5))
+    keras.models.save_model(model,'./smallNNSave')
+
 
 # In[ ]:
 
