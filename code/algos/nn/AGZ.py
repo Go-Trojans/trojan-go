@@ -44,12 +44,14 @@
 # In[105]:
 
 
-import keras
-from keras.layers import Activation, BatchNormalization,MaxPooling2D
-from keras.layers import Conv2D, Dense, Flatten, Input
-from keras.models import Model
+#import keras
+from tensorflow.keras.layers import Activation, BatchNormalization,MaxPooling2D
+from tensorflow.keras.layers import Conv2D, Dense, Flatten, Input
+from tensorflow.keras.models import Model
+import tensorflow.keras.backend as K
 import numpy as np
 import tensorflow as tf
+import os
 
 from algos.godomain import Move
 from algos.gohelper import Point, Player
@@ -99,7 +101,7 @@ class smallNN:
                         data_format='channels_first')(pb)
                         #activation='relu')(pb)
             pb = BatchNormalization()(pb)
-            pb = Activation("relu")(pb)    
+            pb = Activation("relu")(pb)
 
         policy_conv = \
             Conv2D(2, (1, 1),  # <2>
@@ -230,7 +232,7 @@ class trojanGoZero:
             out)
         out = BatchNormalization()(out)
 
-        out = keras.layers.add([res, out])
+        out = tf.keras.layers.add([res, out])
         out = Activation("relu")(out)
 
         return out
@@ -292,9 +294,24 @@ def init_random_model(input_shape) :
 
 if __name__=='__main__' :
     net = smallNN()
+    K.set_learning_phase(0)
     model = net.nn_model((7,5,5))
-    keras.models.save_model(model,'./smallNNSave')
+    #tf.saved_model.save(model,'./smallNNSave')
+    sess = tf.keras.backend.get_session()
+    graph_def = sess.graph.as_graph_def()
+    print(graph_def)  # get the input and output node name from here
 
+    # 'freeze' the graph (convert variables into constants): allows to have both,
+    # weights and the graph architecture in the same file
+    frozen_graphdef = tf.graph_util.convert_variables_to_constants(
+        sess, graph_def, ["dense_1/Relu","dense_2/Tanh"])
+    path = os.getcwd()
+
+    # save the graph
+    tf.train.write_graph(graph_or_graph_def=frozen_graphdef,
+                         logdir=path,  # requires absolute path
+                         name="smallnn.pb",
+                         as_text=False)
 
 # In[ ]:
 

@@ -13,14 +13,17 @@ using namespace std;
 #include "../gohelper.h"
 #include "code/algos/encoders/trojanPlane.h"
 #include "tensorflow/c/c_api.h"
+#include "tensorflow_cc_inference/Inference.h"
 #include "H5Cpp.h"
 #include <stdlib.h> 
 #include <stdio.h>
 #include "keras_model.h"
 #include <math.h>
 #include <map>
+#define BLACK 1
+#define WHITE 2
 using namespace H5;
-
+using tensorflow_cc_inference::Inference;
 class MCTSNode
 {
 public:
@@ -66,7 +69,8 @@ public:
         {
             moves.push_back(Move(Point((int)(idx / boardSize), idx % boardSize)));
         }
-        moves.push_back(Move.pass_turn());
+        Move moved = Move();
+        moves.push_back(moved.pass_turn());
         vector<Move>::const_iterator temp_move = moves.begin();
         vector<float>::const_iterator temp_prob = probs.begin();
         vector<Move> legal_moves = this->state->legal_moves();
@@ -74,7 +78,7 @@ public:
         {
             if (find(legal_moves.begin(), legal_moves.end(), temp_move) != legal_moves.end()) {
                 GoBoard next_board = *(this->state->board);
-                if (temp_move.is_play){
+                if (temp_move.is_play()){
                     next_board.place_stone(this->state->next_player, temp_move.point)
                 }
                 /*else {
@@ -96,11 +100,11 @@ public:
         this->q = (this->wins / this->visits);
     }
 
-    float MCTSNode::puct(int c=4)
+    float puct(int c=4)
     {
         int N = 0;
         for (vector<MCTSNode>::const_iterator child = this->childNodes.begin(); child != this->childNodes.end(); ++child) {
-            N += child.visits;
+            N += child->visits;
         }
         float puc = this->q + ((c * this->p * sqrt(N)) / (1 + this->visits));
         return puc;
@@ -112,12 +116,12 @@ class MCTSPlayer
 {
 public:
     Player *player;
-    //Model model;
+    Inference model;
 
-    MCTSPlayer(Player *player/*,Model model*/)
+    MCTSPlayer(Player *player,Inference model)
     {
         this->player = player;
-        //this->model = model;
+        this->model = model;
     }
 
     
@@ -148,7 +152,7 @@ public:
                 Player hero = currNode.state->next_player;
                 //TO BE DONE
             }
-            while (currNode!=NULL)
+            while (currNode)
             {
                 float val;
                 if (hero == currNode.state->next_player)
@@ -160,7 +164,7 @@ public:
                     val = -v;
                 }
                 currNode.update(val);
-                currNode = currNode.parentNode;
+                currNode = *currNode.parentNode;
             }
             if (stoch == true)
             {
@@ -172,7 +176,7 @@ public:
                 maxNode.push_back(rootnode->childNodes[0]);
                 for (vector<MCTSNode>::const_iterator i = rootnode->childNodes.begin(); i != rootnode->childNodes.end(); ++i)
                 {
-                    if (maxNode[0].visits<*(i.visits))
+                    if (maxNode[0].visits<*(i->visits))
                     {
                         maxNode[0] = *i;
                     }
@@ -203,10 +207,10 @@ public:
     
     }
 
-    void MCTSSelfPlay::play(Network agent1,Network agent2,File expFile,int num_games=2500,
-        int simulations=200,int c=4,float vResion=-0.7,tempMoves=4)
+    void MCTSSelfPlay::play(Inference agent1,Inference agent2,File expFile,int num_games=2500,
+        int simulations=200,int c=4,float vResion=-0.7,int tempMoves=4)
     {
-        TF_Graph* Graph = TF_NewGraph();
+        /*TF_Graph* Graph = TF_NewGraph();
         TF_Status* Status = TF_NewStatus();
         TF_Buffer* RunOpts = NULL;
         TF_SessionOptions* SessionOpts = TF_NewSessionOptions();
@@ -217,17 +221,24 @@ public:
         int NumInputs = 1;
         TF_Output* Input = malloc(sizeof(TF_Output) * NumInputs);
         TF_Output t0 = {TF_GraphOperationByName(Graph, “<node0>”), <idx0>};
+                Input[0] = t0;
+        Input[0] = t0;
         int NumOutputs = 2;
         TF_Output* Output = malloc(sizeof(TF_Output) * NumOutputs);
         TF_Output t1 = {TF_GraphOperationByName(Graph, “<node1>”), <idx1>};
         TF_Output t2 = {TF_GraphOperationByName(Graph, “<node2>”), <idx2>};
-        Input[0] = t0;
+        Output[0] = t1
+        Output[1] = t2*/
 
+        auto CNN = Inference("../nn/smallnn.pb","board_input","dense_1/Relu");
+        TF_Tensor* in  = TF_AllocateTensor(/*Allocate and fill tensor*/);
+        TF_Tensor* out = CNN(in);
+        
         float tau;
-        map<Player, MCTSNode> players = {
-            {Player.black,MCTSPlayer(Player.black, agent1)},
-            {Player.white,MCTSPlayer(Player.white, agent1)}
-        };
+        map<int, MCTSPlayer> players{ {BLACK,new MCTSPlayer(new Player(BLACK),agent1)}, 
+                                        {WHITE,new MCTSPlayer(new Player(WHITE),agent2)} };
+
+
         for (int i = 0; i < num_games; i++)
         {
             GameState gameD;
@@ -257,12 +268,13 @@ public:
                 vector<float> searchProb((int)(pow(this->board_size,2) + 1), 0.0);
                 vector<float> tempNodes;
                 int j;
-                for (vector<MCTSNode>::const_iterator child = mctsNodes.begin(); child != mctsNodes.end(); ++child)
+                for (int i=0;i<mctsNodes.size();i++)
                 {
-                    if (child->move.is_play == true)
+                    MCTSNode child = mctsNodes[i];
+                    if (child.move->is_play == true)
                     {
-                        pair<int, int> coord = child.move.point.coord;
-                        j = this->board_size * coord[0] + coord[1];
+                        pair<int, int> coord = child.move->point.coord;
+                        j = this->board_size * coord.first + coord.second;
                     }
                     else
                     {
@@ -272,23 +284,24 @@ public:
                     tempNodes.push_back(pow(child.visits, (1 / tau)));
                 }
                 float probSum = 0.0;
-                for (vector<float>::const_iterator k = tempNodes.begin(); k != tempNodes.end(); ++k)
+                for (int i=0;i<tempNodes.size();i++)
                 {
-                    probSum += *k;
+                    float k = tempNodes[i];
+                    probSum += k;
                 }
-                for (vector<float>::const_iterator k = tempNodes.begin(); k != tempNodes.end(); ++k)
+                for (int i=0;i<tempNodes.size();i++)
                 {
-                    k = k/probSum;
+                    tempNodes[i] = tempNodes[i]/probSum;
                 }
-                for (vector<float>::const_iterator k = searchProb.begin(); k != searchProb.end(); ++k)
+                for (int i=0;i< searchProb.size(); i++)
                 {
-                    k = k / probSum;
+                    searchProb[i] = searchProb[i]/probSum
                 }
                 /*rootnode = np.random.choice(a = mctsNodes, p = tempNodes)*/
-                Move move = rootnode.move;
-                GameState game = game.apply_move(move);
+                Move *move = rootnode->move;
+                GameState *game = game->apply_move(*move);
             }
-            int winner = game.winner();
+            int winner = game->winner();
         }
     }
 
