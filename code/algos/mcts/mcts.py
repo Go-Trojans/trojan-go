@@ -413,6 +413,27 @@ class MCTSSelfPlay:
             len(tf.config.experimental.list_physical_devices('GPU')), is_gpu, gpus)
         )
 
+        """
+        Developing for multiple GPUs will allow a model to scale with the additional resources. 
+        If developing on a system with a single GPU, we can simulate multiple GPUs with virtual devices. 
+        This enables easy testing of multi-GPU setups without requiring additional resources.
+        """
+        """
+        if gpus:
+            # Create 2 virtual GPUs with 1GB memory each
+        try:
+            tf.config.experimental.set_virtual_device_configuration(
+                gpus[0],
+                [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1024),
+                 tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1024)])
+            logical_gpus = tf.config.experimental.list_logical_devices('GPU')
+            print(len(gpus), "Physical GPU,", len(
+                logical_gpus), "Logical GPUs")
+        except RuntimeError as e:
+            # Virtual devices must be set before GPUs have been initialized
+            print(e)
+        """
+
         with h5py.File(exp_filename, 'r') as exp_input:
             experience_buffer = load_experience(exp_input)
 

@@ -237,6 +237,9 @@ def generate_experience(learning_agent, reference_agent, exp_file,
     gpu_frac = 0.95 / float(num_workers)
     games_per_worker = num_games // num_workers
 
+    # max_gpus_resource = 2 # keep as many number of GPUs available
+    # pool_sema = BoundedSemaphore(value=max_gpus_resource)
+
     for i in range(num_workers):
         filename = get_temp_file()
         experience_files.append(filename)
