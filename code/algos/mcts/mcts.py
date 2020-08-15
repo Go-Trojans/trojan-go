@@ -1,3 +1,4 @@
+from algos.utils import display_board, alphaNumnericMove_from_point, LOG_FORMAT, save_model_to_disk
 from algos.godomain import *
 from algos.gohelper import *
 from algos.encoders import TrojanGoPlane
@@ -15,11 +16,6 @@ import copy
 import logging
 logging = logging.getLogger(__name__)
 
-from algos.utils import display_board, alphaNumnericMove_from_point, LOG_FORMAT, save_model_to_disk
-
-
-
-
 
 class ExperienceBuffer:
     def __init__(self, model_input, action_target, value_target):
@@ -29,45 +25,53 @@ class ExperienceBuffer:
 
     def serialize(self, h5file):
         h5file.create_group('experience')
-        h5file['experience'].create_dataset('model_input', data=self.model_input)
-        h5file['experience'].create_dataset('action_target', data=self.action_target)
-        h5file['experience'].create_dataset('value_target', data=self.value_target)
-
+        h5file['experience'].create_dataset(
+            'model_input', data=self.model_input)
+        h5file['experience'].create_dataset(
+            'action_target', data=self.action_target)
+        h5file['experience'].create_dataset(
+            'value_target', data=self.value_target)
 
 
 def combine_experience(collectors):
-    combined_model_input = np.concatenate([np.array(c.model_input) for c in collectors])
-    combined_action_target = np.concatenate([np.array(c.action_target) for c in collectors])
-    combined_value_target = np.concatenate([np.array(c.value_target) for c in collectors])
+    combined_model_input = np.concatenate(
+        [np.array(c.model_input) for c in collectors])
+    combined_action_target = np.concatenate(
+        [np.array(c.action_target) for c in collectors])
+    combined_value_target = np.concatenate(
+        [np.array(c.value_target) for c in collectors])
 
     return ExperienceBuffer(
         combined_model_input,
         combined_action_target,
         combined_value_target)
 
+
 def load_experience(h5file):
     return ExperienceBuffer(model_input=np.array(h5file['experience']['model_input']),
-                            action_target=np.array(h5file['experience']['action_target']),
-                            value_target=np.array(h5file['experience']['value_target'])
+                            action_target=np.array(
+                                h5file['experience']['action_target']),
+                            value_target=np.array(
+                                h5file['experience']['value_target'])
                             )
+
 
 class MCTSNode:
     """ A node in the game tree. Note wins is always from the viewpoint of playerJustMoved.
     """
 
-    def __init__(self, state, p=0,v=0,q=0,move=None,parent=None):
+    def __init__(self, state, p=0, v=0, q=0, move=None, parent=None):
         self.move = move  # the move that got us to this node - "None" for the root node
         self.state = state  # GameState object that the node represents
         self.parentNode = parent  # "None" for the root node
         self.childNodes = []
-        self.wins = 0 # Win count
-        self.visits = 0 # Visit count
+        self.wins = 0  # Win count
+        self.visits = 0  # Visit count
         self.q = q  # Q value of the node
-        self.p = p # Move probability given by the neural network
-        self.v = v # Value given by the neural network
+        self.p = p  # Move probability given by the neural network
+        self.v = v  # Value given by the neural network
 
-
-    def SelectChild(self,c=4):
+    def SelectChild(self, c=4):
         """
             Use PUCT to select a child.
             Returns the child node with the maximum PUCT score.
@@ -84,26 +88,27 @@ class MCTSNode:
         """
         boardSize = self.state.board.board_width
         numMoves = len(probs)
-        moves = [Move(Point(int(idx/boardSize),idx%boardSize)) for idx in range(numMoves-1)]
+        moves = [Move(Point(int(idx/boardSize), idx % boardSize))
+                 for idx in range(numMoves-1)]
         moves.append(Move.pass_turn())
-        moveProb = zip(moves,probs)
+        moveProb = zip(moves, probs)
         legal_moves = self.state.legal_moves()
-        for move,p in moveProb :
-             if move in legal_moves :
-                
+        for move, p in moveProb:
+            if move in legal_moves:
+
                 # if we don't pass; all the moves are legal
                 if move.is_play:
                     next_board = copy.deepcopy(self.state.board)
                     next_board.place_stone(self.state.next_player, move.point)
                 else:
                     next_board = self.state.board
-                #self.state.moves should not matter as such so keeping it same as parent.
-                childState = GameState(next_board, self.state.next_player.opp, self.state, move, self.state.moves)
-                
-                #childState = self.state.apply_move(move)
-                child = MCTSNode(state=childState,move=move,parent=self,p=p)
-                self.childNodes.append(child)
+                # self.state.moves should not matter as such so keeping it same as parent.
+                childState = GameState(
+                    next_board, self.state.next_player.opp, self.state, move, self.state.moves)
 
+                #childState = self.state.apply_move(move)
+                child = MCTSNode(state=childState, move=move, parent=self, p=p)
+                self.childNodes.append(child)
 
     def update(self, v):
         """
@@ -114,18 +119,18 @@ class MCTSNode:
         self.wins += v
         self.q = self.wins / self.visits
 
-    def PUCT(self,c=4):
+    def PUCT(self, c=4):
         """
             Returns the PUCT score for the node.
         """
         N = 0
-        for child in self.childNodes :
+        for child in self.childNodes:
             N += child.visits
         puct = self.q + c*self.p*sqrt(N)/(1+self.visits)
         return puct
 
 
-class MCTSPlayer :
+class MCTSPlayer:
 
     def __init__(self, player, model):
         self.player = player
@@ -134,10 +139,10 @@ class MCTSPlayer :
     def select_move(self,
                     rootnode, visited, encoder,
                     simulations,
-                    epsilon = 0.25, dcoeff = [0.03], c=4,
+                    epsilon=0.25, dcoeff=[0.03], c=4,
                     stoch=True):
         nn = self.model
-        #print(nn.summary())
+        # print(nn.summary())
         """
         Conduct a tree search for simulations iterations starting from gameState.
         Assumes 2 alternating players(player 1 starts), with game results in the range[-1, 1].
@@ -148,7 +153,7 @@ class MCTSPlayer :
         for i in range(simulations):
             simulations_start = time.time()
             currNode = rootnode
-            if stoch and i>0 :
+            if stoch and i > 0:
                 for child in currNode.childNodes:
                     # Dirichlet noise (do we need during acutal game play?)
 
@@ -161,96 +166,98 @@ class MCTSPlayer :
                     """
                     # stoch will be set during self-play only & False during Actual Game-play !!!
                     if stoch:
-                        child.p = (1-epsilon)*child.p + epsilon*np.random.dirichlet(alpha = dcoeff)
-                    
+                        child.p = (1-epsilon)*child.p + epsilon * \
+                            np.random.dirichlet(alpha=dcoeff)
+
             # Select
-            while currNode in visited: # node is fully expanded and non-terminal
+            while currNode in visited:  # node is fully expanded and non-terminal
                 currNode = currNode.SelectChild(c)
 
             # Expand
-            if currNode not in visited:# if we can expand (i.e. state/node is non-terminal)
+            # if we can expand (i.e. state/node is non-terminal)
+            if currNode not in visited:
                 visited.add(currNode)
                 hero = currNode.state.next_player
                 tensor = encoder.encode(currNode.state)
-                tensor = np.expand_dims(tensor,axis=0)
+                tensor = np.expand_dims(tensor, axis=0)
                 #print("tensor : ", tensor)
                 try:
-                    p,v = nn.predict(tensor)
+                    # [GPU-ERROR] looks like we are seeing a issue while running on GPU, when num_workers is more than 1.
+                    p, v = nn.predict(tensor)
                 except OSError as err:
-                    print("OS error: {0}".format(err))
+                    print("[MCTS line 187] OS error: {0}".format(err))
                     logging.debug("OS error: {}".format(err))
                     raise
                 except:
-                    print("Unexpected error:", sys.exc_info()[0])
-                    logging.debug("Unexpected error: {}".format(sys.exc_info()[0]))
+                    print("[MCTS line 191] Unexpected error:",
+                          sys.exc_info()[0])
+                    logging.debug(
+                        "Unexpected error: {}".format(sys.exc_info()[0]))
                     raise
-                    
+
                 #print("I am able to use neural network model; nn")
-                currNode.expand(p.flatten())# add children
+                currNode.expand(p.flatten())  # add children
             # Backpropagate
-            while currNode:# backpropagate from the expanded node and work back to the root node
-                currNode.update(v if hero == currNode.state.next_player else -v)# state is terminal. Update node with result from POV of node.playerJustMoved
+            while currNode:  # backpropagate from the expanded node and work back to the root node
+                # state is terminal. Update node with result from POV of node.playerJustMoved
+                currNode.update(
+                    v if hero == currNode.state.next_player else -v)
                 currNode = currNode.parentNode
 
         simulations_end = time.time()
         time_taken = simulations_end - simulations_start
-        #STD : 0.1 msec per trials for 9*9 board
+        # STD : 0.1 msec per trials for 9*9 board
         #print("Per move time taken with {} simulations is {}, [expecting max 40 msec or 0.04 sec]".format(simulations, time_taken))
-        if stoch :
-           return rootnode.childNodes
-        else :
-            # We should use "TAU"=0 to sample the possible best moves based on visit count 
+        if stoch:
+            return rootnode.childNodes
+        else:
+            # We should use "TAU"=0 to sample the possible best moves based on visit count
             # TODO: Raveena and Puranjay to evaluate this.
-            #return max(rootnode.childNodes, key=attrgetter('visits')).move
+            # return max(rootnode.childNodes, key=attrgetter('visits')).move
             return max(rootnode.childNodes, key=attrgetter('visits'))
 
 
-
-class MCTSSelfPlay :
+class MCTSSelfPlay:
 
     def __init__(self, plane_size, board_size, model_file=None, model=None):
-        
+
         self.board_size = board_size
         self.plane_size = plane_size
-        self.model_file = model_file # This is in format (.json, .h5)
+        self.model_file = model_file  # This is in format (.json, .h5)
         self.model = model           # This is a Neural Network Model.
-        self.encoder = TrojanGoPlane((board_size,board_size),plane_size)
-
-
+        self.encoder = TrojanGoPlane((board_size, board_size), plane_size)
 
     def save_moves(self, moves, winner):
-            """
-            Save input feature stack, search probabilities,and game winner to disk
-            """
+        """
+        Save input feature stack, search probabilities,and game winner to disk
+        """
 
-            for gameState,tensor, searchProb in moves:
-                self.expBuff.model_input.append(tensor)
-                self.expBuff.action_target.append(searchProb)
-                if winner == 0 :
-                    self.expBuff.value_target.append(0)
-                elif winner == gameState.next_player.value :
-                    self.expBuff.value_target.append(1)
-                else :
-                    self.expBuff.value_target.append(-1)
-
-
+        for gameState, tensor, searchProb in moves:
+            self.expBuff.model_input.append(tensor)
+            self.expBuff.action_target.append(searchProb)
+            if winner == 0:
+                self.expBuff.value_target.append(0)
+            elif winner == gameState.next_player.value:
+                self.expBuff.value_target.append(1)
+            else:
+                self.expBuff.value_target.append(-1)
 
     def play(self, agent1, agent2,
              expFile, num_games=2500,
              simulations=400,
-             c=4,vResign=0,tempMoves=4) :
-        
+             c=4, vResign=0, tempMoves=4):
         """
         :param num_game:
         :return:
          Play num_games of self play against two MCTS players and save move information to disk. """
 
         #print(inspect.currentframe().f_code.co_name, inspect.currentframe().f_back.f_code.co_name)
-        
+
         model_input = []
         action_target = []
         value_target = []
-        self.expBuff = ExperienceBuffer(model_input,action_target,value_target)
+        self.expBuff = ExperienceBuffer(
+            model_input, action_target, value_target)
         self.expFile = expFile
         players = {
             Player.black: MCTSPlayer(Player.black, agent1),
@@ -259,7 +266,7 @@ class MCTSSelfPlay :
 
         num_games_start = time.time()
         """ Play num_games games using self-play rl and MCTS """
-        for i in range(num_games) :
+        for i in range(num_games):
 
             game_start = time.time()
             game = GameState.new_game(self.board_size)
@@ -268,9 +275,9 @@ class MCTSSelfPlay :
             visited = set()
             rootnode = None
             """ Code to play single game using self-play rl and MCTS """
-            while not game.is_over() :
+            while not game.is_over():
                 move_start = time.time()
-                #display_board(game.board)
+                # display_board(game.board)
                 moveNum += 1
                 """
                 For the first 30 moves of each game, the temperature is set to τ = 1;
@@ -283,55 +290,56 @@ class MCTSSelfPlay :
                 In short, τ near to zero means deterministic (exploitation)
                           τ near to 1 means stochasticity (more exploration)
                 """
-                if moveNum <= tempMoves :
+                if moveNum <= tempMoves:
                     tau = 1
-                else :
-                    #TODO: Raveena and Puranjay to evaluate it.
+                else:
+                    # TODO: Raveena and Puranjay to evaluate it.
                     #tau = float('inf')
                     tau = 0.1
                 if not rootnode:
-                    rootnode  = MCTSNode(state = game)
-                """ logic code to select a move using MCTS simulations """    
-                mctsNodes =  players[game.next_player].select_move(rootnode,visited ,self.encoder,simulations ,c=c)
+                    rootnode = MCTSNode(state=game)
+                """ logic code to select a move using MCTS simulations """
+                mctsNodes = players[game.next_player].select_move(
+                    rootnode, visited, self.encoder, simulations, c=c)
                 nn = players[game.next_player].model  # MCTSPlayer.model
 
                 tensor = self.encoder.encode(game)
-                
-                #This code piece is for Resigning a game (vResign)
+
+                # This code piece is for Resigning a game (vResign)
                 """
                 _, rootV = nn.predict(np.expand_dims(tensor, axis=0))
                 childVals = []
                 """
-                
-                searchProb = np.zeros((self.board_size**2 + 1,),dtype='float')
+
+                searchProb = np.zeros((self.board_size**2 + 1,), dtype='float')
                 tempNodes = []
-                for child in mctsNodes :
-                    
-                    #This code piece is for Resigning a game (vResign)
+                for child in mctsNodes:
+
+                    # This code piece is for Resigning a game (vResign)
                     """
                     childTensor = self.encoder.encode(child.state)
                     childTensor = np.expand_dims(childTensor, axis=0)
                     _,childV = nn.predict(childTensor)
                     """
-                    
-                    if child.move.is_play :
-                        r,c = child.move.point
+
+                    if child.move.is_play:
+                        r, c = child.move.point
                         i = self.board_size*r + c
-                    else :
+                    else:
                         i = self.board_size**2
                     """
                     At the end of the search, AlphaGo Zero selects a move "a" to play
                     in the root position s{0}, proportional to its exponentiated visit count,
                     π(a|s0)=N(s0,a) ** (1/τ) / ∑{b} N(s0,b)** (1/τ) ,
                     where τ is a temperature parameter that controls the level of exploration. 
-                    """    
+                    """
                     searchProb[i] = child.visits**(1/tau)
                     tempNodes.append(child.visits**(1/tau))
-                    #childVals.append(childV.item()) #This code piece is for Resigning a game (vResign)
+                    # childVals.append(childV.item()) #This code piece is for Resigning a game (vResign)
                 probSum = sum(tempNodes)
-                tempNodes = np.divide(tempNodes,probSum)
-                searchProb = np.divide(searchProb,probSum)
-                
+                tempNodes = np.divide(tempNodes, probSum)
+                searchProb = np.divide(searchProb, probSum)
+
                 # Disabling self-resign feature as it looks like it is not working properly.
                 """
                 if rootV.item() < vResign and max(childVals) < vResign :
@@ -342,10 +350,10 @@ class MCTSSelfPlay :
                     move = rootnode.move
                 """
 
-                rootnode = np.random.choice(a=mctsNodes,p=tempNodes)
+                rootnode = np.random.choice(a=mctsNodes, p=tempNodes)
                 move = rootnode.move
-                    
-                moves.append((game,tensor,searchProb))
+
+                moves.append((game, tensor, searchProb))
                 if move.is_play:
                     #print(game.next_player, alphaNumnericMove_from_point(move.point))
                     pass
@@ -359,45 +367,51 @@ class MCTSSelfPlay :
                 move_end = time.time()
                 #print("Move time: ", move_end - move_start)
 
-
             winner = game.winner()
-            #print("*"*60)
-            #display_board(game.board)
+            # print("*"*60)
+            # display_board(game.board)
             #print("Total moves : ", moveNum)
             #print("Winner is ", game.winner(), winner)
             game_end = time.time()
             #print("Time taken to play 1 game : ", game_end - game_start)
-            self.save_moves(moves,winner)
+            self.save_moves(moves, winner)
 
         model_input = np.array(self.expBuff.model_input)
         action_target = np.array(self.expBuff.action_target)
         value_target = np.array(self.expBuff.value_target)
 
         num_games_end = time.time()
-        print("Total time taken to play {} game(s) is {}".format(num_games, num_games_end - num_games_start))
-        logging.debug("[PID : {}] Total time taken to play {} game(s) is {}".format(os.getpid(), num_games, num_games_end - num_games_start))
+        print("Total time taken to play {} game(s) is {}".format(
+            num_games, num_games_end - num_games_start))
+        logging.debug("[PID : {}] Total time taken to play {} game(s) is {}".format(
+            os.getpid(), num_games, num_games_end - num_games_start))
 
         """ Save the examples generated after playing 'num_games' self-play games to file """
         print("Going to save the examples here : ", self.expFile)
         with h5py.File(self.expFile, 'w') as exp_out:
-            ExperienceBuffer(model_input, action_target, value_target).serialize(exp_out)
-
-
+            ExperienceBuffer(model_input, action_target,
+                             value_target).serialize(exp_out)
 
         """ filename is saved experienced file inside data dir
             source : https://www.tensorflow.org/tutorials/keras/save_and_load
             NOTE: tf.distribute.Strategy() is not used as of now.
         """
-        
+
     """ output_file is in (.json, .h5) format where trained model will be saved """
+
     def train(self, exp_filename, output_file, learning_rate=0.01, batch_size=128, epochs=100):
         from keras.optimizers import SGD
         import tensorflow as tf
         from algos.utils import load_model_from_disk
 
         is_gpu = len(tf.config.experimental.list_physical_devices('GPU'))
-        print("Num GPUs Available: ", len(tf.config.experimental.list_physical_devices('GPU')))
-        
+        print("Num GPUs Available : {}, is_gpu: {} ".format(
+            len(tf.config.experimental.list_physical_devices('GPU')), is_gpu)
+        )
+        logging.debug("Num GPUs Available : {}, is_gpu: {} ".format(
+            len(tf.config.experimental.list_physical_devices('GPU')), is_gpu)
+        )
+
         with h5py.File(exp_filename, 'r') as exp_input:
             experience_buffer = load_experience(exp_input)
 
@@ -411,23 +425,33 @@ class MCTSSelfPlay :
         # parallel training code
         strategy = tf.distribute.MirroredStrategy()
         print('Number of devices: {}'.format(strategy.num_replicas_in_sync))
-        logging.debug('Number of devices: {}'.format(strategy.num_replicas_in_sync))
+        logging.debug('Number of devices: {}'.format(
+            strategy.num_replicas_in_sync))
 
         # logging line for number of training devices available
         # print ('Number of devices: {}'.format(strategy.num_replicas_in_sync))
 
-        
-        #TODO: Looks like an issue here. [David to Resolve]
+        # TODO: Looks like an issue here. [David to Resolve]
         nn_model = load_model_from_disk(self.model_file)
         with strategy.scope():
             if is_gpu:
+                """[GPU-ERROR] We are seeing this issue on AWS with 4 GPUs. Unable to load handle under this scope"""
+                print(
+                    "[Training] Load model on each GPUs as it is inside tf.distribute.Strategy scope")
+                logging.debug(
+                    "[Training] Load model on each GPUs as it is inside tf.distribute.Strategy scope")
                 self.model = load_model_from_disk(self.model_file)
-            else:    
+            else:
+                print(
+                    "[Training] Load model on CPUs as it is inside tf.distribute.Strategy scope but don't have GPUs")
+                logging.debug(
+                    "[Training] Load model on CPUs as it is inside tf.distribute.Strategy scope but don't have GPUs")
+
                 self.model = nn_model
-            
+
             self.model.compile(
-                        SGD(lr=learning_rate),
-                        loss=['categorical_crossentropy', 'mse'])
+                SGD(lr=learning_rate),
+                loss=['categorical_crossentropy', 'mse'])
 
         """ logic code for checkpointing.
              This is to understand how many epochs is best for training
@@ -461,14 +485,14 @@ class MCTSSelfPlay :
             mode='min',
             patience=5,
             restore_best_weights=True
-            )
+        )
 
         # Train the model with the callback
         self.model.fit(
-                    model_input, [action_target, value_target],
-                    epochs=epochs,
-                    batch_size=batch_size,
-                    callbacks=[early_stopping_callback])  # Pass callback to training
+            model_input, [action_target, value_target],
+            epochs=epochs,
+            batch_size=batch_size,
+            callbacks=[early_stopping_callback])  # Pass callback to training
         """
         # This may generate warnings related to saving the state of the optimizer.
         # These warnings (and similar warnings throughout this notebook)
@@ -480,31 +504,29 @@ class MCTSSelfPlay :
         # model.load_weights(checkpoint_path)
         """
 
-        
         """
         # After training, save the entire model in 'checkpoints/iteration_Savedmodel/' dir.
         my_model = filename.split("/")[-1].split(".")[0]
         model_name = 'checkpoints/iteration_Savedmodel/' + my_model + '_model'
         model.save(model_name)
         """
-        
+
         # Save the entire model to a HDF5 file.
         # The '.h5' extension indicates that the model should be saved to HDF5.
         #model_name = model_name + ".h5"
-        #model.save(model_name)
-        #self.model.save(output_file)
-        
-        #Reload a fresh Keras model from the saved model.
-        #Recreate the exact same model, including its weights and the optimizer
-        #new_model = tf.keras.models.load_model(model_name)
+        # model.save(model_name)
+        # self.model.save(output_file)
 
+        # Reload a fresh Keras model from the saved model.
+        # Recreate the exact same model, including its weights and the optimizer
+        #new_model = tf.keras.models.load_model(model_name)
 
         """ Save the tained model in (.json, .h5) format """
         save_model_to_disk(self.model, output_file)
         print("trained model saved to disk : ", output_file)
         logging.debug("trained model saved to disk : {}".format(output_file))
 
-        
+
 """
 if __name__ == "__main__" :
 
@@ -512,4 +534,4 @@ if __name__ == "__main__" :
     input_shape = (7,5,5)
     nn = AGZ.init_random_model(input_shape)
     mctsSP.play(nn,'./data/experience_1.hdf5',num_games=2500,simulations=1600)
-"""    
+"""

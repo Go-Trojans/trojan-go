@@ -1,9 +1,15 @@
+from keras.models import load_model, save_model
+import keras
+import h5py
+import os
+import tempfile
 import numpy as np
 from algos import gohelper
 #import keras
 import pprint
 import logging
 logging = logging.getLogger(__name__)
+
 
 class bcolors:
     HEADER = '\033[95m'
@@ -14,6 +20,7 @@ class bcolors:
     ENDC = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
+
 
 def print_loop_info(iteration, learning_agent,
                     refernece_agent, num_games_per_iter,
@@ -43,14 +50,21 @@ def system_info():
     from tensorflow.python.client import device_lib
     from tensorflow import config
     pp = pprint.PrettyPrinter(indent=4)
-    import platform,socket,re,uuid,json,psutil,os
+    import platform
+    import socket
+    import re
+    import uuid
+    import json
+    import psutil
+    import os
 
     # The below line may create tensorflow memory usage issue;
     # can be resolved using allow_growth (check AGZ.py)
     local_device_protos = device_lib.list_local_devices()
     print("*"*60)
     logging.debug("\n\n")
-    logging.debug("************************************************************")
+    logging.debug(
+        "************************************************************")
     print(f"{bcolors.OKGREEN}System Info ...{bcolors.ENDC}")
     logging.debug("System Info ...")
     print(f"{bcolors.BOLD}GPU/CPU Info ...{bcolors.ENDC}")
@@ -59,30 +73,29 @@ def system_info():
     logging.debug("{}".format(local_device_protos))
     del device_lib
 
-    info={}
-    info['platform']=platform.system()
-    info['platform-release']=platform.release()
-    info['platform-version']=platform.version()
-    info['architecture']=platform.machine()
-    info['hostname']=socket.gethostname()
-    info['ip-address']=socket.gethostbyname(socket.gethostname())
-    info['mac-address']=':'.join(re.findall('..', '%012x' % uuid.getnode()))
-    info['processor']=platform.processor()
-    info['ram']=str(round(psutil.virtual_memory().total / (1024.0 **3)))+" GB"
-    info['Cores']=os.cpu_count()
-    info['GPUs']=len(config.experimental.list_physical_devices('GPU'))
+    info = {}
+    info['platform'] = platform.system()
+    info['platform-release'] = platform.release()
+    info['platform-version'] = platform.version()
+    info['architecture'] = platform.machine()
+    info['hostname'] = socket.gethostname()
+    info['ip-address'] = socket.gethostbyname(socket.gethostname())
+    info['mac-address'] = ':'.join(re.findall('..', '%012x' % uuid.getnode()))
+    info['processor'] = platform.processor()
+    info['ram'] = str(
+        round(psutil.virtual_memory().total / (1024.0 ** 3)))+" GB"
+    info['Cores'] = os.cpu_count()
+    info['GPUs'] = len(config.experimental.list_physical_devices('GPU'))
     del config
     print("\n")
-    logging.debug("\n")              
+    logging.debug("\n")
     for x, y in info.items():
         print(f"{bcolors.OKBLUE}{x}:{y}{bcolors.ENDC}")
-        logging.debug("{}:{}".format(x,y))          
-    #print("")
+        logging.debug("{}:{}".format(x, y))
+    # print("")
     print("*"*60)
-    logging.debug("************************************************************")              
-
-
-
+    logging.debug(
+        "************************************************************")
 
 
 COLUMNS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -93,6 +106,7 @@ PLAYER_TO_CHAR = {
 }
 
 LOG_FORMAT = "%(asctime)s -- [%(pathname)s]:%(levelname)s %(message)s"
+
 
 def display_board(board):
     for row in range(board.board_width):
@@ -111,7 +125,6 @@ def display_board(board):
     print('    ' + '  '.join(COLUMNS[:board.board_height]))
 
 
-
 def point_from_alphaNumnericMove(alphaNumnericMove):
     col = COLUMNS.index(alphaNumnericMove[0])
     row = int(alphaNumnericMove[1:])
@@ -125,15 +138,9 @@ def alphaNumnericMove_from_point(point):
     )
 
 
-
-import tempfile
-import os
-
-import h5py
-import keras
-from keras.models import load_model, save_model
-
 """ file_json_h5 format (.json, .h5) """
+
+
 def save_model_to_disk(model, file_json_h5):
     # serialize model to JSON
     model_json = model.to_json()
@@ -143,13 +150,19 @@ def save_model_to_disk(model, file_json_h5):
     model.save_weights(file_json_h5[1])
     print("Saved model to disk")
 
+
 """ agent_filename is in (.json , .h5) format """
+
+
 def load_model_from_disk(agent_filename):
+    """
+    [GPU-ERROR] : Unable to load the model when we need during training under tf.dustribute.Strategy scope.
+    """
     from keras.models import model_from_json
 
     agent_json_filepath = agent_filename[0]
     agent_h5_filepath = agent_filename[1]
-    
+
     # load json and create model
     json_file = open(agent_json_filepath, 'r')
     loaded_model_json = json_file.read()
@@ -160,19 +173,21 @@ def load_model_from_disk(agent_filename):
     return loaded_model
 
 
-
 """ return True if tensorflow version is equal or higher than 2.0, else False """
+
+
 def tf_version_comp(tf_v):
     tf_v = tf_v.split(".")
-    if int(tf_v[0]) == 2 and int(tf_v[1]) >=0:
+    if int(tf_v[0]) == 2 and int(tf_v[1]) >= 0:
         return True
     return False
-    
 
 
 """ AGZ.py or other nn files may also have some setting on gpu,
      so check that too.
 """
+
+
 def set_gpu_memory_target(frac):
     """Configure Tensorflow to use a fraction of available GPU memory.
 
@@ -200,15 +215,13 @@ def set_gpu_memory_target(frac):
         config = tf.compat.v1.ConfigProto()
         config.gpu_options.per_process_gpu_memory_fraction = frac
         config.gpu_options.allow_growth = True
-        #set_session(tf.compat.v1.Session(config=config))
+        # set_session(tf.compat.v1.Session(config=config))
         session = tf.compat.v1.Session(config=config)
-        #tf.compat.v1.keras.backend.set_session(session)
+        # tf.compat.v1.keras.backend.set_session(session)
 
     else:
         config = tf.ConfigProto()
         config.gpu_options.per_process_gpu_memory_fraction = frac
         config.gpu_options.allow_growth = True
-        #set_session(tf.Session(config=config))
+        # set_session(tf.Session(config=config))
         session = tf.Session(config=config)
-
-

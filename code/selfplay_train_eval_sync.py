@@ -1,3 +1,18 @@
+import shutil
+import logging
+from algos.mcts.mcts import MCTSPlayer, MCTSNode
+from algos.encoders.trojangoPlane import TrojanGoPlane
+from algos.utils import set_gpu_memory_target, save_model_to_disk, load_model_from_disk, display_board, print_loop_info, system_info, bcolors, LOG_FORMAT
+from algos.gohelper import *
+from algos.godomain import *
+from algos.nn.AGZ import smallNN, init_random_model
+from algos.mcts.mcts import MCTSSelfPlay, ExperienceBuffer, load_experience, combine_experience
+import numpy as np
+import h5py
+from collections import namedtuple
+import tempfile
+import random
+import os
 import argparse
 import datetime
 import time
@@ -6,22 +21,7 @@ import inspect
 
 import multiprocessing
 multiprocessing.set_start_method('spawn', force=True)
-import shutil 
-import os
-import random
-import tempfile
-from collections import namedtuple
 
-import h5py
-import numpy as np
-
-from algos.mcts.mcts import MCTSSelfPlay, ExperienceBuffer, load_experience, combine_experience
-from algos.nn.AGZ import smallNN, init_random_model
-from algos.godomain import *
-from algos.gohelper import *
-from algos.utils import set_gpu_memory_target, save_model_to_disk, load_model_from_disk, display_board, print_loop_info, system_info, bcolors, LOG_FORMAT
-from algos.encoders.trojangoPlane import TrojanGoPlane
-from algos.mcts.mcts import MCTSPlayer, MCTSNode
 
 #import keras
 #import tensorflow as tf
@@ -31,10 +31,11 @@ from algos.mcts.mcts import MCTSPlayer, MCTSNode
 #graph = tf.compat.v1.get_default_graph()
 
 
-import logging
 LOG_FILENAME = './trojango.log'
-logging.basicConfig(filename=LOG_FILENAME,filemode='a', format=LOG_FORMAT, level=logging.DEBUG)
+logging.basicConfig(filename=LOG_FILENAME, filemode='a',
+                    format=LOG_FORMAT, level=logging.DEBUG)
 logging = logging.getLogger(__name__)
+
 
 def get_temp_file():
     fd, fname = tempfile.mkstemp(prefix='algo-train')
@@ -43,16 +44,17 @@ def get_temp_file():
     return fname
 
 
-
 """ Here both the agents are nn model 
     which will help during move selection during MCTS simulation 
 """
+
+
 def simulate_game(black_player, white_player, board_size, simulations):
     plane_size = 7
-    encoder = TrojanGoPlane((board_size,board_size),plane_size)
+    encoder = TrojanGoPlane((board_size, board_size), plane_size)
     moves = []
     game = GameState.new_game(board_size)
-    #agents are smallNN() NN
+    # agents are smallNN() NN
     """
     agents = {
         Player.black: smallNN(black_player),
@@ -75,30 +77,30 @@ def simulate_game(black_player, white_player, board_size, simulations):
 
     visited = set()
     rootnode = None
-    while not game.is_over() :
+    while not game.is_over():
         if not rootnode:
-            rootnode  = MCTSNode(state = game)
-        # Assuming selected_actionNode is a valid move 
+            rootnode = MCTSNode(state=game)
+        # Assuming selected_actionNode is a valid move
         # Also, selected move is using Dirichlet Noise but not "TAU"
         selected_actionNode = agents[game.next_player].select_move(
-                                          rootnode, visited,
-                                          encoder,
-                                          simulations=simulations, c=4, 
-                                          stoch=False)
+            rootnode, visited,
+            encoder,
+            simulations=simulations, c=4,
+            stoch=False)
 
         # update new rootnode as selected_actionNode
         rootnode = selected_actionNode
-        move =  selected_actionNode.move
-        #print(game.next_player, move.point) 
+        move = selected_actionNode.move
+        #print(game.next_player, move.point)
         game = game.apply_move(move)
-        
-    #display_board(game.board)
-    return game                                                       
-    
 
-    
+    # display_board(game.board)
+    return game
+
 
 """ agent1_fname (learning_agent) & agent2_fname (reference_agent) are nn models/agents in (.json, .h5) format """
+
+
 def play_games(args):
     agent1_fname, agent2_fname, num_games, board_size, gpu_frac, simulations = args
 
@@ -120,7 +122,8 @@ def play_games(args):
         else:
             white_player, black_player = agent1, agent2
             print("Agent 1 playing as white and Agent 2 as black")
-        game = simulate_game(black_player, white_player, board_size, simulations)
+        game = simulate_game(black_player, white_player,
+                             board_size, simulations)
         if game.winner() == color1.value:
             print('Agent 1 wins')
             wins += 1
@@ -136,6 +139,8 @@ def play_games(args):
 
 
 """ learning_agent & reference_agent are nn models/agents in (.json, .h5) format """
+
+
 def evaluate(learning_agent, reference_agent,
              num_games, num_workers, board_size, simulations):
     games_per_worker = num_games // num_workers
@@ -162,56 +167,59 @@ def evaluate(learning_agent, reference_agent,
     return total_wins
 
 
-
 """ agent1_filename (learning agent) and  agent2_filename (reference agent)
     are model in  (.json, .h5) format 
-""" 
+"""
+
+
 def do_self_play(board_size, agent1_filename, agent2_filename,
                  num_games, simulations, temperature,
                  experience_filename,
                  gpu_frac):
-    
+
     import tensorflow as tf
     import keras
     #import keras.backend as K
-    #K.set_session(tf.compat.v1.Session())
-    #tf.compat.v1.keras.backend.set_session(tf.compat.v1.Session())
-    
+    # K.set_session(tf.compat.v1.Session())
+    # tf.compat.v1.keras.backend.set_session(tf.compat.v1.Session())
+
     #print(inspect.currentframe().f_code.co_name, inspect.currentframe().f_back.f_code.co_name)
     set_gpu_memory_target(gpu_frac)
 
     #import tensorflow as tf
     #import keras
-    
+
     #global graph
     #graph = tf.compat.v1.get_default_graph()
-    
+
     print("PID: ", os.getpid())
     random.seed(int(time.time()) + os.getpid())
     np.random.seed(int(time.time()) + os.getpid())
 
-    print("learning agent : {} \nreference_agent : {}".format(agent1_filename, agent2_filename))
-        
+    print("learning agent : {} \nreference_agent : {}".format(
+        agent1_filename, agent2_filename))
+
     #print("Loading model from disk ...")
     agent1 = load_model_from_disk(agent1_filename)
     agent2 = load_model_from_disk(agent2_filename)
-    
-    #print(agent1.summary())
-    #print(agent2.summary())
-    
-    
+
+    # print(agent1.summary())
+    # print(agent2.summary())
+
     """
     # _filename is a model saved in .hdf5 format.
     agent1 = tf.keras.models.load_model(agent1_filename)
     print(agent1.summary())
     agent2 = tf.keras.models.load_model(agent2_filename)
     """
-    
-    mctsSP = MCTSSelfPlay(7,5)
-    input_shape = (7,5,5)
+
+    mctsSP = MCTSSelfPlay(7, 5)
+    input_shape = (7, 5, 5)
     #nn = AGZ.init_random_model(input_shape)
-    print(f"{bcolors.OKBLUE} [PID : {os.getpid()}] self-play game is triggered, Get A Cup Of Coffee And Relax !!!{bcolors.ENDC}")
-    logging.debug("[PID : {}] self-play game is triggered, Get A Cup Of Coffee And Relax !!!".format(os.getpid()))
+    print(
+        f"{bcolors.OKBLUE} [PID : {os.getpid()}] self-play game is triggered, Get A Cup Of Coffee And Relax !!!{bcolors.ENDC}")
+    logging.debug(
+        "[PID : {}] self-play game is triggered, Get A Cup Of Coffee And Relax !!!".format(os.getpid()))
     # agent1 and agent2 are nn model
     mctsSP.play(agent1, agent2,
                 experience_filename,
@@ -219,14 +227,16 @@ def do_self_play(board_size, agent1_filename, agent2_filename,
 
 
 """ learning_agent = (learning_agent_json, learning_agent_h5) and same is reference_agent """
+
+
 def generate_experience(learning_agent, reference_agent, exp_file,
                         num_games, simulations, board_size, num_workers):
-    temperature=0
+    temperature = 0
     experience_files = []
     workers = []
     gpu_frac = 0.95 / float(num_workers)
     games_per_worker = num_games // num_workers
-    
+
     for i in range(num_workers):
         filename = get_temp_file()
         experience_files.append(filename)
@@ -264,31 +274,40 @@ def generate_experience(learning_agent, reference_agent, exp_file,
     ###########################################
     with h5py.File(first_filename, 'r') as expf:
         combined_buffer = load_experience(expf)
-        print("Examples in file {} is {}".format(first_filename, combined_buffer.model_input.shape[0]))
+        print("Examples in file {} is {}".format(
+            first_filename, combined_buffer.model_input.shape[0]))
     for filename in other_filenames:
         with h5py.File(filename, 'r') as expf:
             next_buffer = load_experience(expf)
-            print("Examples in next file {} is {}".format(filename, next_buffer.model_input.shape[0]))
+            print("Examples in next file {} is {}".format(
+                filename, next_buffer.model_input.shape[0]))
         combined_buffer = combine_experience([combined_buffer, next_buffer])
-        print("Examples in combined buffer after file {} is {}".format(filename, combined_buffer.model_input.shape[0]))
-        
+        print("Examples in combined buffer after file {} is {}".format(
+            filename, combined_buffer.model_input.shape[0]))
+
     print(f'{bcolors.OKBLUE}Finally Saved experiences into {exp_file}. Please check the size to verify.{bcolors.ENDC}')
-    logging.debug("Finally Saved experiences into {}. Please check the size to verify.".format(exp_file))
+    logging.debug(
+        "Finally Saved experiences into {}. Please check the size to verify.".format(exp_file))
     with h5py.File(exp_file, 'w') as experience_outf:
         combined_buffer.serialize(experience_outf)
 
     # Clean up.
     for fname in experience_files:
         os.unlink(fname)
-    
 
-"""  learning_agent (.json, .h5) and output_file is for storing (.json, .h5) """ 
+
+"""  learning_agent (.json, .h5) and output_file is for storing (.json, .h5) """
+
+
 def train_worker(learning_agent, output_file, experience_file,
                  lr, batch_size):
-    MCTSSelfPlay(7,5,learning_agent).train(experience_file, output_file, lr, batch_size)
+    MCTSSelfPlay(7, 5, learning_agent).train(
+        experience_file, output_file, lr, batch_size)
 
 
-"""  learning_agent (.json, .h5) and output_file is for storing (.json, .h5) """ 
+"""  learning_agent (.json, .h5) and output_file is for storing (.json, .h5) """
+
+
 def train_on_experience(learning_agent, output_file, experience_file,
                         lr=0.04, batch_size=128):
     # Do the training in the background process. Otherwise some Keras
@@ -312,17 +331,18 @@ def main():
     # code here
     parser = argparse.ArgumentParser()
     parser.add_argument('--games-per-batch', '-g', type=int, default=1500)
-    parser.add_argument('--simulations', type=int, default=300) # for 5*5 board
+    parser.add_argument('--simulations', type=int,
+                        default=300)  # for 5*5 board
     parser.add_argument('--board-size', '-b', type=int, default=5)
     parser.add_argument('--lr', type=float, default=0.02)
-    parser.add_argument('--num-workers', type=int, default=4)
+    parser.add_argument('--num-workers', '-w', type=int, default=4)
     parser.add_argument('--num-per-eval', type=int, default=300)
     parser.add_argument('--production', dest='production', action='store_true')
-    parser.add_argument('--no-production', dest='production', action='store_false')
+    parser.add_argument('--no-production',
+                        dest='production', action='store_false')
     parser.set_defaults(production=True)
-    
-    args = parser.parse_args()        
 
+    args = parser.parse_args()
 
     print(f"{bcolors.OKBLUE}Welcome to TROJAN-GO !!!{bcolors.ENDC}")
     logging.debug("Welcome to TROJAN-GO !!!")
@@ -334,7 +354,7 @@ def main():
     learning_agent_json = agents_path + 'initial.json'
     learning_agent_h5 = agents_path + 'initial.h5'
     learning_agent = (learning_agent_json, learning_agent_h5)
-    
+
     reference_agent_json = agents_path + 'initial.json'
     reference_agent_h5 = agents_path + 'initial.h5'
     reference_agent = (reference_agent_json, reference_agent_h5)
@@ -346,26 +366,36 @@ def main():
     save_model_to_disk(model, learning_agent)
     save_model_to_disk(model, reference_agent)
     """
-    
-    experience_file = os.path.join(data_dir, 'exp_temp.hdf5') # examples data to be stored.
+
+    # examples data to be stored.
+    experience_file = os.path.join(data_dir, 'exp_temp.hdf5')
 
     tmp_agent_json = os.path.join(agents_path, 'agent_temp.json')
     tmp_agent_h5 = os.path.join(agents_path, 'agent_temp.h5')
     tmp_agent = (tmp_agent_json, tmp_agent_h5)
 
-    
     working_agent_json = os.path.join(agents_path, 'agent_cur.json')
     working_agent_h5 = os.path.join(agents_path, 'agent_cur.h5')
     working_agent = (working_agent_json, working_agent_h5)
-    
+
     num_cpu = os.cpu_count()
-    args.num_workers = num_cpu
+    if args.num_workers != 1:
+        args.num_workers = num_cpu
+
+    print(f"{bcolors.OKBLUE}Testing : args.num_workers =  {args.num_workers}{bcolors.ENDC}")
     if not args.production:
         args.games_per_batch = num_cpu
-        args.num_workers = num_cpu
+        if args.num_workers != 1:
+            args.num_workers = num_cpu
+            print(
+                f"{bcolors.OKBLUE}Testing : num of workers used will be {args.num_workers}{bcolors.ENDC}")
+        else:
+            print(
+                f"{bcolors.OKBLUE}Testing : num of workers will be {args.num_workers}{bcolors.ENDC}")
+
         args.simulations = 10
         args.num_per_eval = num_cpu
-        
+
     total_games = 0
 
     """
@@ -395,8 +425,11 @@ def main():
 
     while prod:
         loop_start = time.time()
-        print(f"{bcolors.OKBLUE}[Data Generation starts] Reference: {reference_agent_json} {bcolors.ENDC}")
-        logging.debug("[Data Generation starts] Reference: {}".format(reference_agent_json))
+# PHASE-1-START(SELF_PLAY/DataGeneration)
+        print(
+            f"{bcolors.OKBLUE}[Data Generation starts] Reference: {reference_agent_json} {bcolors.ENDC}")
+        logging.debug("[Data Generation starts] Reference: {}".format(
+            reference_agent_json))
         ge_start = time.time()
         generate_experience(
             learning_agent,
@@ -406,27 +439,37 @@ def main():
             args.games_per_batch,
             args.simulations,
             args.board_size,
-            num_workers=args.num_workers)
+            num_workers=args.num_workers)  # [GPU-ERROR] if num_workers is more than 1 than GPU is complaining during nn.predict in MCTS code.
         ge_end = time.time()
         exp_time = ge_end - ge_start
-                      
-        print(f"{bcolors.OKBLUE}[Data Generation finish] Time taken to finish generate experience with multiprocessing({num_cpu}) is : {exp_time} {bcolors.ENDC}")
-        logging.debug("[Data Generation finish] Time taken to finish generate experience with multiprocessing({}) is : {}".format(num_cpu, exp_time))
+
+        print(
+            f"{bcolors.OKBLUE}[Data Generation finish] Time taken to finish generate experience with multiprocessing({num_cpu}) is : {exp_time} {bcolors.ENDC}")
+        logging.debug("[Data Generation finish] Time taken to finish generate experience with multiprocessing({}) is : {}".format(
+            num_cpu, exp_time))
+# PHASE-1-END(SELF_PLAY/DataGeneration)
+
+
+# PHASE-2-START(TRAINING)
         print(f"{bcolors.OKBLUE}[Start Training ...] {bcolors.ENDC}")
         logging.debug("[Start Training ...]")
-                      
+
         train_start = time.time()
         train_on_experience(
             learning_agent, tmp_agent, experience_file)
-        total_games +=  args.games_per_batch
+        total_games += args.games_per_batch
         train_end = time.time()
         train_time = train_end - train_start
         print(f"{bcolors.OKBLUE}[Training ends !!!] {bcolors.ENDC}")
-        logging.debug("[Training ends !!!]")            
-        
+        logging.debug("[Training ends !!!]")
+# PHASE-2-END(TRAINING)
+
+# PHASE-3-START(EVALUATION)
         # Eval Params: 400 games , "TAU"=0 , 400 simulations per move
-        print(f"{bcolors.OKBLUE}[Evaluation starts] ... \nlearning agent {learning_agent} & \nreference_agent {reference_agent}{bcolors.ENDC}")
-        logging.debug("[Evaluation starts] ... \nlearning agent {} & \nreference_agent {}".format(learning_agent, reference_agent))            
+        print(
+            f"{bcolors.OKBLUE}[Evaluation starts] ... \nlearning agent {learning_agent} & \nreference_agent {reference_agent}{bcolors.ENDC}")
+        logging.debug("[Evaluation starts] ... \nlearning agent {} & \nreference_agent {}".format(
+            learning_agent, reference_agent))
         num_games_eval = args.num_per_eval
         eval_start = time.time()
         wins = evaluate(
@@ -439,47 +482,49 @@ def main():
         eval_time = eval_end - eval_start
         print('Won %d / %d games (%.3f)' % (
             wins, num_games_eval, float(wins) / num_games_eval))
-        
+
         shutil.copy(tmp_agent_json, working_agent_json)
         shutil.copy(tmp_agent_h5, working_agent_h5)
         learning_agent = working_agent
-        if wins >= int(np.multiply(num_games_eval,0.55)):
+        if wins >= int(np.multiply(num_games_eval, 0.55)):
             next_filename_json = os.path.join(
                 agents_path,
                 'agent_%08d.json' % (total_games,))
             next_filename_h5 = os.path.join(
                 agents_path,
-                'agent_%08d.h5' % (total_games,))                
-                
+                'agent_%08d.h5' % (total_games,))
+
             shutil.move(tmp_agent_json, next_filename_json)
             shutil.move(tmp_agent_h5, next_filename_h5)
             next_filename = (next_filename_json, next_filename_h5)
             reference_agent = next_filename
-            print(f"{bcolors.OKBLUE}[Evaluation ends] New reference is : {next_filename} {bcolors.ENDC}")
-            logging.debug("[Evaluation ends] New reference is : {}".format(next_filename))        
+            print(
+                f"{bcolors.OKBLUE}[Evaluation ends] New reference is : {next_filename} {bcolors.ENDC}")
+            logging.debug(
+                "[Evaluation ends] New reference is : {}".format(next_filename))
         else:
-            print(f'{bcolors.OKBLUE}[Evaluation ends] Keep learning\n{bcolors.ENDC}')
+            print(
+                f'{bcolors.OKBLUE}[Evaluation ends] Keep learning\n{bcolors.ENDC}')
             logging.debug("[Evaluation ends] Keep learning\n")
-            
-        
+# PHASE-3-END(EVALUATION)
+
         loop_end = time.time()
         loop_time = loop_end - loop_start
 
-         
         info = print_loop_info(iter_count, learning_agent, reference_agent,
                                args.games_per_batch, args.simulations,
                                args.num_workers, args.num_per_eval,
                                exp_time, train_time, eval_time, loop_time)
         print(f"{bcolors.OKBLUE}{info}{bcolors.ENDC}")
         logging.debug("{}".format(info))
-        #print(info)
+        # print(info)
         iter_count = iter_count + 1
         if not args.production:
             prod = False
         """
         print("Total time taken to complete a loop of generating exp, \
               training and evaluation is :", loop_end - loop_start)
-        """  
+        """
 
 
 if __name__ == '__main__':

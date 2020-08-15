@@ -2,15 +2,15 @@
 # coding: utf-8
 
 # # s{t} = [X{t}, Y{t}, X{t−1}, Y{t−1},..., X{t−7}, Y{t−7}, C].
-# The input features s{t} are processed by a residual tower that consists of a single convolutional block 
+# The input features s{t} are processed by a residual tower that consists of a single convolutional block
 # followed by either 19 or 39 residual blocks.
-# 
+#
 # The convolutional block applies the following modules:
 # (1) A convolution of 256 filters of kernel size 3 × 3 with stride 1
 # (2) Batch normalization
 # (3) A rectifier nonlinearity
-# 
-# Each residual block applies the following modules sequentially to its input: 
+#
+# Each residual block applies the following modules sequentially to its input:
 # (1) A convolution of 256 filters of kernel size 3 × 3 with stride 1
 # (2) Batch normalization
 # (3) A rectifier nonlinearity
@@ -18,34 +18,34 @@
 # (5) Batch normalization
 # (6) A skip connection that adds the input to the block
 # (7) A rectifier nonlinearity
-# 
-# The output of the residual tower is passed into two separate ‘heads’ for computing the policy and value. 
-# 
-# The policy head applies the following modules: 
+#
+# The output of the residual tower is passed into two separate ‘heads’ for computing the policy and value.
+#
+# The policy head applies the following modules:
 # (1) A convolution of 2 filters of kernel size 1 × 1 with stride 1
 # (2) Batch normalization
 # (3) A rectifier nonlinearity
 # (4) A fully connected linear layer that outputs a vector of size 19*19 + 1 = 362, corresponding to logit probabilities for all intersections and the pass move
-# 
+#
 # The value head applies the following modules:
-# (1) A convolution of 1 filter of kernel size 1 × 1 with stride 1 
+# (1) A convolution of 1 filter of kernel size 1 × 1 with stride 1
 # (2) Batch normalization
 # (3) A rectifier nonlinearity
 # (4) A fully connected linear layer to a hidden layer of size 256
 # (5) A rectifier nonlinearity
 # (6) A fully connected linear layer to a scalar
 # (7) A tanh nonlinearity outputting a scalar in the range [−1, 1]
-# 
-# The overall network depth, in the 20­ or 40­ block network, is 39 or 79 parameterized layers, respectively, 
+#
+# The overall network depth, in the 20­ or 40­ block network, is 39 or 79 parameterized layers, respectively,
 # for the residual tower, plus an additional 2 layers for the policy head and 3 layers for the value head.
 # """
-# 
+#
 
 # In[105]:
 
 
 import keras
-from keras.layers import Activation, BatchNormalization,MaxPooling2D
+from keras.layers import Activation, BatchNormalization, MaxPooling2D
 from keras.layers import Conv2D, Dense, Flatten, Input
 from keras.models import Model
 import numpy as np
@@ -55,25 +55,28 @@ from algos.godomain import Move
 from algos.gohelper import Point, Player
 
 """ return True if tensorflow version is equal or higher than 2.0, else False """
+
+
 def tf_version_comp(tf_v):
     tf_v = tf_v.split(".")
-    if int(tf_v[0]) == 2 and int(tf_v[1]) >=0:
+    if int(tf_v[0]) == 2 and int(tf_v[1]) >= 0:
         return True
     return False
-    
+
+
 """
 We faced a problem when we have a GPU computer that shared with multiple users.
 Most users run their GPU process without the “allow_growth” option in their Tensorflow or Keras environments.
 It causes the memory of a graphics card will be fully allocated to that process.
 In reality, it is might need only the fraction of memory for operating.
 It prevents any new GPU process which consumes a GPU memory to be run on the same machine.
-"""        
+"""
 if tf_version_comp(tf.__version__):
-    config = tf.compat.v1.ConfigProto() 
+    config = tf.compat.v1.ConfigProto()
     config.gpu_options.allow_growth = True
     session = tf.compat.v1.Session(config=config)
 else:
-    config = tf.ConfigProto() 
+    config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
     session = tf.Session(config=config)
 
@@ -81,6 +84,8 @@ else:
 """
 This is 4 layers ResNet network.
 """
+
+
 class smallNN:
     def __init__(self, model=None):
         # self.board_input = Input(shape=TrojanGoPlane.shape(), name='board_input')
@@ -89,6 +94,7 @@ class smallNN:
 
     def nn_model(self, input_shape):
         """
+        [GPU-ERROR]
         mirrored_strategy = tf.distribute.MirroredStrategy()
         with mirrored_strategy.scope():
         """
@@ -97,9 +103,9 @@ class smallNN:
             pb = Conv2D(64, (3, 3),  # <1>
                         padding='same',  # <1>
                         data_format='channels_first')(pb)
-                        #activation='relu')(pb)
+            # activation='relu')(pb)
             pb = BatchNormalization()(pb)
-            pb = Activation("relu")(pb)    
+            pb = Activation("relu")(pb)
 
         policy_conv = \
             Conv2D(2, (1, 1),  # <2>
@@ -128,8 +134,8 @@ class smallNN:
 
     def select_move(self, encoder, gameState):
         tensor = encoder.encode(gameState)
-        tensor = np.expand_dims(tensor,axis=0)
-        p,v = self.model.predict(tensor) # self.mdel should be fine I guess.
+        tensor = np.expand_dims(tensor, axis=0)
+        p, v = self.model.predict(tensor)  # self.mdel should be fine I guess.
 
         """ argmax is not necessarily the best move each time as
             it would have played already and so it could be invalid move.
@@ -149,20 +155,20 @@ class smallNN:
             else:
                 move = Move.play(Point(row=rows, col=cols))
                 #print(gameState.next_player, move.point)
-                #check the move is valid or not
+                # check the move is valid or not
                 if gameState.is_valid_move(move):
                     return move
-                
-        #code should not reach here
-        print("[ERROR] NN SELECT_MOVE RETURNING None")        
+
+        # code should not reach here
+        print("[ERROR] NN SELECT_MOVE RETURNING None")
         return None
 
-        
-        
 
 """
 This is 6 layers ResNet network.
 """
+
+
 class mediumNN:
     def __init__(self):
         # self.board_input = Input(shape=TrojanGoPlane.shape(), name='board_input')
@@ -201,9 +207,12 @@ class mediumNN:
 
         return model
 
+
 """
 This is 19 layers (num_resnet_block) ResNet network.
 """
+
+
 class trojanGoZero:
     def __init__(self, num_resnet_block=19):
         # self.board_input = Input(shape=TrojanGoPlane.shape(), name='board_input')
@@ -284,7 +293,7 @@ class trojanGoZero:
 
 # In[106]:
 
-def init_random_model(input_shape) :
+def init_random_model(input_shape):
     #net = trojanGoZero()
     net = smallNN()
     model = net.nn_model(input_shape)
@@ -292,7 +301,3 @@ def init_random_model(input_shape) :
 
 
 # In[ ]:
-
-
-
-
