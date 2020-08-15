@@ -405,11 +405,12 @@ class MCTSSelfPlay:
         from algos.utils import load_model_from_disk
 
         is_gpu = len(tf.config.experimental.list_physical_devices('GPU'))
-        print("Num GPUs Available : {}, is_gpu: {} ".format(
-            len(tf.config.experimental.list_physical_devices('GPU')), is_gpu)
+        gpus = tf.config.experimental.list_physical_devices('GPU')
+        print("Num GPUs Available : {}, is_gpu: {} gpus: {}".format(
+            len(tf.config.experimental.list_physical_devices('GPU')), is_gpu, gpus)
         )
-        logging.debug("Num GPUs Available : {}, is_gpu: {} ".format(
-            len(tf.config.experimental.list_physical_devices('GPU')), is_gpu)
+        logging.debug("Num GPUs Available : {}, is_gpu: {} gpus: {}".format(
+            len(tf.config.experimental.list_physical_devices('GPU')), is_gpu, gpus)
         )
 
         with h5py.File(exp_filename, 'r') as exp_input:
