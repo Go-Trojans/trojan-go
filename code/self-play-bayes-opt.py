@@ -18,6 +18,7 @@ import numpy as np
 from skopt.space import Integer, Real
 from skopt.utils import use_named_args
 from skopt.plots import plot_objective
+from skopt.plots import plot_convergence
 from skopt import gp_minimize
 
 # from bayes_opt import BayesianOptimization
@@ -480,7 +481,8 @@ def main():
         # Eval Params: 400 games , "TAU"=0 , 400 simulations per move
         print(f"{bcolors.OKBLUE}[Evaluation starts] ... \nlearning agent {learning_agent} & \nreference_agent {reference_agent}{bcolors.ENDC}")
         logging.debug("[Evaluation starts] ... \nlearning agent {} & \nreference_agent {}".format(learning_agent, reference_agent))            
-        num_games_eval = args.num_per_eval
+        #num_games_eval = args.num_per_eval
+        num_games_eval = hp_game_count
 
 
         eval_start = time.time()
@@ -493,10 +495,10 @@ def main():
         # optimizer.maximize(init_points=2, n_iter=3)
         try:
             results = gp_minimize(obj_func, dimensions=dimensions, n_calls=10, acq_func='EI', x0=None, y0=None, noise=1e-8)
-            print("obj_func is f(x) where x are hyperparams and it is returnung loss/total, results.fun = " ,int(results.fun))
-            # TODO : Don't we need to update the hyperparams so that it can be used in self-play of next oteration.
+            print("obj_func is f(x) where x are hyperparams and it is returnung loss/total, results.fun = " ,results.fun)
+            # TODO : Don't we need to update the hyperparams so that it can be used in self-play of next iteration.
             # Also Objective function should have x{0} to be used by refernce agent and x (EI Point) to be used by learning agent.
-            wins = hp_game_count-int(results.fun)*hp_game_count
+            wins = hp_game_count-int(results.fun * hp_game_count)
             print('-' * 30)
             print("wins: %s" % wins)
             print("Finished hyperparameter tuning")
@@ -510,7 +512,9 @@ def main():
             global num_times_obj_func_called
             num_times_obj_func_called = 0 
             print('Won %d / %d games (%.3f)' % (wins, hp_game_count, float(wins) / hp_game_count))
-            plot_objective(results)
+            plot_convergence(results, yscale='log').figure.savefig("convergence.png")
+            plot_objective(results).flatten()[0].figure.savefig("objective.png")
+            
             print ("=" * 30)
         except ValueError:
             print("Optimization Failed!!")
