@@ -50,6 +50,7 @@ from keras.layers import Conv2D, Dense, Flatten, Input
 from keras.models import Model
 import numpy as np
 import tensorflow as tf
+from keras.optimizers import SGD
 
 from algos.godomain import Move
 from algos.gohelper import Point, Player
@@ -92,12 +93,53 @@ class smallNN:
         self.board_input = Input(shape=(7, 5, 5), name='board_input')
         self.model = model
 
-    def nn_model(self, input_shape):
+    def nn_model_parallel(self, input_shape):
         """
         [GPU-ERROR]
+        """
         mirrored_strategy = tf.distribute.MirroredStrategy()
         with mirrored_strategy.scope():
-        """
+
+            pb = self.board_input
+            for i in range(6):  # <1>
+                pb = Conv2D(64, (3, 3),  # <1>
+                            padding='same',  # <1>
+                            data_format='channels_first')(pb)
+                # activation='relu')(pb)
+                pb = BatchNormalization()(pb)
+                pb = Activation("relu")(pb)
+
+            policy_conv = \
+                Conv2D(2, (1, 1),  # <2>
+                       data_format='channels_first',  # <2>
+                       activation='relu')(pb)  # <2>
+            policy_conv_bn = BatchNormalization()(policy_conv)
+            policy_flat = Flatten()(policy_conv_bn)  # <2>
+            policy_output = \
+                Dense(26,
+                      activation='softmax')(policy_flat)  # <2>
+
+            value_conv = \
+                Conv2D(1, (1, 1),  # <3>
+                       data_format='channels_first',  # <3>
+                       activation='relu')(pb)  # <3>
+            value_conv_bn = BatchNormalization()(value_conv)
+            value_flat = Flatten()(value_conv_bn)  # <3>
+            value_hidden = Dense(256, activation='relu')(value_flat)  # <3>
+            value_output = Dense(1, activation='tanh')(value_hidden)  # <3>
+
+            model = Model(
+                inputs=[self.board_input],
+                outputs=[policy_output, value_output])
+
+            model.compile(
+                SGD(lr=0.02),
+                loss=['categorical_crossentropy', 'mse'])
+
+            return model
+
+    def nn_model(self, input_shape):
+
         pb = self.board_input
         for i in range(6):  # <1>
             pb = Conv2D(64, (3, 3),  # <1>
@@ -129,6 +171,10 @@ class smallNN:
         model = Model(
             inputs=[self.board_input],
             outputs=[policy_output, value_output])
+
+        model.compile(
+            SGD(lr=0.02),
+            loss=['categorical_crossentropy', 'mse'])
 
         return model
 
@@ -293,10 +339,13 @@ class trojanGoZero:
 
 # In[106]:
 
-def init_random_model(input_shape):
+def init_random_model(input_shape, parallel=False):
     #net = trojanGoZero()
     net = smallNN()
-    model = net.nn_model(input_shape)
+    if parallel:
+        model = net.nn_model_parallel(input_shape)
+    else:
+        model = net.nn_model(input_shape)
     return model
 
 

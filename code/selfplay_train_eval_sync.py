@@ -362,13 +362,15 @@ def main():
     reference_agent_h5 = agents_path + 'initial.h5'
     reference_agent = (reference_agent_json, reference_agent_h5)
 
-    """
+    # """
     # Another way of referring the inital model but not good for transfer learning.
-    input_shape = (7,5,5)
+    input_shape = (7, 5, 5)
     model = init_random_model(input_shape)
+    # It will return model generated under strategy scope.
+    #model = init_random_model(input_shape, True)
     save_model_to_disk(model, learning_agent)
     save_model_to_disk(model, reference_agent)
-    """
+    # """
 
     # examples data to be stored.
     experience_file = os.path.join(data_dir, 'exp_temp.hdf5')
