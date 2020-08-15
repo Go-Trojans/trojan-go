@@ -44,7 +44,7 @@ LOG_FILENAME = './trojango.log'
 logging.basicConfig(filename=LOG_FILENAME,filemode='a', format=LOG_FORMAT, level=logging.DEBUG)
 logging = logging.getLogger(__name__)
 
-
+ref_hps = (0.03, 10, 4)
 num_times_obj_func_called = 0
 
 def get_temp_file():
@@ -96,7 +96,7 @@ def simulate_game(black_player, black_player_bayes, white_player, white_player_b
         selected_actionNode = agents[game.next_player].select_move(
                                           rootnode, visited,
                                           encoder,
-                                          simulations=agents[game.next_player].bayes_agent.simulations,
+                                          simulations=int(agents[game.next_player].bayes_agent.simulations),
                                           dcoeff=agents[game.next_player].bayes_agent.dirichlet,
                                           c=agents[game.next_player].bayes_agent.c, 
                                           stoch=False)
@@ -109,9 +109,7 @@ def simulate_game(black_player, black_player_bayes, white_player, white_player_b
         
     #display_board(game.board)
     return game                                                       
-    
-
-    
+     
 
 """ agent1_fname (learning_agent) & agent2_fname (reference_agent) are nn models/agents in (.json, .h5) format """
 def play_games(args):
@@ -120,10 +118,10 @@ def play_games(args):
     
     if len(args) == 6:
         agent1_fname, agent2_fname, num_games, board_size, gpu_frac, simulations = args
-        dcoeff = [0.03]
-        c=4
+        dcoeff, simulations, c = ref_hps
+        ref_hp = (0.03, 10, 4)
     else:
-        agent1_fname, agent2_fname, num_games, board_size, gpu_frac, simulations, dcoeff, c = args
+        agent1_fname, agent2_fname, num_games, board_size, gpu_frac, simulations, dcoeff, c, ref_hp = args
         print("I am in play_games else part , num_games: ", num_games)
 
     set_gpu_memory_target(gpu_frac)
@@ -135,7 +133,12 @@ def play_games(args):
     agent2 = load_model_from_disk(agent2_fname) #refernece agent; used x{0} or previous fixed hyperParams value.
     
     bayes_agent1 = bayesAgent(agent1, dcoeff, int(simulations), c) # this will keep on changing as per bayesian optimization
-    bayes_agent2 = bayesAgent(agent2, [0.03], 10, 4) # fixed hyperParams 
+
+    ref_dcoeff, ref_sims, ref_c = ref_hp
+    print("=" * 100)
+    print("reference hyperparams: %s" % (ref_hp,))
+    print("=" * 100)
+    bayes_agent2 = bayesAgent(agent2, [ref_dcoeff], ref_sims, ref_c) # fixed hyperParams 
     
     wins, losses = 0, 0
     color1 = Player.black
@@ -422,7 +425,7 @@ def main():
         worker_args = [
             (
                 learning_agent, reference_agent,
-                games_per_worker, args.board_size, gpu_frac, simulations, [dcoeff], c
+                games_per_worker, args.board_size, gpu_frac, simulations, [dcoeff], c, ref_hps
             )
             for _ in range(args.num_workers)
         ]
@@ -442,6 +445,7 @@ def main():
         pool.join()
         return total_losses / (total_wins + total_losses + epsilon) # want to minimize loss rate 
 
+#     ref_hps = (0.03, 10, 4)
     while prod:
         loop_start = time.time()
         print(f"{bcolors.OKBLUE}[Data Generation starts] Reference: {reference_agent_json} {bcolors.ENDC}")
@@ -497,7 +501,15 @@ def main():
             print("wins: %s" % wins)
             print("Finished hyperparameter tuning")
             # print ("Found max: %s" % optimizer.max)
+            print('-' * 100)
             print(f"{bcolors.OKBLUE}Best params: {results.x} wins: {wins} {bcolors.ENDC}")
+            global ref_hps
+            ref_hps = results.x
+            print('-' * 100)
+
+            global num_times_obj_func_called
+            num_times_obj_func_called = 0 
+            print('Won %d / %d games (%.3f)' % (wins, hp_game_count, float(wins) / hp_game_count))
             plot_objective(results)
             print ("=" * 30)
         except ValueError:
@@ -512,13 +524,11 @@ def main():
                     num_workers=args.num_workers,
                     board_size=args.board_size,
                     simulations=args.simulations)
+                print('Won %d / %d games (%.3f)' % (
+                    wins, num_games_eval, float(wins) / num_games_eval))
         eval_end = time.time()
         eval_time = eval_end - eval_start
 
-        print('Won %d / %d games (%.3f)' % (
-            wins, num_games_eval, float(wins) / num_games_eval))
-
-        
         shutil.copy(tmp_agent_json, working_agent_json)
         shutil.copy(tmp_agent_h5, working_agent_h5)
         learning_agent = working_agent
@@ -554,8 +564,8 @@ def main():
         logging.debug("{}".format(info))
         #print(info)
         iter_count = iter_count + 1
-        if not args.production:
-            prod = False
+        # if not args.production:
+        #     prod = False
 
 
 if __name__ == '__main__':
