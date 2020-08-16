@@ -1,0 +1,180 @@
+(awsgo) ubuntu@ip-172-31-41-112:~/condadi$ ^C
+(awsgo) ubuntu@ip-172-31-41-112:~/condadi$ ^C
+(awsgo) ubuntu@ip-172-31-41-112:~/condadi$ nvidia-smi
+Sun Aug 16 12:19:06 2020       
++-----------------------------------------------------------------------------+
+| NVIDIA-SMI 450.51.05    Driver Version: 450.51.05    CUDA Version: 11.0     |
+|-------------------------------+----------------------+----------------------+
+| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
+|                               |                      |               MIG M. |
+|===============================+======================+======================|
+|   0  Tesla K80           On   | 00000000:00:1E.0 Off |                    0 |
+| N/A   50C    P0    61W / 149W |    998MiB / 11441MiB |     13%      Default |
+|                               |                      |                  N/A |
++-------------------------------+----------------------+----------------------+
+                                                                               
++-----------------------------------------------------------------------------+
+| Processes:                                                                  |
+|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |
+|        ID   ID                                                   Usage      |
+|=============================================================================|
+|    0   N/A  N/A     13673      C   python                            133MiB |
+|    0   N/A  N/A     13712      C   ...da3/envs/awsgo/bin/python      213MiB |
+|    0   N/A  N/A     13713      C   ...da3/envs/awsgo/bin/python      207MiB |
+|    0   N/A  N/A     13714      C   ...da3/envs/awsgo/bin/python      224MiB |
+|    0   N/A  N/A     13715      C   ...da3/envs/awsgo/bin/python      215MiB |
++-----------------------------------------------------------------------------+
+(awsgo) ubuntu@ip-172-31-41-112:~/condadi$ nvidia-smi
+Sun Aug 16 12:20:21 2020       
++-----------------------------------------------------------------------------+
+| NVIDIA-SMI 450.51.05    Driver Version: 450.51.05    CUDA Version: 11.0     |
+|-------------------------------+----------------------+----------------------+
+| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
+|                               |                      |               MIG M. |
+|===============================+======================+======================|
+|   0  Tesla K80           On   | 00000000:00:1E.0 Off |                    0 |
+| N/A   45C    P8    28W / 149W |      0MiB / 11441MiB |      0%      Default |
+|                               |                      |                  N/A |
++-------------------------------+----------------------+----------------------+
+                                                                               
++-----------------------------------------------------------------------------+
+| Processes:                                                                  |
+|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |
+|        ID   ID                                                   Usage      |
+|=============================================================================|
+|  No running processes found                                                 |
++-----------------------------------------------------------------------------+
+(awsgo) ubuntu@ip-172-31-41-112:~/condadi$ watch nvidia-smi
+(awsgo) ubuntu@ip-172-31-41-112:~/condadi$ ^C
+(awsgo) ubuntu@ip-172-31-41-112:~/condadi$ 
+(awsgo) ubuntu@ip-172-31-41-112:~/condadi$ 
+(awsgo) ubuntu@ip-172-31-41-112:~/condadi$ nvidia-smi
+Sun Aug 16 12:26:29 2020       
++-----------------------------------------------------------------------------+
+| NVIDIA-SMI 450.51.05    Driver Version: 450.51.05    CUDA Version: 11.0     |
+|-------------------------------+----------------------+----------------------+
+| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
+|                               |                      |               MIG M. |
+|===============================+======================+======================|
+|   0  Tesla K80           On   | 00000000:00:1E.0 Off |                    0 |
+| N/A   45C    P8    28W / 149W |      0MiB / 11441MiB |      0%      Default |
+|                               |                      |                  N/A |
++-------------------------------+----------------------+----------------------+
+                                                                               
++-----------------------------------------------------------------------------+
+| Processes:                                                                  |
+|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |
+|        ID   ID                                                   Usage      |
+|=============================================================================|
+|  No running processes found                                                 |
++-----------------------------------------------------------------------------+
+(awsgo) ubuntu@ip-172-31-41-112:~/condadi$ 
+(awsgo) ubuntu@ip-172-31-41-112:~/condadi$ 
+(awsgo) ubuntu@ip-172-31-41-112:~/condadi$ 
+(awsgo) ubuntu@ip-172-31-41-112:~/condadi$ 
+(awsgo) ubuntu@ip-172-31-41-112:~/condadi$ 
+(awsgo) ubuntu@ip-172-31-41-112:~/condadi$ nvidia-smi
+Sun Aug 16 12:28:57 2020       
++-----------------------------------------------------------------------------+
+| NVIDIA-SMI 450.51.05    Driver Version: 450.51.05    CUDA Version: 11.0     |
+|-------------------------------+----------------------+----------------------+
+| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
+|                               |                      |               MIG M. |
+|===============================+======================+======================|
+|   0  Tesla K80           On   | 00000000:00:1E.0 Off |                    0 |
+| N/A   45C    P8    28W / 149W |      0MiB / 11441MiB |      0%      Default |
+|                               |                      |                  N/A |
++-------------------------------+----------------------+----------------------+
+                                                                               
++-----------------------------------------------------------------------------+
+| Processes:                                                                  |
+|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |
+|        ID   ID                                                   Usage      |
+|=============================================================================|
+|  No running processes found                                                 |
++-----------------------------------------------------------------------------+
+(awsgo) ubuntu@ip-172-31-41-112:~/condadi$ 
+(awsgo) ubuntu@ip-172-31-41-112:~/condadi$ 
+(awsgo) ubuntu@ip-172-31-41-112:~/condadi$ 
+(awsgo) ubuntu@ip-172-31-41-112:~/condadi$ nvidia-smi
+Sun Aug 16 12:28:59 2020       
++-----------------------------------------------------------------------------+
+| NVIDIA-SMI 450.51.05    Driver Version: 450.51.05    CUDA Version: 11.0     |
+|-------------------------------+----------------------+----------------------+
+| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
+|                               |                      |               MIG M. |
+|===============================+======================+======================|
+|   0  Tesla K80           On   | 00000000:00:1E.0 Off |                    0 |
+| N/A   45C    P8    28W / 149W |      0MiB / 11441MiB |      0%      Default |
+|                               |                      |                  N/A |
++-------------------------------+----------------------+----------------------+
+                                                                               
++-----------------------------------------------------------------------------+
+| Processes:                                                                  |
+|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |
+|        ID   ID                                                   Usage      |
+|=============================================================================|
+|  No running processes found                                                 |
++-----------------------------------------------------------------------------+
+(awsgo) ubuntu@ip-172-31-41-112:~/condadi$ 
+(awsgo) ubuntu@ip-172-31-41-112:~/condadi$ 
+(awsgo) ubuntu@ip-172-31-41-112:~/condadi$ 
+(awsgo) ubuntu@ip-172-31-41-112:~/condadi$ 
+(awsgo) ubuntu@ip-172-31-41-112:~/condadi$ 
+(awsgo) ubuntu@ip-172-31-41-112:~/condadi$ nvidia-smi
+Sun Aug 16 12:30:14 2020       
++-----------------------------------------------------------------------------+
+| NVIDIA-SMI 450.51.05    Driver Version: 450.51.05    CUDA Version: 11.0     |
+|-------------------------------+----------------------+----------------------+
+| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
+|                               |                      |               MIG M. |
+|===============================+======================+======================|
+|   0  Tesla K80           On   | 00000000:00:1E.0 Off |                    0 |
+| N/A   45C    P8    28W / 149W |      0MiB / 11441MiB |      0%      Default |
+|                               |                      |                  N/A |
++-------------------------------+----------------------+----------------------+
+                                                                               
++-----------------------------------------------------------------------------+
+| Processes:                                                                  |
+|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |
+|        ID   ID                                                   Usage      |
+|=============================================================================|
+|  No running processes found                                                 |
++-----------------------------------------------------------------------------+
+(awsgo) ubuntu@ip-172-31-41-112:~/condadi$ 
+(awsgo) ubuntu@ip-172-31-41-112:~/condadi$ 
+(awsgo) ubuntu@ip-172-31-41-112:~/condadi$ 
+(awsgo) ubuntu@ip-172-31-41-112:~/condadi$ 
+(awsgo) ubuntu@ip-172-31-41-112:~/condadi$ watch nvidia-smi
+(awsgo) ubuntu@ip-172-31-41-112:~/condadi$ htop
+(awsgo) ubuntu@ip-172-31-41-112:~/condadi$ watch nvidia-smi
+(awsgo) ubuntu@ip-172-31-41-112:~/condadi$ nvidia-smi
+Sun Aug 16 12:37:33 2020       
++-----------------------------------------------------------------------------+
+| NVIDIA-SMI 450.51.05    Driver Version: 450.51.05    CUDA Version: 11.0     |
+|-------------------------------+----------------------+----------------------+
+| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
+|                               |                      |               MIG M. |
+|===============================+======================+======================|
+|   0  Tesla K80           On   | 00000000:00:1E.0 Off |                    0 |
+| N/A   49C    P8    28W / 149W |      0MiB / 11441MiB |      0%      Default |
+|                               |                      |                  N/A |
++-------------------------------+----------------------+----------------------+
+                                                                               
++-----------------------------------------------------------------------------+
+| Processes:                                                                  |
+|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |
+|        ID   ID                                                   Usage      |
+|=============================================================================|
+|  No running processes found                                                 |
++-----------------------------------------------------------------------------+
+(awsgo) ubuntu@ip-172-31-41-112:~/condadi$ Connection to ec2-52-66-180-44.ap-south-1.compute.amazonaws.com closed by remote host.
+Connection to ec2-52-66-180-44.ap-south-1.compute.amazonaws.com closed.
+pujakumari@Pujas-MacBook-Air:~/Desktop/AWS_INSTANCE$ 
