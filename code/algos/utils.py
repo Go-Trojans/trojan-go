@@ -204,6 +204,7 @@ def set_gpu_memory_target(frac):
     Tensorflow.
     """
     import keras
+    import os
     if keras.backend.backend() != 'tensorflow':
         print("Return without doing anything")
         return
@@ -213,11 +214,25 @@ def set_gpu_memory_target(frac):
     #from keras.backend.tensorflow_backend import set_session
     if tf_version_comp(tf.__version__):
         config = tf.compat.v1.ConfigProto()
-        config.gpu_options.per_process_gpu_memory_fraction = frac
+        # config.gpu_options.per_process_gpu_memory_fraction = frac #not needed I guess
         config.gpu_options.allow_growth = True
         # set_session(tf.compat.v1.Session(config=config))
         session = tf.compat.v1.Session(config=config)
         # tf.compat.v1.keras.backend.set_session(session)
+
+        """
+        To force the process to use a specific GPU, I use the environment variable CUDA_VISIBLE_DEVICES, 
+        which is independent from the master process which forked the worker process.
+        So, with 4 GPUs machine and 32 cores/process, each GPUs will have 8 processes running.
+        """
+        n_gpu = len(tf.config.experimental.list_physical_devices('GPU'))
+        print(
+            f"{bcolors.OKBLUE}[set_gpu_memory_target] Number of GPUs: {n_gpu}{bcolors.ENDC}")
+        if n_gpu > 0:
+            gpu_id = (os.getpid % n_gpu)
+            os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
+            print(
+                f"{bcolors.OKBLUE}[set_gpu_memory_target] PID={os.getpid()} gpu_id={str(gpu_id)}{bcolors.ENDC}")
 
     else:
         config = tf.ConfigProto()

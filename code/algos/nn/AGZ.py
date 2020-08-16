@@ -51,6 +51,7 @@ from keras.models import Model
 import numpy as np
 import tensorflow as tf
 from keras.optimizers import SGD
+import os
 
 from algos.godomain import Move
 from algos.gohelper import Point, Player
@@ -73,10 +74,12 @@ In reality, it is might need only the fraction of memory for operating.
 It prevents any new GPU process which consumes a GPU memory to be run on the same machine.
 """
 if tf_version_comp(tf.__version__):
+    print("[******  AGZ.py  *******] PID = ", os.getpid())
     config = tf.compat.v1.ConfigProto()
     config.gpu_options.allow_growth = True
     session = tf.compat.v1.Session(config=config)
 else:
+    print("[******  AGZ.py  *******] PID = ", os.getpid())
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
     session = tf.Session(config=config)
@@ -109,20 +112,17 @@ class smallNN:
                 pb = BatchNormalization()(pb)
                 pb = Activation("relu")(pb)
 
-            policy_conv = \
-                Conv2D(2, (1, 1),  # <2>
-                       data_format='channels_first',  # <2>
-                       activation='relu')(pb)  # <2>
+            policy_conv = Conv2D(2, (1, 1),  # <2>
+                                 data_format='channels_first',  # <2>
+                                 activation='relu')(pb)  # <2>
             policy_conv_bn = BatchNormalization()(policy_conv)
             policy_flat = Flatten()(policy_conv_bn)  # <2>
-            policy_output = \
-                Dense(26,
-                      activation='softmax')(policy_flat)  # <2>
+            policy_output = Dense(26,
+                                  activation='softmax')(policy_flat)  # <2>
 
-            value_conv = \
-                Conv2D(1, (1, 1),  # <3>
-                       data_format='channels_first',  # <3>
-                       activation='relu')(pb)  # <3>
+            value_conv = Conv2D(1, (1, 1),  # <3>
+                                data_format='channels_first',  # <3>
+                                activation='relu')(pb)  # <3>
             value_conv_bn = BatchNormalization()(value_conv)
             value_flat = Flatten()(value_conv_bn)  # <3>
             value_hidden = Dense(256, activation='relu')(value_flat)  # <3>
@@ -149,20 +149,17 @@ class smallNN:
             pb = BatchNormalization()(pb)
             pb = Activation("relu")(pb)
 
-        policy_conv = \
-            Conv2D(2, (1, 1),  # <2>
-                   data_format='channels_first',  # <2>
-                   activation='relu')(pb)  # <2>
+        policy_conv = Conv2D(2, (1, 1),  # <2>
+                             data_format='channels_first',  # <2>
+                             activation='relu')(pb)  # <2>
         policy_conv_bn = BatchNormalization()(policy_conv)
         policy_flat = Flatten()(policy_conv_bn)  # <2>
-        policy_output = \
-            Dense(26,
-                  activation='softmax')(policy_flat)  # <2>
+        policy_output = Dense(26,
+                              activation='softmax')(policy_flat)  # <2>
 
-        value_conv = \
-            Conv2D(1, (1, 1),  # <3>
-                   data_format='channels_first',  # <3>
-                   activation='relu')(pb)  # <3>
+        value_conv = Conv2D(1, (1, 1),  # <3>
+                            data_format='channels_first',  # <3>
+                            activation='relu')(pb)  # <3>
         value_conv_bn = BatchNormalization()(value_conv)
         value_flat = Flatten()(value_conv_bn)  # <3>
         value_hidden = Dense(256, activation='relu')(value_flat)  # <3>
@@ -196,11 +193,11 @@ class smallNN:
             # Move is pass , i.e. index = 25
             if (rows == encoder.board_height and cols == 0):
                 move = Move.pass_turn()
-                #print(gameState.next_player, move.point)
+                # print(gameState.next_player, move.point)
                 return move
             else:
                 move = Move.play(Point(row=rows, col=cols))
-                #print(gameState.next_player, move.point)
+                # print(gameState.next_player, move.point)
                 # check the move is valid or not
                 if gameState.is_valid_move(move):
                     return move
@@ -228,20 +225,17 @@ class mediumNN:
                         data_format='channels_first',  # <1>
                         activation='relu')(pb)  # <1>
 
-        policy_conv = \
-            Conv2D(2, (1, 1),  # <2>
-                   data_format='channels_first',  # <2>
-                   activation='relu')(pb)  # <2>
+        policy_conv = Conv2D(2, (1, 1),  # <2>
+                             data_format='channels_first',  # <2>
+                             activation='relu')(pb)  # <2>
         policy_conv_bn = BatchNormalization()(policy_conv)
         policy_flat = Flatten()(policy_conv_bn)  # <2>
-        policy_output = \
-            Dense(26,
-                  activation='softmax')(policy_flat)  # <2>
+        policy_output = Dense(26,
+                              activation='softmax')(policy_flat)  # <2>
 
-        value_conv = \
-            Conv2D(1, (1, 1),  # <3>
-                   data_format='channels_first',  # <3>
-                   activation='relu')(pb)  # <3>
+        value_conv = Conv2D(1, (1, 1),  # <3>
+                            data_format='channels_first',  # <3>
+                            activation='relu')(pb)  # <3>
         value_conv_bn = BatchNormalization()(value_conv)
         value_flat = Flatten()(value_conv_bn)  # <3>
         value_hidden = Dense(256, activation='relu')(value_flat)  # <3>
@@ -311,20 +305,17 @@ class trojanGoZero:
 
         out = self_out
 
-        policy_conv = \
-            Conv2D(2, (1, 1),  # <2>
-                   data_format='channels_first',  # <2>
-                   activation='relu')(out)  # <2>
+        policy_conv = Conv2D(2, (1, 1),  # <2>
+                             data_format='channels_first',  # <2>
+                             activation='relu')(out)  # <2>
         policy_conv_bn = BatchNormalization()(policy_conv)
         policy_flat = Flatten()(policy_conv_bn)  # <2>
-        policy_output = \
-            Dense(26,
-                  activation='softmax')(policy_flat)  # <2>
+        policy_output = Dense(26,
+                              activation='softmax')(policy_flat)  # <2>
 
-        value_conv = \
-            Conv2D(1, (1, 1),  # <3>
-                   data_format='channels_first',  # <3>
-                   activation='relu')(out)  # <3>
+        value_conv = Conv2D(1, (1, 1),  # <3>
+                            data_format='channels_first',  # <3>
+                            activation='relu')(out)  # <3>
         value_conv_bn = BatchNormalization()(value_conv)
         value_flat = Flatten()(value_conv_bn)  # <3>
         value_hidden = Dense(256, activation='relu')(value_flat)  # <3>
@@ -340,7 +331,7 @@ class trojanGoZero:
 # In[106]:
 
 def init_random_model(input_shape, parallel=False):
-    #net = trojanGoZero()
+    # net = trojanGoZero()
     net = smallNN()
     if parallel:
         model = net.nn_model_parallel(input_shape)
