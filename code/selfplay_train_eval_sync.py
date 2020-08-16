@@ -389,7 +389,8 @@ def main():
 
     print(f"{bcolors.OKBLUE}Testing : args.num_workers =  {args.num_workers}{bcolors.ENDC}")
     if not args.production:
-        args.games_per_batch = num_cpu
+        #args.games_per_batch = num_cpu
+        args.games_per_batch = args.num_workers
         if args.num_workers != 1:
             args.num_workers = num_cpu
             print(
@@ -399,7 +400,8 @@ def main():
                 f"{bcolors.OKBLUE}Testing : num of workers will be {args.num_workers}{bcolors.ENDC}")
 
         args.simulations = 10
-        args.num_per_eval = num_cpu
+        #args.num_per_eval = num_cpu
+        args.num_per_eval = args.num_workers
 
     total_games = 0
 
