@@ -73,11 +73,14 @@ It causes the memory of a graphics card will be fully allocated to that process.
 In reality, it is might need only the fraction of memory for operating.
 It prevents any new GPU process which consumes a GPU memory to be run on the same machine.
 """
+# WITHOUT THIS, IT IS GIVING ERROR
 if tf_version_comp(tf.__version__):
     print("[******  AGZ.py  *******] PID = ", os.getpid())
     config = tf.compat.v1.ConfigProto()
+    config.gpu_options.visible_device_list = str(np.remainder(os.getpid(), 8))
     config.gpu_options.allow_growth = True
     session = tf.compat.v1.Session(config=config)
+    tf.compat.v1.keras.backend.set_session(session)
 else:
     print("[******  AGZ.py  *******] PID = ", os.getpid())
     config = tf.ConfigProto()
