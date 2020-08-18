@@ -231,8 +231,9 @@ def set_gpu_memory_target(frac):
         if n_gpu > 0:
             gpu_id = np.remainder(os.getpid(), n_gpu)
             # can be commented out.
+            # giving error (though all GPUs were working) (logfile: cuda_error1.log)
             os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
-            #os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+            # os.environ["CUDA_VISIBLE_DEVICES"] = "1"           # out of memory on GPU:1 but no error
             print(
                 f"{bcolors.OKBLUE}[set_gpu_memory_target] PID={os.getpid()} gpu_id={str(gpu_id)}{bcolors.ENDC}")
 

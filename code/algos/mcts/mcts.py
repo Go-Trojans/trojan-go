@@ -183,7 +183,10 @@ class MCTSPlayer:
                 #print("tensor : ", tensor)
                 try:
                     # [GPU-ERROR] looks like we are seeing a issue while running on GPU, when num_workers is more than 1.
-                    p, v = nn.predict(tensor)
+                    import tensorflow as tf
+                    with tf.device('/device:GPU:{}'.format(np.remainder(os.getpid(), 8))):
+                        # with tf.device('/device:GPU:2'):
+                        p, v = nn.predict(tensor)
                 except OSError as err:
                     print("[MCTS line 187] OS error: {0}".format(err))
                     logging.debug("OS error: {}".format(err))
