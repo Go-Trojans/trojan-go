@@ -177,8 +177,8 @@ def do_self_play(board_size, agent1_filename, agent2_filename,
                  experience_filename,
                  gpu_frac):
 
-    import tensorflow as tf
-    import keras
+    #import tensorflow as tf
+    #import keras
     #import keras.backend as K
     # K.set_session(tf.compat.v1.Session())
     # tf.compat.v1.keras.backend.set_session(tf.compat.v1.Session())

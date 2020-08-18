@@ -1,5 +1,5 @@
 from keras.models import load_model, save_model
-import keras
+#import keras
 import h5py
 import os
 import tempfile
@@ -203,16 +203,17 @@ def set_gpu_memory_target(frac):
     This function does nothing if Keras is using a backend other than
     Tensorflow.
     """
-    import keras
+    #import keras
     import os
-    if keras.backend.backend() != 'tensorflow':
-        print("Return without doing anything")
-        return
+    # if keras.backend.backend() != 'tensorflow':
+    #    print("Return without doing anything")
+    #    return
     # Do the import here, not at the top, in case Tensorflow is not
     # installed at all.
-    import tensorflow as tf
+    #import tensorflow as tf
     # from keras.backend.tensorflow_backend import set_session
-    if tf_version_comp(tf.__version__):
+    # if tf_version_comp(tf.__version__):
+    if True:
 
         """
         To force the process to use a specific GPU, I use the environment variable CUDA_VISIBLE_DEVICES,
@@ -251,6 +252,9 @@ def set_gpu_memory_target(frac):
         session = tf.compat.v1.Session(config=config)
         tf.compat.v1.keras.backend.set_session(session)
         """
+
+        import keras
+        import tensorflow as tf
 
         # On CPU/GPU placement
         config = tf.compat.v1.ConfigProto(
