@@ -349,7 +349,7 @@ def main():
 
     print(f"{bcolors.OKBLUE}Welcome to TROJAN-GO !!!{bcolors.ENDC}")
     logging.debug("Welcome to TROJAN-GO !!!")
-    system_info()
+    # system_info()
 
     agents_path = './checkpoints/iteration_Savedmodel/'
     data_dir = './data/'

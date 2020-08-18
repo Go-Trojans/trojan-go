@@ -49,7 +49,7 @@ from keras.layers import Activation, BatchNormalization, MaxPooling2D
 from keras.layers import Conv2D, Dense, Flatten, Input
 from keras.models import Model
 import numpy as np
-import tensorflow as tf
+#import tensorflow as tf
 from keras.optimizers import SGD
 import os
 
@@ -73,6 +73,8 @@ It causes the memory of a graphics card will be fully allocated to that process.
 In reality, it is might need only the fraction of memory for operating.
 It prevents any new GPU process which consumes a GPU memory to be run on the same machine.
 """
+
+"""
 # WITHOUT THIS, IT IS GIVING ERROR
 if tf_version_comp(tf.__version__):
     print("[******  AGZ.py  START *******] PID = ", os.getpid())
@@ -87,6 +89,7 @@ else:
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
     session = tf.Session(config=config)
+"""
 
 
 """

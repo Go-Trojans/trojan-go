@@ -224,13 +224,15 @@ def set_gpu_memory_target(frac):
         GPU3 = 4,9
         """
         gpu_id = '0'
-        n_gpu = len(tf.config.experimental.list_physical_devices('GPU'))
+        #n_gpu = len(tf.config.experimental.list_physical_devices('GPU'))
+        n_gpu = 8
         print(
             f"{bcolors.OKBLUE}[set_gpu_memory_target] Number of GPUs: {n_gpu}{bcolors.ENDC}")
         if n_gpu > 0:
             gpu_id = np.remainder(os.getpid(), n_gpu)
             # can be commented out.
             os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
+            #os.environ["CUDA_VISIBLE_DEVICES"] = "1"
             print(
                 f"{bcolors.OKBLUE}[set_gpu_memory_target] PID={os.getpid()} gpu_id={str(gpu_id)}{bcolors.ENDC}")
 
@@ -239,6 +241,7 @@ def set_gpu_memory_target(frac):
         print(
             f"{bcolors.OKBLUE}[set_gpu_memory_target config START] PID={os.getpid()} gpu_id={str(gpu_id)}{bcolors.ENDC}")
 
+        """
         config = tf.compat.v1.ConfigProto()
         # config.gpu_options.per_process_gpu_memory_fraction = frac #not needed I guess
         config.gpu_options.visible_device_list = str(gpu_id)
@@ -246,6 +249,14 @@ def set_gpu_memory_target(frac):
         # set_session(tf.compat.v1.Session(config=config))
         session = tf.compat.v1.Session(config=config)
         tf.compat.v1.keras.backend.set_session(session)
+        """
+
+        # On CPU/GPU placement
+        config = tf.compat.v1.ConfigProto(
+            allow_soft_placement=True, log_device_placement=True)
+        config.gpu_options.allow_growth = True
+        tf.compat.v1.Session(config=config)
+
         print(
             f"{bcolors.OKBLUE}[set_gpu_memory_target config END] PID={os.getpid()} gpu_id={str(gpu_id)}{bcolors.ENDC}")
         # ----------------------------------------------------------------------------------
