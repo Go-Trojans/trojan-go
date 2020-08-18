@@ -75,12 +75,13 @@ It prevents any new GPU process which consumes a GPU memory to be run on the sam
 """
 # WITHOUT THIS, IT IS GIVING ERROR
 if tf_version_comp(tf.__version__):
-    print("[******  AGZ.py  *******] PID = ", os.getpid())
+    print("[******  AGZ.py  START *******] PID = ", os.getpid())
     config = tf.compat.v1.ConfigProto()
     config.gpu_options.visible_device_list = str(np.remainder(os.getpid(), 8))
     config.gpu_options.allow_growth = True
     session = tf.compat.v1.Session(config=config)
     tf.compat.v1.keras.backend.set_session(session)
+    print("[******  AGZ.py END *******] PID = ", os.getpid())
 else:
     print("[******  AGZ.py  *******] PID = ", os.getpid())
     config = tf.ConfigProto()
