@@ -226,7 +226,7 @@ def set_gpu_memory_target(frac):
         """
         gpu_id = '0'
         #n_gpu = len(tf.config.experimental.list_physical_devices('GPU'))
-        n_gpu = 8
+        n_gpu = 4
         print(
             f"{bcolors.OKBLUE}[set_gpu_memory_target] Number of GPUs: {n_gpu}{bcolors.ENDC}")
         if n_gpu > 0:
@@ -259,7 +259,7 @@ def set_gpu_memory_target(frac):
         session = tf.compat.v1.Session(config=config)
         tf.compat.v1.keras.backend.set_session(session)
         """
-
+        """
         # Below lines can be commented out, I am not sure though.
         import keras
         import tensorflow as tf
@@ -275,7 +275,7 @@ def set_gpu_memory_target(frac):
         print(
             f"{bcolors.OKBLUE}[set_gpu_memory_target config END] PID={os.getpid()} gpu_id={str(gpu_id)}{bcolors.ENDC}")
         # ----------------------------------------------------------------------------------
-
+        """
     else:
         config = tf.ConfigProto()
         config.gpu_options.per_process_gpu_memory_fraction = frac

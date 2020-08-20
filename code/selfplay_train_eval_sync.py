@@ -485,7 +485,6 @@ def main():
 # PHASE-1-END(SELF_PLAY/DataGeneration)
 
         #################################
-        return
 
 # PHASE-2-START(TRAINING)
         print(f"{bcolors.OKBLUE}[Start Training ...] {bcolors.ENDC}")
