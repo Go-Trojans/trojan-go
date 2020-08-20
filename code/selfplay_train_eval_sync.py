@@ -23,12 +23,12 @@ import multiprocessing
 multiprocessing.set_start_method('spawn', force=True)
 
 
-#import keras
-#import tensorflow as tf
+# import keras
+# import tensorflow as tf
 
 
-#global graph
-#graph = tf.compat.v1.get_default_graph()
+# global graph
+# graph = tf.compat.v1.get_default_graph()
 
 
 LOG_FILENAME = './trojango.log'
@@ -44,8 +44,8 @@ def get_temp_file():
     return fname
 
 
-""" Here both the agents are nn model 
-    which will help during move selection during MCTS simulation 
+""" Here both the agents are nn model
+    which will help during move selection during MCTS simulation
 """
 
 
@@ -67,7 +67,7 @@ def simulate_game(black_player, white_player, board_size, simulations):
         moves.append(next_move)
         game = game.apply_move(next_move)
 
-    #display_board(game.board)
+    # display_board(game.board)
     return game
     """
     agents = {
@@ -91,7 +91,7 @@ def simulate_game(black_player, white_player, board_size, simulations):
         # update new rootnode as selected_actionNode
         rootnode = selected_actionNode
         move = selected_actionNode.move
-        #print(game.next_player, move.point)
+        # print(game.next_player, move.point)
         game = game.apply_move(move)
 
     # display_board(game.board)
@@ -168,7 +168,7 @@ def evaluate(learning_agent, reference_agent,
 
 
 """ agent1_filename (learning agent) and  agent2_filename (reference agent)
-    are model in  (.json, .h5) format 
+    are model in  (.json, .h5) format
 """
 
 
@@ -177,20 +177,20 @@ def do_self_play(board_size, agent1_filename, agent2_filename,
                  experience_filename,
                  gpu_frac):
 
-    #import tensorflow as tf
-    #import keras
-    #import keras.backend as K
+    # import tensorflow as tf
+    # import keras
+    # import keras.backend as K
     # K.set_session(tf.compat.v1.Session())
     # tf.compat.v1.keras.backend.set_session(tf.compat.v1.Session())
 
-    #print(inspect.currentframe().f_code.co_name, inspect.currentframe().f_back.f_code.co_name)
+    # print(inspect.currentframe().f_code.co_name, inspect.currentframe().f_back.f_code.co_name)
     set_gpu_memory_target(gpu_frac)
 
-    #import tensorflow as tf
-    #import keras
+    # import tensorflow as tf
+    # import keras
 
-    #global graph
-    #graph = tf.compat.v1.get_default_graph()
+    # global graph
+    # graph = tf.compat.v1.get_default_graph()
 
     print("PID: ", os.getpid())
     random.seed(int(time.time()) + os.getpid())
@@ -199,7 +199,7 @@ def do_self_play(board_size, agent1_filename, agent2_filename,
     print("learning agent : {} \nreference_agent : {}".format(
         agent1_filename, agent2_filename))
 
-    #print("Loading model from disk ...")
+    # print("Loading model from disk ...")
     agent1 = load_model_from_disk(agent1_filename)
     agent2 = load_model_from_disk(agent2_filename)
 
@@ -215,7 +215,7 @@ def do_self_play(board_size, agent1_filename, agent2_filename,
 
     mctsSP = MCTSSelfPlay(7, 5)
     input_shape = (7, 5, 5)
-    #nn = AGZ.init_random_model(input_shape)
+    # nn = AGZ.init_random_model(input_shape)
     print(
         f"{bcolors.OKBLUE} [PID : {os.getpid()}] self-play game is triggered, Get A Cup Of Coffee And Relax !!!{bcolors.ENDC}")
     logging.debug(
@@ -330,10 +330,36 @@ def train_on_experience(learning_agent, output_file, experience_file,
     worker.join()
 
 
+def init_model(input_shape, learning_agent, reference_agent):
+    model = init_random_model(input_shape)
+    # It will return model generated under strategy scope.
+    # model = init_random_model(input_shape, True)
+    save_model_to_disk(model, learning_agent)
+    save_model_to_disk(model, reference_agent)
+    print("[PID: {}] Initial model saved to disk".format(os.getpid()))
+
+
+def save_initial_model(input_shape, learning_agent, reference_agent):
+    # Do the initialization of model in the background process.
+    # Otherwise some Keras stuff gets initialized in the parent,
+    # and later that forks, and that messes with the workers.
+    worker = multiprocessing.Process(
+        target=init_model,
+        args=[
+            input_shape,
+            learning_agent,
+            reference_agent
+        ]
+    )
+    worker.start()
+    worker.join()
+
+
 def main():
     # code here
     parser = argparse.ArgumentParser()
-    parser.add_argument('--games-per-batch', '-g', type=int, default=1500)
+    # each worker plays = this/#of workers
+    parser.add_argument('--games-per-batch', '-g', type=int, default=32)
     parser.add_argument('--simulations', type=int,
                         default=300)  # for 5*5 board
     parser.add_argument('--board-size', '-b', type=int, default=5)
@@ -362,15 +388,17 @@ def main():
     reference_agent_h5 = agents_path + 'initial.h5'
     reference_agent = (reference_agent_json, reference_agent_h5)
 
-    # """
+    """
     # Another way of referring the inital model but not good for transfer learning.
     input_shape = (7, 5, 5)
     model = init_random_model(input_shape)
     # It will return model generated under strategy scope.
-    #model = init_random_model(input_shape, True)
+    # model = init_random_model(input_shape, True)
     save_model_to_disk(model, learning_agent)
     save_model_to_disk(model, reference_agent)
-    # """
+    """
+    input_shape = (7, 5, 5)
+    save_initial_model(input_shape, learning_agent, reference_agent)
 
     # examples data to be stored.
     experience_file = os.path.join(data_dir, 'exp_temp.hdf5')
@@ -384,31 +412,31 @@ def main():
     working_agent = (working_agent_json, working_agent_h5)
 
     num_cpu = os.cpu_count()
-    if args.num_workers != 1:
-        args.num_workers = num_cpu
+    # if args.num_workers != 1:
+    #     args.num_workers = num_cpu
 
     print(f"{bcolors.OKBLUE}Testing : args.num_workers =  {args.num_workers}{bcolors.ENDC}")
     if not args.production:
-        #args.games_per_batch = num_cpu
-        args.games_per_batch = args.num_workers
-        if args.num_workers != 1:
-            args.num_workers = num_cpu
-            print(
-                f"{bcolors.OKBLUE}Testing : num of workers used will be {args.num_workers}{bcolors.ENDC}")
-        else:
-            print(
-                f"{bcolors.OKBLUE}Testing : num of workers will be {args.num_workers}{bcolors.ENDC}")
+        # args.games_per_batch = num_cpu
+        #args.games_per_batch = args.num_workers
+        # if args.num_workers != 1:
+        #     args.num_workers = num_cpu
+        # print(
+        #     f"{bcolors.OKBLUE}Testing : num of workers used will be {args.num_workers}{bcolors.ENDC}")
+        # else:
+        #     print(
+        #         f"{bcolors.OKBLUE}Testing : num of workers will be {args.num_workers}{bcolors.ENDC}")
 
         args.simulations = 10
-        #args.num_per_eval = num_cpu
+        # args.num_per_eval = num_cpu
         args.num_per_eval = args.num_workers
 
     total_games = 0
 
     """
-    #from keras.models import model_from_json
-    #json_filepath = '/Users/pujakumari/Desktop/TROJANGO/trojan-go/code/algos/nn/modelJH.json'
-    #h5_filepath = '/Users/pujakumari/Desktop/TROJANGO/trojan-go/code/algos/nn/modelJH.h5'
+    # from keras.models import model_from_json
+    # json_filepath = '/Users/pujakumari/Desktop/TROJANGO/trojan-go/code/algos/nn/modelJH.json'
+    # h5_filepath = '/Users/pujakumari/Desktop/TROJANGO/trojan-go/code/algos/nn/modelJH.h5'
     
     # load json and create model
     json_file = open(json_filepath, 'r')
@@ -441,7 +469,7 @@ def main():
         generate_experience(
             learning_agent,
             reference_agent,
-            #agent1, agent2,
+            # agent1, agent2,
             experience_file,
             args.games_per_batch,
             args.simulations,
@@ -456,6 +484,8 @@ def main():
             num_cpu, exp_time))
 # PHASE-1-END(SELF_PLAY/DataGeneration)
 
+        #################################
+        return
 
 # PHASE-2-START(TRAINING)
         print(f"{bcolors.OKBLUE}[Start Training ...] {bcolors.ENDC}")

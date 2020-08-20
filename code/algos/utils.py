@@ -230,11 +230,18 @@ def set_gpu_memory_target(frac):
         print(
             f"{bcolors.OKBLUE}[set_gpu_memory_target] Number of GPUs: {n_gpu}{bcolors.ENDC}")
         if n_gpu > 0:
-            gpu_id = np.remainder(os.getpid(), n_gpu)
+            gpu_id = np.remainder(os.getpid(), n_gpu)  # 0 to 7
+
+            os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
             # can be commented out.
             # giving error (though all GPUs were working) (logfile: cuda_error1.log)
             os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
-            # os.environ["CUDA_VISIBLE_DEVICES"] = "1"           # out of memory on GPU:1 but no error
+
+            # out of memory on GPU:1 but no error. Also all GPUs are not getting utilized.
+            # os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+
+            os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
+
             print(
                 f"{bcolors.OKBLUE}[set_gpu_memory_target] PID={os.getpid()} gpu_id={str(gpu_id)}{bcolors.ENDC}")
 
@@ -253,12 +260,15 @@ def set_gpu_memory_target(frac):
         tf.compat.v1.keras.backend.set_session(session)
         """
 
+        # Below lines can be commented out, I am not sure though.
         import keras
         import tensorflow as tf
 
         # On CPU/GPU placement
         config = tf.compat.v1.ConfigProto(
             allow_soft_placement=True, log_device_placement=True)
+        # need to test this.
+        #config.gpu_options.per_process_gpu_memory_fraction = 0.95/4
         config.gpu_options.allow_growth = True
         tf.compat.v1.Session(config=config)
 
