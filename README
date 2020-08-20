@@ -15,4 +15,7 @@ Pull the code from hithub:
 How to run the code in conda environment:
       1. copy run.sh from local machine to your AWS
       2. bash run.sh
+      3. python selfplay_train_eval_sync.py --no-production
+         python selfplay_train_eval_sync.py --no-production -w 2        [2 workers with 32 games default]
+         python selfplay_train_eval_sync.py --no-production -w 2 -g 4   [2 workers with 4 games in total]
 
