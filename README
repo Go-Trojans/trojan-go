@@ -13,7 +13,7 @@ Pull the code from hithub:
  
 
 How to run the code in conda environment:
-      1. copy run.sh from local machine to your AWS
+      1. copy run.sh from local machine to your AWS [find run.sh here : https://github.com/Go-Trojans/trojan-go/blob/aws_trojango/run.sh]
       2. bash run.sh
       3. source activate awsgo; cd TROJANGO/trojan-go/code/
       4. python selfplay_train_eval_sync.py --no-production
