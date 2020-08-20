@@ -18,4 +18,3 @@ pip install tensorflow-gpu==2.2
 # Run the code.
 cd TROJANGO/trojan-go/code/
 for a in /sys/bus/pci/devices/*; do echo 0 | sudo tee -a $a/numa_node; done
-python3 selfplay_train_eval_sync.py --no-production
