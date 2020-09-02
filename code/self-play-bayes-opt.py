@@ -33,7 +33,7 @@ from algos.mcts.mcts import MCTSPlayer, MCTSNode
 from algos.bayes_agent import bayesAgent
 
 #import keras
-#import tensorflow as tf
+# import tensorflow as tf
 
 
 #global graph
@@ -118,27 +118,27 @@ def play_games(args):
     print("I am in play_games")
     
     if len(args) == 6:
-        agent1_fname, agent2_fname, num_games, board_size, gpu_frac, simulations = args
-        dcoeff, simulations, c = ref_hps
-        ref_hp = (0.03, 10, 4)
+        agent1_fname, agent2_fname , num_games, board_size, gpu_frac, simulations = args
+        ref_hp = ref_hps
+        # ref_hp = (0.03, 10, 4)
     else:
-        agent1_fname, agent2_fname, num_games, board_size, gpu_frac, simulations, dcoeff, c, ref_hp = args
+        agent1, agent2, num_games, board_size, gpu_frac, simulations, dcoeff, c, ref_hp = args
         print("I am in play_games else part , num_games: ", num_games)
+        print("=" * 100)
+        print("reference hyperparams: %s" % (ref_hp,))
+        print("=" * 100)
 
     set_gpu_memory_target(gpu_frac)
 
     random.seed(int(time.time()) + os.getpid())
     np.random.seed(int(time.time()) + os.getpid())
 
-    agent1 = load_model_from_disk(agent1_fname) # learning agent; should be variable and is using x hyperParams
-    agent2 = load_model_from_disk(agent2_fname) #refernece agent; used x{0} or previous fixed hyperParams value.
+    # agent1 = load_model_from_disk(agent1_fname) # learning agent; should be variable and is using x hyperParams
+    # agent2 = load_model_from_disk(agent2_fname) #refernece agent; used x{0} or previous fixed hyperParams value.
     
     bayes_agent1 = bayesAgent(agent1, dcoeff, int(simulations), c) # this will keep on changing as per bayesian optimization
 
     ref_dcoeff, ref_sims, ref_c = ref_hp
-    print("=" * 100)
-    print("reference hyperparams: %s" % (ref_hp,))
-    print("=" * 100)
     bayes_agent2 = bayesAgent(agent2, [ref_dcoeff], ref_sims, ref_c) # fixed hyperParams 
     
     wins, losses = 0, 0
@@ -203,7 +203,7 @@ def evaluate(learning_agent, reference_agent,
 """ agent1_filename (learning agent) and  agent2_filename (reference agent)
     are model in  (.json, .h5) format 
 """ 
-def do_self_play(board_size, agent1_filename, agent2_filename,
+def do_self_play(board_size, # agent1_filename, agent2_filename,
                  num_games, simulations, temperature,
                  experience_filename,
                  gpu_frac):
@@ -227,11 +227,11 @@ def do_self_play(board_size, agent1_filename, agent2_filename,
     random.seed(int(time.time()) + os.getpid())
     np.random.seed(int(time.time()) + os.getpid())
 
-    print("learning agent : {} \nreference_agent : {}".format(agent1_filename, agent2_filename))
+    # print("learning agent : {} \nreference_agent : {}".format(agent1_filename, agent2_filename))
         
-    #print("Loading model from disk ...")
-    agent1 = load_model_from_disk(agent1_filename)
-    agent2 = load_model_from_disk(agent2_filename)
+    # #print("Loading model from disk ...")
+    # agent1 = load_model_from_disk(agent1_filename)
+    # agent2 = load_model_from_disk(agent2_filename)
     
     #print(agent1.summary())
     #print(agent2.summary())
@@ -256,7 +256,7 @@ def do_self_play(board_size, agent1_filename, agent2_filename,
 
 
 """ learning_agent = (learning_agent_json, learning_agent_h5) and same is reference_agent """
-def generate_experience(learning_agent, reference_agent, exp_file,
+def generate_experience(l_agent, r_agent, exp_file,
                         num_games, simulations, board_size, num_workers):
     temperature=0
     experience_files = []
@@ -271,8 +271,8 @@ def generate_experience(learning_agent, reference_agent, exp_file,
             target=do_self_play,
             args=(
                 board_size,
-                learning_agent,
-                reference_agent,
+                l_agent,
+                r_agent,
                 games_per_worker,
                 simulations,
                 temperature,
@@ -376,6 +376,16 @@ def main():
     reference_agent_h5 = agents_path + 'initial.h5'
     reference_agent = (reference_agent_json, reference_agent_h5)
 
+    l_agent = load_model_from_disk(learning_agent)
+    r_agent = load_model_from_disk(reference_agent)
+    from multiprocessing.managers import BaseManager
+
+    class AgentManager(BaseManager):
+        pass
+
+    AgentManager.register('l_agent', l_agent)
+    AgentManager.register('r_agent', r_agent)
+
     """
     # Another way of referring the inital model but not good for transfer learning.
     input_shape = (7,5,5)
@@ -425,7 +435,7 @@ def main():
         pool = multiprocessing.Pool(args.num_workers)
         worker_args = [
             (
-                learning_agent, reference_agent,
+                l_agent, r_agent,
                 games_per_worker, args.board_size, gpu_frac, simulations, [dcoeff], c, ref_hps
             )
             for _ in range(args.num_workers)
@@ -453,8 +463,8 @@ def main():
         logging.debug("[Data Generation starts] Reference: {}".format(reference_agent_json))
         ge_start = time.time()
         generate_experience(
-            learning_agent,
-            reference_agent,
+            l_agent,
+            r_agent,
             #agent1, agent2,
             experience_file,
             args.games_per_batch,
@@ -512,8 +522,8 @@ def main():
             global num_times_obj_func_called
             num_times_obj_func_called = 0 
             print('Won %d / %d games (%.3f)' % (wins, hp_game_count, float(wins) / hp_game_count))
-            plot_convergence(results, yscale='log').figure.savefig("convergence.png")
-            plot_objective(results).flatten()[0].figure.savefig("objective.png")
+            # plot_convergence(results, yscale='log').figure.savefig("convergence.png")
+            # plot_objective(results).flatten()[0].figure.savefig("objective.png")
             
             print ("=" * 30)
         except ValueError:
